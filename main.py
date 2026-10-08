@@ -784,6 +784,83 @@ async def on_app_command_error_handler(interaction: discord.Interaction, error: 
 
 bot.tree.on_error = on_app_command_error_handler
 
+@tasks.loop(seconds=2.0)
+async def process_web_command_queue():
+    if not client:
+        return
+    try:
+        col = client["rtmbot"]["bot_commands"]
+        pending = await asyncio.to_thread(lambda: list(col.find({"status": "pending"}).sort("created_at", 1).limit(5)))
+        for item in pending:
+            doc_id = item["_id"]
+            cmd_str = (item.get("command") or "").strip()
+            channel_id = item.get("channel_id")
+            guild_id = item.get("guild_id")
+            issuer = item.get("issuer") or "Web Panel"
+
+            if not cmd_str:
+                await asyncio.to_thread(lambda: col.update_one({"_id": doc_id}, {"$set": {"status": "failed", "output": "Perintah kosong", "executed_at": datetime.now(timezone.utc).isoformat()}}))
+                continue
+
+            target_channel = None
+            if channel_id:
+                try:
+                    target_channel = bot.get_channel(int(channel_id)) or await bot.fetch_channel(int(channel_id))
+                except Exception:
+                    pass
+
+            if not target_channel and guild_id:
+                try:
+                    g = bot.get_guild(int(guild_id)) or await bot.fetch_guild(int(guild_id))
+                    if g:
+                        target_channel = g.system_channel
+                        if not target_channel:
+                            for ch in g.text_channels:
+                                if ch.permissions_for(g.me).send_messages:
+                                    target_channel = ch
+                                    break
+                except Exception:
+                    pass
+
+            status = "completed"
+            output_lines = []
+
+            if not target_channel:
+                status = "failed"
+                output_lines.append(f"❌ Tidak ditemukan kanal Discord tujuan untuk Guild '{guild_id}' / Channel '{channel_id}'.")
+            else:
+                try:
+                    sent_msg = await target_channel.send(f"💻 **[Web Console]** Menjalankan: `{cmd_str}`\n*(Diinisiasi oleh: {issuer})*")
+                    output_lines.append(f"📡 Pesan/Perintah dikirim ke #{target_channel.name} (`{target_channel.id}`) di {target_channel.guild.name}")
+
+                    if cmd_str.startswith(("!", "?")):
+                        sent_msg.content = cmd_str
+                        ctx = await bot.get_context(sent_msg)
+                        if ctx.valid:
+                            await bot.invoke(ctx)
+                            output_lines.append(f"✅ Perintah `{ctx.command.qualified_name}` berhasil diproses oleh bot.")
+                        else:
+                            output_lines.append(f"ℹ️ Perintah `{cmd_str}` diposting ke kanal teks.")
+                    else:
+                        output_lines.append(f"✅ Pesan berhasil diposting ke channel.")
+                except Exception as ex:
+                    status = "failed"
+                    output_lines.append(f"❌ Terjadi kesalahan saat eksekusi: {str(ex)}")
+
+            executed_at = datetime.now(timezone.utc).isoformat()
+            output_text = "\n".join(output_lines)
+            await asyncio.to_thread(lambda: col.update_one(
+                {"_id": doc_id},
+                {"$set": {
+                    "status": status,
+                    "output": output_text,
+                    "executed_at": executed_at
+                }}
+            ))
+            log.info(f"⚡ [WEB_QUEUE] {cmd_str} -> {status}")
+    except Exception as e:
+        log.error(f"Error in process_web_command_queue: {e}")
+
 async def load_cogs():
     initial_extensions = [
         "cogs.leveling", "cogs.moderation", "cogs.quotes", "cogs.minigames",
@@ -801,7 +878,11 @@ async def setup_hook():
     log.info("🚀 Memulai setup_hook dan memuat cogs...")
     bot.session = aiohttp.ClientSession()
     await load_cogs()
+    if not process_web_command_queue.is_running():
+        process_web_command_queue.start()
+        log.info("✅ Web command queue processor aktif.")
     log.info("✅ setup_hook selesai.")
 
 save_cookies_from_env()
 bot.run(os.getenv("DISCORD_TOKEN"))
+
