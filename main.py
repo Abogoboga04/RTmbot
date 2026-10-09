@@ -13,7 +13,8 @@ import json
 from io import BytesIO
 from pymongo import MongoClient, errors as pymongo_errors
 from dotenv import load_dotenv
-from datetime import datetime, timezone 
+from datetime import datetime, timezone, timedelta
+import re
 import zipfile
 import time 
 
@@ -865,11 +866,126 @@ async def process_web_command_queue():
                         else:
                             status = "failed"
                             output_lines.append("Isi pesan teks kosong.")
+                    elif action == "announce":
+                        raw_text = " ".join(args)
+                        if not raw_text:
+                            status = "failed"
+                            output_lines.append("Isi pengumuman tidak boleh kosong.")
+                        else:
+                            if "|" in raw_text:
+                                a_title, a_desc = raw_text.split("|", 1)
+                            else:
+                                a_title, a_desc = "Pengumuman Server", raw_text
+                            emb = discord.Embed(
+                                title=a_title.strip(),
+                                description=a_desc.strip(),
+                                color=0x5865F2,
+                                timestamp=datetime.now(timezone.utc)
+                            )
+                            if target_channel.guild.icon:
+                                emb.set_thumbnail(url=target_channel.guild.icon.url)
+                            emb.set_footer(text=f"Diumumkan oleh {issuer}")
+                            await target_channel.send(embed=emb)
+                            output_lines.append(f"Pengumuman berhasil disiarkan ke #{target_channel.name}.")
                     elif action == "ping":
                         latency_ms = round(bot.latency * 1000)
                         output_lines.append(f"Pong! Latensi bot adalah {latency_ms} ms.")
+                    elif action == "kick":
+                        if not args:
+                            status = "failed"
+                            output_lines.append("Format: kick <user_id> [alasan]")
+                        else:
+                            raw_uid = re.sub(r'\D', '', args[0])
+                            if not raw_uid:
+                                status = "failed"
+                                output_lines.append("Target ID pengguna tidak valid.")
+                            else:
+                                reason = " ".join(args[1:]) if len(args) > 1 else "Dikeluarkan via Web Console"
+                                target_member = target_channel.guild.get_member(int(raw_uid))
+                                if not target_member:
+                                    try:
+                                        target_member = await target_channel.guild.fetch_member(int(raw_uid))
+                                    except Exception:
+                                        target_member = None
+                                if target_member:
+                                    await target_member.kick(reason=reason)
+                                    output_lines.append(f"Anggota {target_member.display_name} ({target_member.id}) berhasil dikeluarkan.")
+                                else:
+                                    status = "failed"
+                                    output_lines.append(f"Member ID {raw_uid} tidak ditemukan di server.")
+                    elif action == "ban":
+                        if not args:
+                            status = "failed"
+                            output_lines.append("Format: ban <user_id> [alasan]")
+                        else:
+                            raw_uid = re.sub(r'\D', '', args[0])
+                            if not raw_uid:
+                                status = "failed"
+                                output_lines.append("Target ID pengguna tidak valid.")
+                            else:
+                                reason = " ".join(args[1:]) if len(args) > 1 else "Diblokir via Web Console"
+                                await target_channel.guild.ban(discord.Object(id=int(raw_uid)), reason=reason)
+                                output_lines.append(f"Pengguna ID {raw_uid} berhasil diblokir dari server.")
+                    elif action == "unban":
+                        if not args:
+                            status = "failed"
+                            output_lines.append("Format: unban <user_id>")
+                        else:
+                            raw_uid = re.sub(r'\D', '', args[0])
+                            await target_channel.guild.unban(discord.Object(id=int(raw_uid)))
+                            output_lines.append(f"Blokir pengguna ID {raw_uid} berhasil dicabut.")
+                    elif action == "timeout":
+                        if not args:
+                            status = "failed"
+                            output_lines.append("Format: timeout <user_id> [durasi_menit] [alasan]")
+                        else:
+                            raw_uid = re.sub(r'\D', '', args[0])
+                            duration_mins = int(args[1]) if len(args) > 1 and args[1].isdigit() else 10
+                            reason = " ".join(args[2:]) if len(args) > 2 else "Timeout via Web Console"
+                            target_member = target_channel.guild.get_member(int(raw_uid))
+                            if not target_member:
+                                try:
+                                    target_member = await target_channel.guild.fetch_member(int(raw_uid))
+                                except Exception:
+                                    target_member = None
+                            if target_member:
+                                await target_member.timeout(timedelta(minutes=duration_mins), reason=reason)
+                                output_lines.append(f"Member {target_member.display_name} berhasil dibungkam {duration_mins} menit.")
+                            else:
+                                status = "failed"
+                                output_lines.append(f"Member ID {raw_uid} tidak ditemukan di server.")
+                    elif action == "voice_disconnect":
+                        if not args:
+                            status = "failed"
+                            output_lines.append("Format: voice_disconnect <user_id>")
+                        else:
+                            raw_uid = re.sub(r'\D', '', args[0])
+                            target_member = target_channel.guild.get_member(int(raw_uid))
+                            if target_member and target_member.voice:
+                                await target_member.move_to(None)
+                                output_lines.append(f"Koneksi voice {target_member.display_name} berhasil diputus.")
+                            else:
+                                status = "failed"
+                                output_lines.append(f"Member ID {raw_uid} tidak sedang berada di kanal suara.")
+                    elif action == "voicepanel":
+                        leveling_cog = bot.get_cog("ProgressionSystem")
+                        if leveling_cog and hasattr(leveling_cog, "build_voice_panel_card"):
+                            card = leveling_cog.build_voice_panel_card(target_channel.guild)
+                            await target_channel.send(**card)
+                            output_lines.append(f"Panel Voice Leaderboard berhasil dikirim ke #{target_channel.name}.")
+                        else:
+                            status = "failed"
+                            output_lines.append("Modul leveling & voice tidak aktif.")
+                    elif action == "botinfo":
+                        g_count = len(bot.guilds)
+                        u_count = sum(len(g.members) for g in bot.guilds)
+                        latency_ms = round(bot.latency * 1000)
+                        output_lines.append(f"RTMBOT Info: {g_count} Server, ~{u_count} Anggota, Latensi: {latency_ms} ms.")
+                    elif action == "serverinfo":
+                        g = target_channel.guild
+                        output_lines.append(f"Server Info: {g.name} (ID: {g.id}) | {len(g.members)} Anggota, {len(g.channels)} Kanal.")
                     else:
-                        if cmd_str.startswith(("!", "?")):
+                        if cmd_str.startswith(("!", "?", "/")):
                             sent_msg = await target_channel.send(cmd_str)
                             ctx = await bot.get_context(sent_msg)
                             if ctx.valid:
