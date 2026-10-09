@@ -827,25 +827,62 @@ async def process_web_command_queue():
 
             if not target_channel:
                 status = "failed"
-                output_lines.append(f"❌ Tidak ditemukan kanal Discord tujuan untuk Guild '{guild_id}' / Channel '{channel_id}'.")
+                output_lines.append(f"Kanal Discord tujuan tidak ditemukan untuk Guild '{guild_id}' / Channel '{channel_id}'.")
             else:
                 try:
-                    sent_msg = await target_channel.send(f"💻 **[Web Console]** Menjalankan: `{cmd_str}`\n*(Diinisiasi oleh: {issuer})*")
-                    output_lines.append(f"📡 Pesan/Perintah dikirim ke #{target_channel.name} (`{target_channel.id}`) di {target_channel.guild.name}")
+                    clean_cmd = cmd_str.lstrip("!?").strip()
+                    parts = clean_cmd.split()
+                    action = parts[0].lower() if parts else ""
+                    args = parts[1:] if len(parts) > 1 else []
 
-                    if cmd_str.startswith(("!", "?")):
-                        sent_msg.content = cmd_str
-                        ctx = await bot.get_context(sent_msg)
-                        if ctx.valid:
-                            await bot.invoke(ctx)
-                            output_lines.append(f"✅ Perintah `{ctx.command.qualified_name}` berhasil diproses oleh bot.")
+                    if action in ("clear", "purge"):
+                        amount = 10
+                        if args and args[0].isdigit():
+                            amount = min(max(int(args[0]), 1), 100)
+                        deleted = await target_channel.purge(limit=amount)
+                        output_lines.append(f"Berhasil menghapus {len(deleted)} pesan di #{target_channel.name} ({target_channel.guild.name}).")
+                    elif action == "slowmode":
+                        sec = 0
+                        if args and args[0].isdigit():
+                            sec = min(max(int(args[0]), 0), 21600)
+                        await target_channel.edit(slowmode_delay=sec)
+                        output_lines.append(f"Slowmode #{target_channel.name} berhasil diatur ke {sec} detik.")
+                    elif action == "lock":
+                        overwrite = target_channel.overwrites_for(target_channel.guild.default_role)
+                        overwrite.send_messages = False
+                        await target_channel.set_permissions(target_channel.guild.default_role, overwrite=overwrite)
+                        output_lines.append(f"Kanal #{target_channel.name} berhasil dikunci.")
+                    elif action == "unlock":
+                        overwrite = target_channel.overwrites_for(target_channel.guild.default_role)
+                        overwrite.send_messages = None
+                        await target_channel.set_permissions(target_channel.guild.default_role, overwrite=overwrite)
+                        output_lines.append(f"Kanal #{target_channel.name} berhasil dibuka kembali.")
+                    elif action == "say":
+                        text_to_send = " ".join(args)
+                        if text_to_send:
+                            await target_channel.send(text_to_send)
+                            output_lines.append(f"Pesan teks berhasil dikirim ke #{target_channel.name}.")
                         else:
-                            output_lines.append(f"ℹ️ Perintah `{cmd_str}` diposting ke kanal teks.")
+                            status = "failed"
+                            output_lines.append("Isi pesan teks kosong.")
+                    elif action == "ping":
+                        latency_ms = round(bot.latency * 1000)
+                        output_lines.append(f"Pong! Latensi bot adalah {latency_ms} ms.")
                     else:
-                        output_lines.append(f"✅ Pesan berhasil diposting ke channel.")
+                        if cmd_str.startswith(("!", "?")):
+                            sent_msg = await target_channel.send(cmd_str)
+                            ctx = await bot.get_context(sent_msg)
+                            if ctx.valid:
+                                await bot.invoke(ctx)
+                                output_lines.append(f"Perintah `{ctx.command.qualified_name}` berhasil diproses.")
+                            else:
+                                output_lines.append(f"Pesan dikirim ke #{target_channel.name}.")
+                        else:
+                            await target_channel.send(cmd_str)
+                            output_lines.append(f"Pesan berhasil diposting ke #{target_channel.name}.")
                 except Exception as ex:
                     status = "failed"
-                    output_lines.append(f"❌ Terjadi kesalahan saat eksekusi: {str(ex)}")
+                    output_lines.append(f"Terjadi kesalahan saat eksekusi: {str(ex)}")
 
             executed_at = datetime.now(timezone.utc).isoformat()
             output_text = "\n".join(output_lines)
