@@ -2353,10 +2353,60 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
 
         await ctx.send(embed=embed)
 
+    def restore_voice_sessions(self):
+        """Memulihkan sesi aktif voice dari MongoDB agar continuous session tidak ter-reset saat bot restart."""
+        mongo_client = getattr(self.bot, 'mongo_client', None)
+        active_docs = {}
+        if mongo_client:
+            try:
+                col = mongo_client.get_database("rtmbot")["active_voice_sessions"]
+                active_docs = {d["_id"]: d.get("start_time", time.time()) for d in col.find()}
+            except Exception:
+                pass
+
+        now = time.time()
+        current_voice_uids = set()
+        for guild in self.bot.guilds:
+            for vc in guild.voice_channels:
+                for member in vc.members:
+                    if member.bot:
+                        continue
+                    uid_str = str(member.id)
+                    current_voice_uids.add(uid_str)
+                    if member.id in self._voice_active_sessions:
+                        continue
+                    if uid_str in active_docs:
+                        self._voice_active_sessions[member.id] = active_docs[uid_str]
+                    else:
+                        self._voice_active_sessions[member.id] = now
+                        if mongo_client:
+                            def _sync_new(u_id, g_id, c_id, s_t):
+                                try:
+                                    mongo_client.get_database("rtmbot")["active_voice_sessions"].replace_one(
+                                        {"_id": u_id},
+                                        {"_id": u_id, "start_time": s_t, "guild_id": g_id, "channel_id": c_id},
+                                        upsert=True
+                                    )
+                                except Exception:
+                                    pass
+                            threading.Thread(target=_sync_new, args=(uid_str, str(guild.id), str(vc.id), now), daemon=True).start()
+
+        # Bersihkan sesi MongoDB untuk member yang sudah tidak berada di voice saat bot start
+        if mongo_client and active_docs:
+            stale_uids = [uid for uid in active_docs.keys() if uid not in current_voice_uids]
+            if stale_uids:
+                def _clean_stale(stales):
+                    try:
+                        mongo_client.get_database("rtmbot")["active_voice_sessions"].delete_many({"_id": {"$in": stales}})
+                    except Exception:
+                        pass
+                threading.Thread(target=_clean_stale, args=(stale_uids,), daemon=True).start()
+
     @commands.Cog.listener()
     async def on_ready(self):
         """Sinkronisasi data dari MongoDB dan verifikasi panel voice di semua server saat bot ready."""
         self.load_data_from_mongo()
+        self.restore_voice_sessions()
         for guild in self.bot.guilds:
             try:
                 await self.update_voice_panel(guild)
@@ -2376,10 +2426,31 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         if before.channel is None and after.channel is not None:
             if not (guild.afk_channel and after.channel.id == guild.afk_channel.id):
                 self._voice_active_sessions[member.id] = now
+                mongo_client = getattr(self.bot, 'mongo_client', None)
+                if mongo_client:
+                    def _save_active():
+                        try:
+                            mongo_client.get_database("rtmbot")["active_voice_sessions"].replace_one(
+                                {"_id": str(member.id)},
+                                {"_id": str(member.id), "start_time": now, "guild_id": str(guild.id), "channel_id": str(after.channel.id)},
+                                upsert=True
+                            )
+                        except Exception:
+                            pass
+                    threading.Thread(target=_save_active, daemon=True).start()
 
         # User keluar dari voice channel atau pindah ke channel AFK
         elif before.channel is not None and (after.channel is None or (guild.afk_channel and after.channel.id == guild.afk_channel.id)):
             join_time = self._voice_active_sessions.pop(member.id, None)
+            mongo_client = getattr(self.bot, 'mongo_client', None)
+            if mongo_client:
+                def _remove_active():
+                    try:
+                        mongo_client.get_database("rtmbot")["active_voice_sessions"].delete_one({"_id": str(member.id)})
+                    except Exception:
+                        pass
+                threading.Thread(target=_remove_active, daemon=True).start()
+
             if join_time:
                 elapsed = int(now - join_time)
                 all_level_data = load_json(LEVEL_FILE)
