@@ -1113,9 +1113,11 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                             data[user_id]["weekly_voice_time"] += 60
 
                             # EXP & Koin (tetap dapat selama tidak deafen)
-                            if not (member.voice and member.voice.self_deaf):
-                                exp_gain_vc = int(base_exp_vc * anomaly_multiplier)
-                                rswn_gain_vc = int(base_rswn_vc * anomaly_multiplier)
+                            if not (member.voice and (member.voice.self_deaf or member.voice.deaf)):
+                                boost_channels = guild_config.get("voice_boost_channels", {})
+                                ch_boost = float(boost_channels.get(str(vc.id), 1.0))
+                                exp_gain_vc = int(base_exp_vc * anomaly_multiplier * ch_boost)
+                                rswn_gain_vc = int(base_rswn_vc * anomaly_multiplier * ch_boost)
 
                                 data[user_id]["exp"] += exp_gain_vc
                                 data[user_id].setdefault("weekly_exp", 0)
@@ -1124,6 +1126,19 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                                 if user_id not in bank_data:
                                     bank_data[user_id] = {"balance": 0, "debt": 0}
                                 bank_data[user_id]["balance"] += rswn_gain_vc
+
+                            # Pemeriksaan Voice Role Milestones (Role otomatis berdasarkan akumulasi jam voice)
+                            v_roles = guild_config.get("voice_roles", {})
+                            if v_roles:
+                                total_hours = data[user_id]["voice_time"] // 3600
+                                for hrs_str, r_id in v_roles.items():
+                                    try:
+                                        if int(hrs_str) <= total_hours:
+                                            target_role = guild.get_role(int(r_id))
+                                            if target_role and target_role not in member.roles:
+                                                await member.add_roles(target_role, reason=f"Pencapaian Voice Milestone {hrs_str} Jam")
+                                    except Exception:
+                                        pass
 
                             new_level = calculate_new_level(data[user_id]["exp"], exp_per_level, max_level)
                             if new_level > data[user_id].get("level", 0):
@@ -1505,6 +1520,105 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
             await ctx.send(f"✅ Pengaturan role untuk **Level {level}** dihapus.")
         else:
             await ctx.send(f"❌ Tidak ada pengaturan role untuk **Level {level}**.")
+
+    @commands.command(name="setvoicerole", help="Atur role yang diberikan otomatis saat member mencapai akumulasi jam voice tertentu")
+    @commands.has_permissions(administrator=True)
+    async def set_voice_role(self, ctx: commands.Context, hours: int, role: discord.Role):
+        if hours <= 0:
+            return await ctx.send("Jam akumulasi voice harus lebih besar dari 0.")
+        guild_id = str(ctx.guild.id)
+        all_configs = load_json(CONFIG_FILE)
+        config = all_configs.setdefault(guild_id, {})
+        config.setdefault("voice_roles", {})
+        config["voice_roles"][str(hours)] = role.id
+        self.save_config_data(all_configs)
+        await ctx.send(f"Role {role.mention} akan diberikan otomatis saat member mencapai **{hours} Jam Aktif Voice**.")
+
+    @commands.command(name="removevoicerole", help="Hapus pengaturan role milestone voice pada target jam tertentu")
+    @commands.has_permissions(administrator=True)
+    async def remove_voice_role(self, ctx: commands.Context, hours: int):
+        guild_id = str(ctx.guild.id)
+        all_configs = load_json(CONFIG_FILE)
+        config = all_configs.get(guild_id, {})
+        v_roles = config.get("voice_roles", {})
+        if str(hours) in v_roles:
+            del v_roles[str(hours)]
+            self.save_config_data(all_configs)
+            await ctx.send(f"Pengaturan voice role untuk **{hours} Jam** berhasil dihapus.")
+        else:
+            await ctx.send(f"Tidak ada pengaturan role untuk akumulasi **{hours} Jam**.")
+
+    @commands.command(name="listvoiceroles", aliases=["voiceroles"], help="Lihat daftar role penghargaan jam voice server")
+    async def list_voice_roles(self, ctx: commands.Context):
+        guild_id = str(ctx.guild.id)
+        all_configs = load_json(CONFIG_FILE)
+        config = all_configs.get(guild_id, {})
+        v_roles = config.get("voice_roles", {})
+        if not v_roles:
+            return await ctx.send("Belum ada pengaturan role milestone jam voice di server ini.")
+
+        sorted_milestones = sorted(v_roles.items(), key=lambda x: int(x[0]))
+        lines = []
+        for hrs, rid in sorted_milestones:
+            role = ctx.guild.get_role(int(rid))
+            r_mention = role.mention if role else f"<Role Terhapus ({rid})>"
+            lines.append(f"• **{hrs} Jam Voice**: {r_mention}")
+
+        embed = discord.Embed(
+            title=f"Daftar Role Milestone Voice | {ctx.guild.name}",
+            description="\n".join(lines),
+            color=0x2ECC71
+        )
+        await ctx.send(embed=embed)
+
+    @commands.command(name="setvoiceboost", help="Atur kanal voice yang memberikan bonus multiplier EXP")
+    @commands.has_permissions(administrator=True)
+    async def set_voice_boost(self, ctx: commands.Context, channel: discord.VoiceChannel, multiplier: float = 1.5):
+        if multiplier < 1.0 or multiplier > 5.0:
+            return await ctx.send("Multiplier harus bernilai antara 1.0 hingga 5.0.")
+        guild_id = str(ctx.guild.id)
+        all_configs = load_json(CONFIG_FILE)
+        config = all_configs.setdefault(guild_id, {})
+        config.setdefault("voice_boost_channels", {})
+        config["voice_boost_channels"][str(channel.id)] = multiplier
+        self.save_config_data(all_configs)
+        await ctx.send(f"Kanal {channel.mention} kini memberikan bonus **{multiplier}x EXP & Koin** saat aktif di voice.")
+
+    @commands.command(name="removevoiceboost", help="Hapus status kanal voice bonus EXP")
+    @commands.has_permissions(administrator=True)
+    async def remove_voice_boost(self, ctx: commands.Context, channel: discord.VoiceChannel):
+        guild_id = str(ctx.guild.id)
+        all_configs = load_json(CONFIG_FILE)
+        config = all_configs.get(guild_id, {})
+        boosts = config.get("voice_boost_channels", {})
+        if str(channel.id) in boosts:
+            del boosts[str(channel.id)]
+            self.save_config_data(all_configs)
+            await ctx.send(f"Status bonus EXP pada kanal {channel.mention} telah dihapus.")
+        else:
+            await ctx.send(f"Kanal {channel.mention} tidak terdaftar sebagai kanal bonus.")
+
+    @commands.command(name="listvoiceboost", aliases=["voiceboosts"], help="Lihat daftar kanal voice bonus multiplier EXP server")
+    async def list_voice_boosts(self, ctx: commands.Context):
+        guild_id = str(ctx.guild.id)
+        all_configs = load_json(CONFIG_FILE)
+        config = all_configs.get(guild_id, {})
+        boosts = config.get("voice_boost_channels", {})
+        if not boosts:
+            return await ctx.send("Belum ada kanal voice bonus di server ini.")
+
+        lines = []
+        for cid, mult in boosts.items():
+            ch = ctx.guild.get_channel(int(cid))
+            c_name = ch.mention if ch else f"<#{cid}>"
+            lines.append(f"• **{c_name}**: `{mult}x Bonus EXP & Koin`")
+
+        embed = discord.Embed(
+            title=f"Kanal Voice Bonus EXP | {ctx.guild.name}",
+            description="\n".join(lines),
+            color=0x3498DB
+        )
+        await ctx.send(embed=embed)
 
     @commands.command(name="uangall", help="Berikan RSWN ke seluruh member di server")
     @commands.has_permissions(administrator=True)
@@ -1942,7 +2056,8 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
 
         buttons = [
             {"label": "Cek Voice Saya", "style": 1, "emoji": "⏱️", "custom_id": "voicepanel_check_self"},
-            {"label": "Lihat Top 20 Voice", "style": 2, "emoji": "📜", "custom_id": "voicepanel_top20_alltime"},
+            {"label": "Top 20 Akumulasi", "style": 2, "emoji": "👑", "custom_id": "voicepanel_top20_alltime"},
+            {"label": "Top 20 Sesi Terlama", "style": 2, "emoji": "⚡", "custom_id": "voicepanel_top20_session"},
             {"label": "Perbarui Panel", "style": 2, "emoji": "🔄", "custom_id": "voicepanel_refresh"}
         ]
 
@@ -2520,6 +2635,36 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                 f"👑 **Top 20 Voice Akumulasi | {guild.name}**\n\n"
                 + "\n".join(lines)
                 + "\n\n*Peringkat 1 hingga 10 juga ditampilkan pada panel publik server.*"
+            )
+            await interaction.response.send_message(resp_text, ephemeral=True)
+        elif custom_id == "voicepanel_top20_session":
+            guild = interaction.guild
+            if not guild:
+                return
+            all_level_data = load_json(LEVEL_FILE)
+            data = all_level_data.get(str(guild.id), {})
+            users_with_session = [
+                (uid, udata) for uid, udata in data.items()
+                if udata.get("longest_single_session", 0) > 0 and guild.get_member(int(uid))
+            ]
+            sorted_voice_session = sorted(users_with_session, key=lambda x: x[1].get("longest_single_session", 0), reverse=True)[:20]
+            if not sorted_voice_session:
+                await interaction.response.send_message("Belum ada catatan rekor sesi voice di server ini.", ephemeral=True)
+                return
+
+            medals = ["🥇", "🥈", "🥉"] + [f"`#{i}`" for i in range(4, 21)]
+            lines = []
+            for idx, (uid, udata) in enumerate(sorted_voice_session, start=1):
+                member = guild.get_member(int(uid))
+                if member:
+                    m_icon = medals[idx - 1]
+                    dur = format_voice_duration(udata.get("longest_single_session", 0))
+                    lines.append(f"{m_icon} **{member.display_name}** : `{dur}`")
+
+            resp_text = (
+                f"⚡ **Top 20 Rekor Sesi Voice Terlama | {guild.name}**\n\n"
+                + "\n".join(lines)
+                + "\n\n*Durasi sekali nongkrong / masuk voice channel tanpa terputus.*"
             )
             await interaction.response.send_message(resp_text, ephemeral=True)
         elif custom_id == "voicepanel_refresh":
