@@ -132,9 +132,16 @@ cookies.txt
 # Local Agent Docs & Implementation Plans
 PLAN_IMPLEMENTASI.md
 implementasi_plan.md
+*implementation_plan*.md
+*plan_implementasi*.md
+*PLAN_IMPLEMENTASI*.md
+*implementation_plan*
+*plan_implementasi*
 ARCHITECTURE.md
 Rules_Agent.md
 *.plan.md
+task.md
+task_*.md
 
 # Spyder project settings
 .spyderproject
