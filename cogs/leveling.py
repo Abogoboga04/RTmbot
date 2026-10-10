@@ -107,12 +107,14 @@ def format_voice_duration(seconds: int) -> str:
     return " ".join(parts)
 
 def format_digital_clock(seconds: int) -> str:
-    """Format durasi detik ke format jam digital HH:MM:SS."""
+    """Format durasi detik ke format jam digital (Hari jika >= 24 jam + HH:MM:SS)."""
     if seconds <= 0:
         return "00:00:00"
-    h = seconds // 3600
-    m = (seconds % 3600) // 60
-    s = seconds % 60
+    days, remainder = divmod(seconds, 86400)
+    h, remainder = divmod(remainder, 3600)
+    m, s = divmod(remainder, 60)
+    if days > 0:
+        return f"{days} Hari {h:02d}:{m:02d}:{s:02d}"
     return f"{h:02d}:{m:02d}:{s:02d}"
 
 async def crop_avatar_to_circle(user: discord.User):

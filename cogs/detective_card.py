@@ -214,10 +214,16 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
         server_owner_name = clean_display_text(server_owner.display_name if server_owner else "Owner Server")
         server_owner_role = f"Owner & Pendiri {safe_guild_name[:18]}"
 
-        # Ambil nama Bot secara dinamis (otomatis sinkron jika nama bot berubah)
+        # Ambil Display Name Owner Bot & Nama Bot secara dinamis
+        try:
+            app_info = await self.bot.application_info()
+            bot_owner = app_info.owner
+            bot_owner_name = clean_display_text(bot_owner.display_name if bot_owner else "Rhdevs71")
+        except Exception:
+            bot_owner_name = "Rhdevs71"
+
         bot_display_name = clean_display_text(self.bot.user.name if self.bot.user else "RTMBOT")
-        bot_owner_display = f"Owner {bot_display_name}"
-        bot_owner_role = "Pengembang Sistem & Bot Server"
+        bot_owner_role = f"Pengembang & Owner Bot {bot_display_name}"
 
         # Format Tanggal Bergabung User ke Server
         months_id = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"]
@@ -366,16 +372,22 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
             draw.text(((W - qw) // 2, 465), quote_text, font=fonts["quote"], fill=(122, 103, 80, 255))
 
             # 9. Authority / Signatures Section (Kiri: Owner Server, Kanan: Owner Bot)
-            draw.text((120, 515), server_owner_name, font=fonts["sign_name"], fill=text_dark)
-            draw.text((110, 550), server_owner_role, font=fonts["sign_role"], fill=text_gold)
+            cx_left = 200
+            sw = fonts["sign_name"].getbbox(server_owner_name)[2] - fonts["sign_name"].getbbox(server_owner_name)[0]
+            draw.text((cx_left - sw // 2, 515), server_owner_name, font=fonts["sign_name"], fill=text_dark)
+            srw = fonts["sign_role"].getbbox(server_owner_role)[2] - fonts["sign_role"].getbbox(server_owner_role)[0]
+            draw.text((cx_left - srw // 2, 550), server_owner_role, font=fonts["sign_role"], fill=text_gold)
 
             # Center stars and flower
             self._draw_star(draw, W // 2 - 40, 535, r_outer=15, r_inner=7)
             self._draw_sakura(draw, W // 2, 535, r_petal=9)
             self._draw_star(draw, W // 2 + 40, 535, r_outer=15, r_inner=7)
 
-            draw.text((720, 515), bot_owner_display, font=fonts["sign_name"], fill=text_dark)
-            draw.text((700, 550), bot_owner_role, font=fonts["sign_role"], fill=text_gold)
+            cx_right = 800
+            bw = fonts["sign_name"].getbbox(bot_owner_name)[2] - fonts["sign_name"].getbbox(bot_owner_name)[0]
+            draw.text((cx_right - bw // 2, 515), bot_owner_name, font=fonts["sign_name"], fill=text_dark)
+            brw = fonts["sign_role"].getbbox(bot_owner_role)[2] - fonts["sign_role"].getbbox(bot_owner_role)[0]
+            draw.text((cx_right - brw // 2, 550), bot_owner_role, font=fonts["sign_role"], fill=text_gold)
 
             # 10. Bottom Authentication Token
             auth_str = f"ID OTENTIKASI RESMI: RTM-{target.id}-VERIFIED"
