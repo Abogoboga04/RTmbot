@@ -2,7 +2,6 @@ import io
 import os
 import math
 import time
-import random
 import unicodedata
 import asyncio
 from datetime import datetime
@@ -32,6 +31,27 @@ async def _fetch_font_bytes(url: str) -> bytes:
         pass
     return None
 
+def clean_display_text(text: str) -> str:
+    """
+    Membersihkan teks dari karakter unicode tak terlihat, variation selectors,
+    dan tag glyphs yang dapat menyebabkan kotak kosong (□) pada font PIL.
+    """
+    if not text:
+        return "MEMBER"
+    text = unicodedata.normalize('NFKC', str(text))
+    cleaned = []
+    for ch in text:
+        cat = unicodedata.category(ch)
+        if cat in ('Cc', 'Cf', 'Cs', 'Co', 'Cn'):
+            continue
+        if 0xE0000 <= ord(ch) <= 0xE007F or 0xFE00 <= ord(ch) <= 0xFE0F:
+            continue
+        if ord(ch) in (0x200B, 0x200C, 0x200D, 0xFEFF, 0x00A0):
+            continue
+        cleaned.append(ch)
+    res = "".join(cleaned).strip()
+    return res if res else "MEMBER"
+
 class DetectiveCard(commands.Cog, name="Detective Rank Card"):
     def __init__(self, bot):
         self.bot = bot
@@ -49,7 +69,6 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
         f_sans_bold_path = os.path.join(win_fonts, "arialbd.ttf")
         f_sans_reg_path = os.path.join(win_fonts, "arial.ttf")
 
-        # Fallback Google Fonts jika berjalan di Linux / Railway container
         remote_serif_bold_bytes = None
         remote_serif_reg_bytes = None
         remote_sans_bold_bytes = None
@@ -87,7 +106,7 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
             "sign_role": load_font(f_serif_reg_path, remote_serif_reg_bytes, 13),
             "stamp_title": load_font(f_sans_bold_path, remote_sans_bold_bytes, 15),
             "stamp_date": load_font(f_sans_bold_path, remote_sans_bold_bytes, 15),
-            "stamp_sub": load_font(f_sans_bold_path, remote_sans_bold_bytes, 11),
+            "stamp_sub": load_font(f_sans_bold_path, remote_sans_bold_bytes, 12),
             "auth_id": load_font(f_sans_reg_path, remote_sans_reg_bytes, 12),
         }
 
@@ -125,12 +144,57 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
         except Exception:
             pass
 
-        safe_user_name = unicodedata.normalize('NFKC', target.display_name).strip()
-        safe_guild_name = unicodedata.normalize('NFKC', guild.name).strip()
+        # Sanitasi teks agar bersih tanpa box glyphs
+        safe_user_name = clean_display_text(target.display_name)
+        safe_guild_name = clean_display_text(guild.name)
 
         # Ambil role tertinggi pengguna (kecuali @everyone)
         user_roles = [r for r in target.roles if r.name != "@everyone"]
-        highest_role_name = user_roles[-1].name.upper() if user_roles else "MEMBER RESMI"
+        highest_role_name = clean_display_text(user_roles[-1].name.upper() if user_roles else "MEMBER RESMI")
+
+        # Ambil nama Owner Server
+        server_owner = guild.owner
+        server_owner_name = clean_display_text(server_owner.display_name if server_owner else "Owner Server")
+        server_owner_role = f"Owner & Pendiri {safe_guild_name[:16]}"
+
+        # Ambil nama Owner Bot RTMBOT
+        try:
+            app_info = await self.bot.application_info()
+            bot_owner = app_info.owner
+            bot_owner_name = clean_display_text(bot_owner.display_name if bot_owner else "Rhdevs71")
+        except Exception:
+            bot_owner_name = "Rhdevs71"
+        bot_owner_role = "Developer & Pemilik Bot RTMBOT"
+
+        # Format Tanggal Bergabung User ke Server
+        months_id = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"]
+        months_full_id = [
+            "JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI",
+            "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"
+        ]
+        if target.joined_at:
+            j_dt = target.joined_at
+            j_day = f"{j_dt.day:02d}"
+            j_month_abbr = months_id[j_dt.month - 1]
+            j_month_full = months_full_id[j_dt.month - 1]
+            j_year = f"{j_dt.year}"
+            tanggal_resmi_str = f"{j_day} {j_month_full} {j_year}"
+            stamp_date_str = f"{j_day} {j_month_abbr}"
+            stamp_year_str = f"THN {j_year}"
+            sub_header_str = f"SERTIFIKAT RESMI KEANGGOTAAN • SEJAK {j_year}"
+        else:
+            now_dt = datetime.utcnow()
+            j_day = f"{now_dt.day:02d}"
+            j_month_abbr = months_id[now_dt.month - 1]
+            j_month_full = months_full_id[now_dt.month - 1]
+            j_year = f"{now_dt.year}"
+            tanggal_resmi_str = f"{j_day} {j_month_full} {j_year}"
+            stamp_date_str = f"{j_day} {j_month_abbr}"
+            stamp_year_str = f"THN {j_year}"
+            sub_header_str = f"SERTIFIKAT RESMI KEANGGOTAAN • {j_year}"
+
+        # Nomor Lisensi resmi berbasis ID Discord pengguna
+        license_num = f"RTM-{target.id}"
 
         def _render():
             W, H = 1100, 680
@@ -157,10 +221,10 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
 
             # 2. Top Header Left
             title_text = f"BIRO DETEKTIF RESMI {safe_guild_name.upper()}"
-            if len(title_text) > 38:
-                title_text = title_text[:35] + "..."
+            if len(title_text) > 36:
+                title_text = title_text[:33] + "..."
             draw.text((65, 55), title_text, font=fonts["title"], fill=text_dark)
-            draw.text((65, 96), "KASUS SPESIAL • 28 OKTOBER 2026", font=fonts["subtitle"], fill=text_gold)
+            draw.text((65, 96), sub_header_str, font=fonts["subtitle"], fill=text_gold)
 
             # 3. Top Header Right Badge
             badge_tier = "RANK: S-CLASS MASTER" if rank_pos <= 3 else f"RANK: #{rank_pos} • CLASS-A"
@@ -215,12 +279,9 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
                 name_title = name_title[:33] + "..."
             draw.text((285, 155), name_title, font=fonts["name_header"], fill=text_dark)
 
-            # Nomor lisensi acak deterministik berbasis target ID
-            rnd_num = (abs(hash(str(target.id))) % 9000) + 1000
-            license_num = f"HR-2810-{rnd_num}"
             fields = [
                 ("NOMOR LISENSI :", license_num),
-                ("TANGGAL RESMI :", "28 OKTOBER 2026"),
+                ("TANGGAL RESMI :", tanggal_resmi_str),
                 ("STATUS :", "AKTIF & TERVERIFIKASI RESMI"),
                 ("TOTAL EXP :", f"{exp:,} EXP (Level {level})"),
                 ("SALDO KAS :", f"{balance:,} RSWN"),
@@ -245,11 +306,11 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
             b1 = fonts["stamp_title"].getbbox(st1)
             draw.text((seal_cx - (b1[2]-b1[0])//2 + 8, seal_cy - 39), st1, font=fonts["stamp_title"], fill=(255, 240, 240, 255))
 
-            st2 = "28 OKT"
+            st2 = stamp_date_str
             b2 = fonts["stamp_date"].getbbox(st2)
             draw.text((seal_cx - (b2[2]-b2[0])//2, seal_cy - 12), st2, font=fonts["stamp_date"], fill=(255, 255, 255, 255))
 
-            st3 = "VERIFIED"
+            st3 = stamp_year_str
             b3 = fonts["stamp_sub"].getbbox(st3)
             draw.text((seal_cx - (b3[2]-b3[0])//2, seal_cy + 14), st3, font=fonts["stamp_sub"], fill=(255, 220, 220, 255))
 
@@ -257,26 +318,25 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
             draw.line([(65, 435), (W - 65, 435)], fill=gold_light, width=1)
 
             # 8. Quote / Official Decree
-            quote_text = "Lisensi resmi ini diterbitkan secara sah atas keberhasilan memecahkan Kasus Spesial 28 Oktober."
+            quote_text = f"Lisensi resmi ini diterbitkan secara sah atas keaktifan dan keanggotaan terverifikasi di server {safe_guild_name}."
             q_bbox = fonts["quote"].getbbox(quote_text)
             qw = q_bbox[2] - q_bbox[0]
             draw.text(((W - qw) // 2, 465), quote_text, font=fonts["quote"], fill=(122, 103, 80, 255))
 
-            # 9. Authority / Signatures Section
-            draw.text((150, 520), "Mas Ilham Endriadi", font=fonts["sign_name"], fill=text_dark)
-            draw.text((140, 545), "Kawan Seberang Pulau (Padang)", font=fonts["sign_role"], fill=text_gold)
+            # 9. Authority / Signatures Section (Kiri: Owner Server, Kanan: Owner Bot)
+            draw.text((150, 520), server_owner_name, font=fonts["sign_name"], fill=text_dark)
+            draw.text((130, 545), server_owner_role, font=fonts["sign_role"], fill=text_gold)
 
             # Center stars and flower
             self._draw_star(draw, W // 2 - 35, 535, r_outer=13, r_inner=6)
             self._draw_sakura(draw, W // 2, 535, r_petal=7)
             self._draw_star(draw, W // 2 + 35, 535, r_outer=13, r_inner=6)
 
-            draw.text((740, 520), "Segenap Sahabat Discord RTM", font=fonts["sign_name"], fill=text_dark)
-            draw.text((765, 545), "Keluarga Server & Squad Mabar", font=fonts["sign_role"], fill=text_gold)
+            draw.text((740, 520), bot_owner_name, font=fonts["sign_name"], fill=text_dark)
+            draw.text((710, 545), bot_owner_role, font=fonts["sign_role"], fill=text_gold)
 
             # 10. Bottom Authentication Token
-            short_uid = str(target.id)[:6]
-            auth_str = f"ID OTENTIKASI RESMI: HR-{short_uid}-BDG-SQUAD-RTM-VERIFIED"
+            auth_str = f"ID OTENTIKASI RESMI: RTM-{target.id}-VERIFIED"
             a_bbox = fonts["auth_id"].getbbox(auth_str)
             aw = a_bbox[2] - a_bbox[0]
             draw.text(((W - aw) // 2, 630), auth_str, font=fonts["auth_id"], fill=(160, 145, 125, 255))

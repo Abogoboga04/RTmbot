@@ -941,16 +941,10 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         buffer.seek(0)
         return buffer
 
-    async def increment_timeout_counter(self, current_channel_id: int = None):
-        """
-        Menaikkan hitungan global timeout dan memperbarui tombol peringatan di seluruh trap channel.
-        Dipicu otomatis oleh trigger trap channel, anti-spam, media spam, link phising, raid escalation, atau manual timeout.
-        """
+    async def update_trap_display(self, current_channel_id: int = None):
+        """Perbarui tampilan tombol Timeouts count pada seluruh pesan trap di server"""
         try:
-            global_count = self.settings.get("global_trap_count", 30) + 1
-            self.settings["global_trap_count"] = global_count
-            self.save_settings()
-
+            global_count = self.settings.get("global_trap_count", 30)
             from cogs.v2_layout import build_v2_card, edit_v2_message, send_v2_message
             buttons = [
                 {
@@ -992,7 +986,39 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                         except Exception:
                             pass
         except Exception as e:
+            print(f"Error in update_trap_display: {e}")
+
+    async def increment_timeout_counter(self, current_channel_id: int = None, amount: int = 1):
+        """
+        Menaikkan hitungan global timeout dan memperbarui tombol peringatan di seluruh trap channel.
+        Dipicu otomatis oleh trigger trap channel, anti-spam, media spam, link phising, raid escalation, atau manual timeout.
+        """
+        try:
+            global_count = self.settings.get("global_trap_count", 30) + amount
+            self.settings["global_trap_count"] = global_count
+            self.save_settings()
+            await self.update_trap_display(current_channel_id)
+        except Exception as e:
             print(f"Error in increment_timeout_counter: {e}")
+
+    @commands.command(name="addtrapcount", aliases=["addtimeoutcount"], help="Tambah hitungan timeout count secara manual pada kartu jebakan")
+    @commands.has_permissions(administrator=True)
+    async def add_trap_count(self, ctx: commands.Context, amount: int = 1):
+        if amount <= 0:
+            return await ctx.send("❌ Jumlah penambahan harus lebih besar dari 0.")
+        await self.increment_timeout_counter(amount=amount)
+        cur = self.settings.get("global_trap_count", 30)
+        await ctx.send(f"✅ Hitungan timeout berhasil ditambahkan sebanyak **+{amount}**. Total saat ini: **{cur}**.")
+
+    @commands.command(name="settrapcount", aliases=["settimeoutcount"], help="Atur angka timeout count kartu jebakan ke nilai tertentu")
+    @commands.has_permissions(administrator=True)
+    async def set_trap_count(self, ctx: commands.Context, new_count: int):
+        if new_count < 0:
+            return await ctx.send("❌ Angka hitungan timeout tidak boleh negatif.")
+        self.settings["global_trap_count"] = new_count
+        self.save_settings()
+        await self.update_trap_display()
+        await ctx.send(f"✅ Angka timeout count berhasil diatur menjadi **{new_count}**.")
 
     def get_guild_settings(self, guild_id: int):
         guild_id_str = str(guild_id)

@@ -106,6 +106,15 @@ def format_voice_duration(seconds: int) -> str:
         parts.append(f"{secs} Detik")
     return " ".join(parts)
 
+def format_digital_clock(seconds: int) -> str:
+    """Format durasi detik ke format jam digital HH:MM:SS."""
+    if seconds <= 0:
+        return "00:00:00"
+    h = seconds // 3600
+    m = (seconds % 3600) // 60
+    s = seconds % 60
+    return f"{h:02d}:{m:02d}:{s:02d}"
+
 async def crop_avatar_to_circle(user: discord.User):
     async with aiohttp.ClientSession() as session:
         async with session.get(user.display_avatar.url) as resp:
@@ -2000,11 +2009,19 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
             member = guild.get_member(int(uid))
             if member:
                 m_icon = medals[idx - 1]
-                dur = format_voice_duration(udata.get("longest_single_session", 0))
-                top_session_lines.append(f"{m_icon} **{member.display_name}** : `{dur}`")
+                dur_peak = format_digital_clock(udata.get("longest_single_session", 0))
+                if member.id in self._voice_active_sessions:
+                    cur_act = format_digital_clock(int(time.time() - self._voice_active_sessions[member.id]))
+                    extra_str = f" *(🔥 Aktif: `{cur_act}`)*"
+                elif udata.get("last_single_session", 0) > 0:
+                    last_dur = format_digital_clock(udata.get("last_single_session", 0))
+                    extra_str = f" *(Terakhir: `{last_dur}`)*"
+                else:
+                    extra_str = ""
+                top_session_lines.append(f"{m_icon} **{member.display_name}** : `{dur_peak}`{extra_str}")
 
         top_session_text = "\n".join(top_session_lines) if top_session_lines else "Belum ada catatan sesi voice."
-        top_session_text += "\n\n*Durasi sekali masuk voice channel tanpa terputus.*"
+        top_session_text += "\n\n*Rekor nonstop (HH:MM:SS) & durasi sesi terakhir sebelum putus.*"
 
         # 3. Aktivitas Voice Saat Ini
         active_members_count = 0
@@ -2571,6 +2588,7 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                 all_level_data = load_json(LEVEL_FILE)
                 data = all_level_data.setdefault(str(guild.id), {})
                 user_data = data.setdefault(str(member.id), {"exp": 0, "weekly_exp": 0, "level": 0, "badges": []})
+                user_data["last_single_session"] = elapsed
                 user_data.setdefault("longest_single_session", 0)
                 if elapsed > user_data["longest_single_session"]:
                     user_data["longest_single_session"] = elapsed
@@ -2658,13 +2676,21 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                 member = guild.get_member(int(uid))
                 if member:
                     m_icon = medals[idx - 1]
-                    dur = format_voice_duration(udata.get("longest_single_session", 0))
-                    lines.append(f"{m_icon} **{member.display_name}** : `{dur}`")
+                    dur_peak = format_digital_clock(udata.get("longest_single_session", 0))
+                    if member.id in self._voice_active_sessions:
+                        cur_act = format_digital_clock(int(time.time() - self._voice_active_sessions[member.id]))
+                        extra_str = f" *(🔥 Aktif: `{cur_act}`)*"
+                    elif udata.get("last_single_session", 0) > 0:
+                        last_dur = format_digital_clock(udata.get("last_single_session", 0))
+                        extra_str = f" *(Terakhir: `{last_dur}`)*"
+                    else:
+                        extra_str = ""
+                    lines.append(f"{m_icon} **{member.display_name}** : `{dur_peak}`{extra_str}")
 
             resp_text = (
                 f"⚡ **Top 20 Rekor Sesi Voice Terlama | {guild.name}**\n\n"
                 + "\n".join(lines)
-                + "\n\n*Durasi sekali nongkrong / masuk voice channel tanpa terputus.*"
+                + "\n\n*Rekor nonstop (HH:MM:SS) & durasi sesi terakhir sebelum disconnect.*"
             )
             await interaction.response.send_message(resp_text, ephemeral=True)
         elif custom_id == "voicepanel_refresh":
