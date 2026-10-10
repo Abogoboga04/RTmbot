@@ -222,46 +222,70 @@ async def generate_official_member_card(
     sub_header_str = f"SERTIFIKAT RESMI KEANGGOTAAN • SEJAK {j_year}"
 
     def _render() -> io.BytesIO:
-        W, H = 1050, 660
-        card = Image.new("RGBA", (W, H), (252, 250, 242, 255))
+        W, H = 1024, 631
+        card = Image.new("RGBA", (W, H), (255, 251, 242, 255))
         draw = ImageDraw.Draw(card)
         fonts = get_card_fonts()
 
-        gold_dark = (175, 143, 84, 255)
-        gold_light = (212, 188, 130, 255)
+        gold_dark = (212, 175, 55, 255)
+        gold_light = (217, 189, 138, 255)
         text_dark = (44, 34, 30, 255)
         text_gold = (140, 115, 85, 255)
 
-        # 1. Double Gold Border & Corner Dots
-        draw.rectangle([(25, 25), (W - 25, H - 25)], outline=gold_dark, width=3)
-        draw.rectangle([(33, 33), (W - 33, H - 33)], outline=gold_light, width=1)
-        for cx, cy in [(42, 42), (W - 42, 42), (42, H - 42), (W - 42, H - 42)]:
-            draw.ellipse([(cx - 2, cy - 2), (cx + 2, cy + 2)], fill=gold_dark)
+        # 1. Outer Border & Inner Border
+        draw.rectangle([(20, 20), (W - 20, H - 22)], outline=gold_dark, width=4)
+        draw.rectangle([(32, 32), (W - 32, H - 33)], outline=gold_light, width=1)
 
-        # 2. Header Judul
+        # 2. Ornamen Sudut Siku (L-shaped Ornamental Brackets) + Titik Aksen
+        bracket_len = 22
+        dot_dist = 7
+        # Top-Left
+        draw.line([(42, 42), (42 + bracket_len, 42)], fill=gold_dark, width=2)
+        draw.line([(42, 42), (42, 42 + bracket_len)], fill=gold_dark, width=2)
+        draw.ellipse([(42 + dot_dist - 2, 42 + dot_dist - 2), (42 + dot_dist + 2, 42 + dot_dist + 2)], fill=gold_dark)
+
+        # Top-Right
+        draw.line([(W - 42, 42), (W - 42 - bracket_len, 42)], fill=gold_dark, width=2)
+        draw.line([(W - 42, 42), (W - 42, 42 + bracket_len)], fill=gold_dark, width=2)
+        draw.ellipse([(W - 42 - dot_dist - 2, 42 + dot_dist - 2), (W - 42 - dot_dist + 2, 42 + dot_dist + 2)], fill=gold_dark)
+
+        # Bottom-Left
+        draw.line([(42, H - 43), (42 + bracket_len, H - 43)], fill=gold_dark, width=2)
+        draw.line([(42, H - 43), (42, H - 43 - bracket_len)], fill=gold_dark, width=2)
+        draw.ellipse([(42 + dot_dist - 2, H - 43 - dot_dist - 2), (42 + dot_dist + 2, H - 43 - dot_dist + 2)], fill=gold_dark)
+
+        # Bottom-Right
+        draw.line([(W - 42, H - 43), (W - 42 - bracket_len, H - 43)], fill=gold_dark, width=2)
+        draw.line([(W - 42, H - 43), (W - 42, H - 43 - bracket_len)], fill=gold_dark, width=2)
+        draw.ellipse([(W - 42 - dot_dist - 2, H - 43 - dot_dist - 2), (W - 42 - dot_dist + 2, H - 43 - dot_dist + 2)], fill=gold_dark)
+
+        # 3. Header Kiri
         title_text = custom_title or f"KARTU RESMI ANGGOTA • {safe_guild_name.upper()}"
-        draw.text((65, 55), title_text, font=fonts["title"], fill=text_dark)
-        draw.text((65, 96), sub_header_str, font=fonts["subtitle"], fill=text_gold)
+        draw.text((58, 48), title_text, font=fonts["title"], fill=text_dark)
+        draw.text((58, 86), sub_header_str, font=fonts["subtitle"], fill=text_gold)
 
-        # 3. Badge Peringkat Kanan Atas
+        # Header Kanan (Badge Peringkat)
         if rank_pos is not None:
             badge_tier = f"RANK: #{rank_pos} • CLASS-A" if rank_pos > 3 else "RANK: S-CLASS MASTER"
         else:
             badge_tier = "ANGGOTA RESMI VERIFIED"
-            
-        badge_w, badge_h = 240, 42
-        badge_x, badge_y = W - 65 - badge_w, 60
+
+        badge_w, badge_h = 220, 38
+        badge_x, badge_y = W - 58 - badge_w, 54
         draw.rounded_rectangle([(badge_x, badge_y), (badge_x + badge_w, badge_y + badge_h)], radius=8, fill=(192, 57, 43, 255))
         bw = fonts["badge"].getbbox(badge_tier)
-        bw_w = bw[2] - bw[0]
-        bw_h = bw[3] - bw[1]
-        draw.text((badge_x + (badge_w - bw_w) // 2, badge_y + (badge_h - bw_h) // 2 - 2), badge_tier, font=fonts["badge"], fill=(255, 255, 255, 255))
+        b_w = bw[2] - bw[0]
+        b_h = bw[3] - bw[1]
+        draw.text((badge_x + (badge_w - b_w) // 2, badge_y + (badge_h - b_h) // 2 - 2), badge_tier, font=fonts["badge"], fill=(255, 255, 255, 255))
 
-        # 4. Kotak Foto Avatar
-        frame_box = [(65, 140), (245, 390)]
-        draw.rounded_rectangle(frame_box, radius=12, fill=(245, 240, 225, 255), outline=gold_light, width=2)
+        # 4. Garis Pembatas Header Emas
+        draw.line([(58, 109), (W - 58, 109)], fill=gold_dark, width=1)
 
-        pic_cx, pic_cy, pic_r = 155, 225, 65
+        # 5. Box Foto Avatar Kiri
+        frame_box = [(58, 138), (212, 345)]
+        draw.rounded_rectangle(frame_box, radius=8, fill=(255, 246, 233, 255), outline=gold_light, width=1)
+
+        pic_cx, pic_cy, pic_r = 135, 222, 54
         if avatar_bytes:
             try:
                 av_img = Image.open(io.BytesIO(avatar_bytes)).convert("RGBA").resize((pic_r * 2, pic_r * 2), Image.Resampling.LANCZOS)
@@ -273,82 +297,83 @@ async def generate_official_member_card(
         else:
             draw.ellipse([(pic_cx - pic_r, pic_cy - pic_r), (pic_cx + pic_r, pic_cy + pic_r)], fill=(120, 140, 170, 255))
 
+        # Lis Emas Konsentris Sempurna Sekeliling Avatar
         draw.ellipse([(pic_cx - pic_r - 2, pic_cy - pic_r - 2), (pic_cx + pic_r + 2, pic_cy + pic_r + 2)], outline=gold_dark, width=2)
 
         # Label Nama di Bawah Foto Avatar
-        tag_box = [(83, 315), (227, 347)]
-        draw.rounded_rectangle(tag_box, radius=6, fill=(238, 230, 210, 255), outline=gold_light, width=1)
+        tag_box = [(75, 302), (195, 332)]
+        draw.rounded_rectangle(tag_box, radius=6, fill=(248, 237, 218, 255), outline=gold_light, width=1)
         short_u = safe_user_name[:12]
         tb = fonts["photo_label"].getbbox(short_u)
         tb_w = tb[2] - tb[0]
-        draw.text((83 + (144 - tb_w) // 2, 323), short_u, font=fonts["photo_label"], fill=text_dark)
+        draw.text((75 + (120 - tb_w) // 2, 310), short_u, font=fonts["photo_label"], fill=text_dark)
 
-        # 5. Detail Profil & Lisensi
+        # 6. Detail Informasi Tengah
         user_header_text = f"{safe_user_name} • {highest_role_name}"
         if len(user_header_text) > 36:
             user_header_text = user_header_text[:33] + "..."
-        draw.text((280, 155), user_header_text, font=fonts["name_header"], fill=text_dark)
+        draw.text((246, 154), user_header_text, font=fonts["name_header"], fill=text_dark)
 
-        field_y = 215
+        field_y = 205
         license_number = f"RTM-{target.id}"
         fields = [
             ("NOMOR LISENSI :", license_number),
             ("TANGGAL RESMI :", official_date_str),
-            ("STATUS :", "AKTIF & TERVERIFIKASI RESMI"),
-            ("TOTAL EXP :", f"{exp:,} EXP (Level {level})"),
-            ("SALDO KAS :", f"{balance:,} RSWN"),
+            ("STATUS        :", "AKTIF & TERVERIFIKASI RESMI"),
+            ("TOTAL EXP     :", f"{exp:,} EXP (Level {level})"),
+            ("SALDO KAS     :", f"{balance:,} RSWN"),
         ]
         for label, val in fields:
-            draw.text((280, field_y), label, font=fonts["label"], fill=text_gold)
-            draw.text((475, field_y), val, font=fonts["value"], fill=text_dark)
-            field_y += 37
+            draw.text((246, field_y), label, font=fonts["label"], fill=text_gold)
+            draw.text((415, field_y), val, font=fonts["value"], fill=text_dark)
+            field_y += 33
 
-        # 6. Luxury Scalloped Wax Seal
-        seal_cx, seal_cy = 930, 275
+        # 7. Luxury Scalloped Wax Seal (Ukuran Proporsional & Rapi)
+        seal_cx, seal_cy = 887, 240
         draw_luxury_wax_seal(
             draw=draw,
             cx=seal_cx,
             cy=seal_cy,
-            radius=78,
+            radius=64,
             stamp_title="• RESMI •",
             stamp_date=stamp_date_str,
             stamp_year=stamp_year_str,
             fonts=fonts
         )
 
-        # 7. Divider Horizontal
-        draw.line([(65, 435), (W - 65, 435)], fill=gold_light, width=1)
+        # 8. Divider Horizontal Tengah
+        draw.line([(58, 415), (W - 58, 415)], fill=gold_light, width=1)
 
-        # 8. Teks Dekrit / Pengesahan
+        # 9. Teks Dekrit / Pengesahan
         quote_text = f"Lisensi resmi ini diterbitkan secara sah atas keaktifan dan keanggotaan terverifikasi di server {safe_guild_name}."
         q_bbox = fonts["quote"].getbbox(quote_text)
         qw = q_bbox[2] - q_bbox[0]
-        draw.text(((W - qw) // 2, 465), quote_text, font=fonts["quote"], fill=(122, 103, 80, 255))
+        draw.text(((W - qw) // 2, 445), quote_text, font=fonts["quote"], fill=(122, 103, 80, 255))
 
-        # 9. Tanda Tangan Resmi (Owner Server & Owner Bot Rata Tengah)
-        cx_left = 200
+        # 10. Tanda Tangan Resmi (Owner Server di Kiri, Owner Bot di Kanan)
+        cx_left = 185
         sw = fonts["sign_name"].getbbox(server_owner_name)[2] - fonts["sign_name"].getbbox(server_owner_name)[0]
-        draw.text((cx_left - sw // 2, 515), server_owner_name, font=fonts["sign_name"], fill=text_dark)
+        draw.text((cx_left - sw // 2, 482), server_owner_name, font=fonts["sign_name"], fill=text_dark)
         srw = fonts["sign_role"].getbbox(server_owner_role)[2] - fonts["sign_role"].getbbox(server_owner_role)[0]
-        draw.text((cx_left - srw // 2, 550), server_owner_role, font=fonts["sign_role"], fill=text_gold)
+        draw.text((cx_left - srw // 2, 510), server_owner_role, font=fonts["sign_role"], fill=text_gold)
 
         # Bintang & Sakura di Tengah
-        draw_star(draw, W // 2 - 40, 535, r_outer=15, r_inner=7)
-        draw_sakura(draw, W // 2, 535, r_petal=9)
-        draw_star(draw, W // 2 + 40, 535, r_outer=15, r_inner=7)
+        draw_star(draw, W // 2 - 36, 498, r_outer=13, r_inner=6)
+        draw_sakura(draw, W // 2, 498, r_petal=7)
+        draw_star(draw, W // 2 + 36, 498, r_outer=13, r_inner=6)
 
         # Owner Bot
-        cx_right = 800
+        cx_right = 835
         bw = fonts["sign_name"].getbbox(bot_owner_name)[2] - fonts["sign_name"].getbbox(bot_owner_name)[0]
-        draw.text((cx_right - bw // 2, 515), bot_owner_name, font=fonts["sign_name"], fill=text_dark)
+        draw.text((cx_right - bw // 2, 482), bot_owner_name, font=fonts["sign_name"], fill=text_dark)
         brw = fonts["sign_role"].getbbox(bot_owner_role)[2] - fonts["sign_role"].getbbox(bot_owner_role)[0]
-        draw.text((cx_right - brw // 2, 550), bot_owner_role, font=fonts["sign_role"], fill=text_gold)
+        draw.text((cx_right - brw // 2, 510), bot_owner_role, font=fonts["sign_role"], fill=text_gold)
 
-        # 10. ID Otentikasi Footer
+        # 11. ID Otentikasi Footer (Jarak Bebas 26px di Atas Border Bawah, Tanpa Tabrakan)
         auth_str = f"ID OTENTIKASI RESMI: RTM-{target.id}-VERIFIED"
         a_bbox = fonts["auth_id"].getbbox(auth_str)
         aw = a_bbox[2] - a_bbox[0]
-        draw.text(((W - aw) // 2, 630), auth_str, font=fonts["auth_id"], fill=(160, 145, 125, 255))
+        draw.text(((W - aw) // 2, 572), auth_str, font=fonts["auth_id"], fill=(160, 145, 125, 255))
 
         buf = io.BytesIO()
         card.save(buf, format="PNG")
