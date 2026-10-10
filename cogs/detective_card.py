@@ -2,6 +2,7 @@ import io
 import os
 import math
 import time
+import re
 import unicodedata
 import asyncio
 from datetime import datetime
@@ -31,26 +32,30 @@ async def _fetch_font_bytes(url: str) -> bytes:
         pass
     return None
 
+def is_safe_printable_char(ch: str) -> bool:
+    code = ord(ch)
+    # ASCII printable (32 to 126)
+    if 32 <= code <= 126:
+        return True
+    # Latin-1 Supplement & Extended (160 to 591)
+    if 160 <= code <= 591:
+        return True
+    # Tanda baca umum yang aman
+    if code in (0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014):
+        return True
+    return False
+
 def clean_display_text(text: str) -> str:
     """
-    Membersihkan teks dari karakter unicode tak terlihat, variation selectors,
-    dan tag glyphs yang dapat menyebabkan kotak kosong (□) pada font PIL.
+    Membersihkan teks secara ketat dari karakter invisible, variation selectors,
+    tag glyphs, dan unicode liar yang gagal dirender dan memicu kotak kosong (□).
     """
     if not text:
         return "MEMBER"
     text = unicodedata.normalize('NFKC', str(text))
-    cleaned = []
-    for ch in text:
-        cat = unicodedata.category(ch)
-        if cat in ('Cc', 'Cf', 'Cs', 'Co', 'Cn'):
-            continue
-        if 0xE0000 <= ord(ch) <= 0xE007F or 0xFE00 <= ord(ch) <= 0xFE0F:
-            continue
-        if ord(ch) in (0x200B, 0x200C, 0x200D, 0xFEFF, 0x00A0):
-            continue
-        cleaned.append(ch)
-    res = "".join(cleaned).strip()
-    return res if res else "MEMBER"
+    cleaned = ''.join(ch for ch in text if is_safe_printable_char(ch)).strip()
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    return cleaned if cleaned else "MEMBER"
 
 class DetectiveCard(commands.Cog, name="Detective Rank Card"):
     def __init__(self, bot):
@@ -94,7 +99,7 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
             return ImageFont.load_default()
 
         return {
-            "title": load_font(f_serif_bold_path, remote_serif_bold_bytes, 30),
+            "title": load_font(f_serif_bold_path, remote_serif_bold_bytes, 28),
             "subtitle": load_font(f_serif_bold_path, remote_serif_bold_bytes, 15),
             "name_header": load_font(f_serif_bold_path, remote_serif_bold_bytes, 28),
             "badge": load_font(f_sans_bold_path, remote_sans_bold_bytes, 17),
@@ -102,15 +107,15 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
             "value": load_font(f_serif_bold_path, remote_serif_bold_bytes, 17),
             "photo_label": load_font(f_sans_bold_path, remote_sans_bold_bytes, 14),
             "quote": load_font(f_serif_reg_path, remote_serif_reg_bytes, 16),
-            "sign_name": load_font(f_serif_bold_path, remote_serif_bold_bytes, 17),
-            "sign_role": load_font(f_serif_reg_path, remote_serif_reg_bytes, 13),
-            "stamp_title": load_font(f_sans_bold_path, remote_sans_bold_bytes, 15),
-            "stamp_date": load_font(f_sans_bold_path, remote_sans_bold_bytes, 15),
+            "sign_name": load_font(f_serif_bold_path, remote_serif_bold_bytes, 24), # Ukuran diperbesar
+            "sign_role": load_font(f_serif_reg_path, remote_serif_reg_bytes, 15), # Ukuran diperbesar
+            "stamp_title": load_font(f_sans_bold_path, remote_sans_bold_bytes, 13),
+            "stamp_date": load_font(f_sans_bold_path, remote_sans_bold_bytes, 16),
             "stamp_sub": load_font(f_sans_bold_path, remote_sans_bold_bytes, 12),
             "auth_id": load_font(f_sans_reg_path, remote_sans_reg_bytes, 12),
         }
 
-    def _draw_star(self, draw, cx, cy, r_outer=12, r_inner=6, fill=(245, 195, 60, 255), outline=(180, 135, 30, 255)):
+    def _draw_star(self, draw, cx, cy, r_outer=14, r_inner=7, fill=(245, 195, 60, 255), outline=(180, 135, 30, 255)):
         points = []
         for i in range(10):
             r = r_outer if i % 2 == 0 else r_inner
@@ -120,13 +125,65 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
             points.append((x, y))
         draw.polygon(points, fill=fill, outline=outline)
 
-    def _draw_sakura(self, draw, cx, cy, r_petal=7, fill=(255, 170, 195, 255), outline=(215, 95, 130, 255)):
+    def _draw_sakura(self, draw, cx, cy, r_petal=8, fill=(255, 170, 195, 255), outline=(215, 95, 130, 255)):
         for i in range(5):
             angle = i * 2 * math.pi / 5 - math.pi / 2
-            px = cx + 7 * math.cos(angle)
-            py = cy + 7 * math.sin(angle)
+            px = cx + 8 * math.cos(angle)
+            py = cy + 8 * math.sin(angle)
             draw.ellipse([(px - r_petal, py - r_petal), (px + r_petal, py + r_petal)], fill=fill, outline=outline)
-        draw.ellipse([(cx - 4, cy - 4), (cx + 4, cy + 4)], fill=(255, 235, 120, 255))
+        draw.ellipse([(cx - 5, cy - 5), (cx + 5, cy + 5)], fill=(255, 235, 120, 255))
+
+    def _draw_luxury_wax_seal(self, draw, cx, cy, radius=76, stamp_title="• RESMI •", stamp_date="19 JUL", stamp_year="THN 2024", fonts=None):
+        teeth = 36
+        outer_r = radius
+        inner_r = radius - 5
+        scallop_pts = []
+        for i in range(teeth * 2):
+            angle = i * math.pi / teeth
+            r = outer_r if i % 2 == 0 else inner_r
+            x = cx + r * math.cos(angle)
+            y = cy + r * math.sin(angle)
+            scallop_pts.append((x, y))
+
+        # Gerigi terluar scallop merah tua
+        draw.polygon(scallop_pts, fill=(140, 25, 25, 255), outline=(90, 15, 15, 255))
+
+        # Piringan utama crimson dengan border emas
+        draw.ellipse([(cx - radius + 4, cy - radius + 4), (cx + radius - 4, cy + radius - 4)],
+                     fill=(185, 38, 38, 255), outline=(218, 165, 32, 255), width=2)
+
+        # Cincin dalam emas
+        draw.ellipse([(cx - radius + 10, cy - radius + 10), (cx + radius - 10, cy + radius - 10)],
+                     outline=(218, 165, 32, 200), width=1)
+
+        # Butiran manik-manik emas (beaded circle)
+        num_dots = 30
+        dot_r = radius - 17
+        for i in range(num_dots):
+            ang = i * 2 * math.pi / num_dots
+            dx = cx + dot_r * math.cos(ang)
+            dy = cy + dot_r * math.sin(ang)
+            draw.ellipse([(dx - 1.5, dy - 1.5), (dx + 1.5, dy + 1.5)], fill=(245, 215, 120, 230))
+
+        # Piringan inti terdalam
+        core_r = radius - 23
+        draw.ellipse([(cx - core_r, cy - core_r), (cx + core_r, cy + core_r)],
+                     fill=(160, 30, 30, 255), outline=(130, 20, 20, 255), width=1)
+
+        # Sakura vektor di atas
+        self._draw_sakura(draw, cx, cy - 28, r_petal=5)
+
+        # Teks status stempel
+        b1 = fonts["stamp_title"].getbbox(stamp_title)
+        draw.text((cx - (b1[2]-b1[0])//2, cy - 18), stamp_title, font=fonts["stamp_title"], fill=(255, 235, 160, 255))
+
+        # Tanggal awal join (hari & bulan)
+        b2 = fonts["stamp_date"].getbbox(stamp_date)
+        draw.text((cx - (b2[2]-b2[0])//2, cy + 2), stamp_date, font=fonts["stamp_date"], fill=(255, 255, 255, 255))
+
+        # Tahun bergabung
+        b3 = fonts["stamp_sub"].getbbox(stamp_year)
+        draw.text((cx - (b3[2]-b3[0])//2, cy + 24), stamp_year, font=fonts["stamp_sub"], fill=(255, 220, 180, 255))
 
     async def render_detective_card(
         self,
@@ -144,7 +201,7 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
         except Exception:
             pass
 
-        # Sanitasi teks agar bersih tanpa box glyphs
+        # Sanitasi teks agar bersih tanpa box glyphs (□)
         safe_user_name = clean_display_text(target.display_name)
         safe_guild_name = clean_display_text(guild.name)
 
@@ -152,19 +209,15 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
         user_roles = [r for r in target.roles if r.name != "@everyone"]
         highest_role_name = clean_display_text(user_roles[-1].name.upper() if user_roles else "MEMBER RESMI")
 
-        # Ambil nama Owner Server
+        # Ambil nama Owner Server Discord
         server_owner = guild.owner
         server_owner_name = clean_display_text(server_owner.display_name if server_owner else "Owner Server")
-        server_owner_role = f"Owner & Pendiri {safe_guild_name[:16]}"
+        server_owner_role = f"Owner & Pendiri {safe_guild_name[:18]}"
 
-        # Ambil nama Owner Bot RTMBOT
-        try:
-            app_info = await self.bot.application_info()
-            bot_owner = app_info.owner
-            bot_owner_name = clean_display_text(bot_owner.display_name if bot_owner else "Rhdevs71")
-        except Exception:
-            bot_owner_name = "Rhdevs71"
-        bot_owner_role = "Developer & Pemilik Bot RTMBOT"
+        # Ambil nama Bot secara dinamis (otomatis sinkron jika nama bot berubah)
+        bot_display_name = clean_display_text(self.bot.user.name if self.bot.user else "RTMBOT")
+        bot_owner_display = f"Owner {bot_display_name}"
+        bot_owner_role = "Pengembang Sistem & Bot Server"
 
         # Format Tanggal Bergabung User ke Server
         months_id = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"]
@@ -206,7 +259,6 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
             gold_light = (212, 188, 130, 255)
             text_dark = (44, 34, 30, 255)
             text_gold = (140, 115, 85, 255)
-            red_seal = (178, 44, 44, 255)
 
             # 1. Double Gold Border
             draw.rectangle([(25, 25), (W - 25, H - 25)], outline=gold_dark, width=3)
@@ -219,15 +271,13 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
             for cx, cy in [(42, 42), (W - 42, 42), (42, H - 42), (W - 42, H - 42)]:
                 draw.ellipse([(cx - 2, cy - 2), (cx + 2, cy + 2)], fill=gold_dark)
 
-            # 2. Top Header Left
-            title_text = f"BIRO DETEKTIF RESMI {safe_guild_name.upper()}"
-            if len(title_text) > 36:
-                title_text = title_text[:33] + "..."
+            # 2. Top Header Left (Kartu Resmi Anggota)
+            title_text = f"KARTU RESMI ANGGOTA • {safe_guild_name.upper()}"
             draw.text((65, 55), title_text, font=fonts["title"], fill=text_dark)
             draw.text((65, 96), sub_header_str, font=fonts["subtitle"], fill=text_gold)
 
             # 3. Top Header Right Badge
-            badge_tier = "RANK: S-CLASS MASTER" if rank_pos <= 3 else f"RANK: #{rank_pos} • CLASS-A"
+            badge_tier = f"RANK: #{rank_pos} • CLASS-A" if rank_pos > 3 else "RANK: S-CLASS MASTER"
             badge_w, badge_h = 240, 42
             badge_x, badge_y = W - 65 - badge_w, 60
             draw.rounded_rectangle([(badge_x, badge_y), (badge_x + badge_w, badge_y + badge_h)], radius=8, fill=(192, 57, 43, 255))
@@ -293,26 +343,18 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
                 draw.text((475, field_y), val, font=fonts["value"], fill=text_dark)
                 field_y += 37
 
-            # 6. Right Wax Seal / Stamp
+            # 6. Right Wax Seal / Stamp (Versi Mewah Scalloped & Beaded)
             seal_cx, seal_cy = 930, 275
-            seal_r = 72
-            draw.ellipse([(seal_cx - seal_r - 6, seal_cy - seal_r - 6), (seal_cx + seal_r + 6, seal_cy + seal_r + 6)], outline=(220, 100, 100, 80), width=4)
-            draw.ellipse([(seal_cx - seal_r, seal_cy - seal_r), (seal_cx + seal_r, seal_cy + seal_r)], fill=red_seal, outline=(140, 30, 30, 255), width=3)
-            draw.ellipse([(seal_cx - seal_r + 8, seal_cy - seal_r + 8), (seal_cx + seal_r - 8, seal_cy + seal_r - 8)], outline=(240, 160, 160, 180), width=1)
-
-            # Stamp details dengan vector sakura
-            self._draw_sakura(draw, seal_cx - 36, seal_cy - 30, r_petal=5)
-            st1 = "RESMI"
-            b1 = fonts["stamp_title"].getbbox(st1)
-            draw.text((seal_cx - (b1[2]-b1[0])//2 + 8, seal_cy - 39), st1, font=fonts["stamp_title"], fill=(255, 240, 240, 255))
-
-            st2 = stamp_date_str
-            b2 = fonts["stamp_date"].getbbox(st2)
-            draw.text((seal_cx - (b2[2]-b2[0])//2, seal_cy - 12), st2, font=fonts["stamp_date"], fill=(255, 255, 255, 255))
-
-            st3 = stamp_year_str
-            b3 = fonts["stamp_sub"].getbbox(st3)
-            draw.text((seal_cx - (b3[2]-b3[0])//2, seal_cy + 14), st3, font=fonts["stamp_sub"], fill=(255, 220, 220, 255))
+            self._draw_luxury_wax_seal(
+                draw=draw,
+                cx=seal_cx,
+                cy=seal_cy,
+                radius=78,
+                stamp_title="• RESMI •",
+                stamp_date=stamp_date_str,
+                stamp_year=stamp_year_str,
+                fonts=fonts
+            )
 
             # 7. Horizontal Divider
             draw.line([(65, 435), (W - 65, 435)], fill=gold_light, width=1)
@@ -324,16 +366,16 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
             draw.text(((W - qw) // 2, 465), quote_text, font=fonts["quote"], fill=(122, 103, 80, 255))
 
             # 9. Authority / Signatures Section (Kiri: Owner Server, Kanan: Owner Bot)
-            draw.text((150, 520), server_owner_name, font=fonts["sign_name"], fill=text_dark)
-            draw.text((130, 545), server_owner_role, font=fonts["sign_role"], fill=text_gold)
+            draw.text((120, 515), server_owner_name, font=fonts["sign_name"], fill=text_dark)
+            draw.text((110, 550), server_owner_role, font=fonts["sign_role"], fill=text_gold)
 
             # Center stars and flower
-            self._draw_star(draw, W // 2 - 35, 535, r_outer=13, r_inner=6)
-            self._draw_sakura(draw, W // 2, 535, r_petal=7)
-            self._draw_star(draw, W // 2 + 35, 535, r_outer=13, r_inner=6)
+            self._draw_star(draw, W // 2 - 40, 535, r_outer=15, r_inner=7)
+            self._draw_sakura(draw, W // 2, 535, r_petal=9)
+            self._draw_star(draw, W // 2 + 40, 535, r_outer=15, r_inner=7)
 
-            draw.text((740, 520), bot_owner_name, font=fonts["sign_name"], fill=text_dark)
-            draw.text((710, 545), bot_owner_role, font=fonts["sign_role"], fill=text_gold)
+            draw.text((720, 515), bot_owner_display, font=fonts["sign_name"], fill=text_dark)
+            draw.text((700, 550), bot_owner_role, font=fonts["sign_role"], fill=text_gold)
 
             # 10. Bottom Authentication Token
             auth_str = f"ID OTENTIKASI RESMI: RTM-{target.id}-VERIFIED"
@@ -350,8 +392,8 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
 
     @commands.hybrid_command(
         name="detectiverank",
-        aliases=["rankdetektif", "testrank"],
-        description="Lihat kartu rank bertema Sertifikat Lisensi Biro Detektif Resmi"
+        aliases=["rankdetektif", "testrank", "karturank"],
+        description="Lihat kartu lisensi resmi keanggotaan server bergaya sertifikat eksklusif"
     )
     @app_commands.describe(member="Pilih member yang ingin dilihat kartu lisensinya (opsional)")
     async def detective_rank(self, ctx: commands.Context, member: discord.Member = None):
@@ -387,7 +429,7 @@ class DetectiveCard(commands.Cog, name="Detective Rank Card"):
             rank_pos=rank_pos
         )
 
-        file = discord.File(card_buffer, filename=f"detective_license_{target.name}.png")
+        file = discord.File(card_buffer, filename=f"license_{target.name}.png")
         await ctx.send(file=file)
 
 async def setup(bot):
