@@ -33,22 +33,38 @@ def clean_display_text(text: str) -> str:
     return cleaned if cleaned else "MEMBER"
 
 def get_card_fonts():
-    """Load font tipografi elegan Windows dengan fallback terjamin."""
-    win_fonts = r"C:\Windows\Fonts"
-    f_serif_bold = os.path.join(win_fonts, "georgiab.ttf")
-    if not os.path.exists(f_serif_bold):
-        f_serif_bold = os.path.join(win_fonts, "timesbd.ttf")
+    """Load font tipografi elegan lintas platform (Windows & Linux Railway)."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    asset_fonts = os.path.join(base_dir, "assets", "fonts")
     
-    f_serif_reg = os.path.join(win_fonts, "georgia.ttf")
-    if not os.path.exists(f_serif_reg):
-        f_serif_reg = os.path.join(win_fonts, "times.ttf")
+    search_dirs = [
+        asset_fonts,
+        os.path.join(base_dir, "data", "fonts"),
+        r"C:\Windows\Fonts",
+        "/usr/share/fonts/truetype/dejavu",
+        "/usr/share/fonts/truetype/liberation",
+        "/usr/share/fonts",
+        "/usr/local/share/fonts"
+    ]
+    
+    def find_font(filenames):
+        for d in search_dirs:
+            if not os.path.exists(d):
+                continue
+            for fn in filenames:
+                p = os.path.join(d, fn)
+                if os.path.isfile(p):
+                    return p
+        return None
 
-    f_sans_bold = os.path.join(win_fonts, "arialbd.ttf")
-    f_sans_reg = os.path.join(win_fonts, "arial.ttf")
+    f_serif_bold = find_font(["georgiab.ttf", "timesbd.ttf", "DejaVuSerif-Bold.ttf", "LiberationSerif-Bold.ttf"])
+    f_serif_reg = find_font(["georgia.ttf", "times.ttf", "DejaVuSerif.ttf", "LiberationSerif-Regular.ttf"])
+    f_sans_bold = find_font(["arialbd.ttf", "DejaVuSans-Bold.ttf", "LiberationSans-Bold.ttf"])
+    f_sans_reg = find_font(["arial.ttf", "DejaVuSans.ttf", "LiberationSans-Regular.ttf"])
 
     def load_font(path, size):
         try:
-            if os.path.exists(path):
+            if path and os.path.exists(path):
                 return ImageFont.truetype(path, size)
         except Exception:
             pass
