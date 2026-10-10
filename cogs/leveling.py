@@ -17,11 +17,9 @@ import unicodedata
 import threading
 
 try:
-    from cogs.v2_layout import build_v2_card, send_v2_message, edit_v2_message
+    from cogs.card_generator import generate_official_member_card
 except ImportError:
-    build_v2_card = None
-    send_v2_message = None
-    edit_v2_message = None
+    generate_official_member_card = None
 
 LEVEL_FILE = "data/level_data.json"
 BANK_FILE = "data/bank_data.json"
@@ -891,154 +889,25 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         return 1
 
     async def create_rank_image(self, target, level, exp, balance, guild, rank_pos, badges):
-        guild_id = str(guild.id)
-        all_configs = load_json(CONFIG_FILE)
-        guild_config = all_configs.get(guild_id, {})
-        exp_per_level = guild_config.get("exp_per_level", 3500)
-        max_level = guild_config.get("max_level", 0)
+        if generate_official_member_card:
+            card_buffer = await generate_official_member_card(
+                bot=self.bot,
+                target=target,
+                guild=guild,
+                exp=exp,
+                level=level,
+                balance=balance,
+                rank_pos=rank_pos
+            )
+            return discord.File(card_buffer, filename=f"license_{target.name}.png")
 
-        level_badges = guild_config.get("level_badges", {})
-        earned_badge = ""
-        for lvl_str in sorted(level_badges.keys(), key=int, reverse=True):
-            if level >= int(lvl_str):
-                earned_badge = level_badges[lvl_str]
-                break
-
-        display_badges = list(badges)
-        if earned_badge and earned_badge not in display_badges:
-            display_badges.insert(0, earned_badge)
-        
-        badges_str = " ".join(display_badges) if display_badges else "Pemula"
-
-        if max_level > 0 and level >= max_level:
-            progress_ratio = 1.0
-            display_text = "MAX LEVEL"
-        else:
-            next_level_exp = (level + 1) * exp_per_level
-            current_level_base_exp = level * exp_per_level
-            exp_progress = exp - current_level_base_exp
-            exp_needed = exp_per_level
-            progress_ratio = min(exp_progress / exp_needed, 1.0)
-            display_text = f"{exp} / {next_level_exp} EXP"
-
-        avatar_bytes = await target.display_avatar.replace(size=256, format="png").read()
-        g_icon_bytes = None
-        if guild.icon:
-            try:
-                g_icon_bytes = await guild.icon.replace(size=64, format="png").read()
-            except Exception:
-                pass
-        bot_avatar_bytes = None
-        try:
-            bot_avatar_bytes = await self.bot.user.display_avatar.replace(size=64, format="png").read()
-        except Exception:
-            pass
-
-        global _font_bold_bytes, _font_reg_bytes
-        if not _font_bold_bytes or not _font_reg_bytes:
-            try:
-                url_bold = "https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-Bold.ttf"
-                url_reg = "https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-Regular.ttf"
-                async with aiohttp.ClientSession() as session:
-                    if not _font_bold_bytes:
-                        async with session.get(url_bold) as resp_b:
-                            if resp_b.status == 200:
-                                _font_bold_bytes = await resp_b.read()
-                    if not _font_reg_bytes:
-                        async with session.get(url_reg) as resp_r:
-                            if resp_r.status == 200:
-                                _font_reg_bytes = await resp_r.read()
-            except Exception:
-                pass
-
-        def _render_card():
-            width = 1000
-            height = 330
-            background = Image.new('RGBA', (width, height), (20, 22, 25, 255))
-            draw = ImageDraw.Draw(background)
-
-            draw.polygon([(0, 0), (1000, 0), (1000, 330), (0, 330)], fill=(15, 15, 20, 255))
-            draw.polygon([(0, 330), (320, 330), (450, 0), (0, 0)], fill=(30, 35, 45, 255))
-            draw.line((448, 0, 318, 330), fill=(0, 255, 200, 255), width=6)
-
-            draw.ellipse((40, 55, 260, 275), outline=(0, 255, 200, 180), width=4)
-            draw.ellipse((25, 40, 275, 290), outline=(255, 255, 255, 40), width=1)
-            draw.line((150, 10, 150, 45), fill=(0, 255, 200, 255), width=3)
-            draw.line((150, 285, 150, 320), fill=(0, 255, 200, 255), width=3)
-            draw.line((5, 165, 40, 165), fill=(0, 255, 200, 255), width=3)
-            draw.line((260, 165, 295, 165), fill=(0, 255, 200, 255), width=3)
-
-            avatar_img = Image.open(BytesIO(avatar_bytes)).convert("RGBA").resize((200, 200))
-            mask = Image.new("L", (200, 200), 0)
-            draw_mask = ImageDraw.Draw(mask)
-            draw_mask.ellipse((0, 0, 200, 200), fill=255)
-            background.paste(avatar_img, (50, 65), mask)
-
-            try:
-                if _font_bold_bytes and _font_reg_bytes:
-                    font_title = ImageFont.truetype(BytesIO(_font_bold_bytes), 45)
-                    font_rank = ImageFont.truetype(BytesIO(_font_bold_bytes), 65)
-                    font_subtitle = ImageFont.truetype(BytesIO(_font_bold_bytes), 35)
-                    font_text = ImageFont.truetype(BytesIO(_font_reg_bytes), 22)
-                    font_small = ImageFont.truetype(BytesIO(_font_reg_bytes), 18)
-                else:
-                    font_title = font_rank = font_subtitle = font_text = font_small = ImageFont.load_default()
-            except Exception:
-                font_title = font_rank = font_subtitle = font_text = font_small = ImageFont.load_default()
-
-            safe_guild_name = unicodedata.normalize('NFKC', guild.name)
-            safe_target_name = unicodedata.normalize('NFKC', target.display_name)
-
-            if g_icon_bytes:
-                try:
-                    g_img = Image.open(BytesIO(g_icon_bytes)).convert("RGBA").resize((35, 35))
-                    g_mask = Image.new("L", (35, 35), 0)
-                    ImageDraw.Draw(g_mask).ellipse((0, 0, 35, 35), fill=255)
-                    background.paste(g_img, (480, 45), g_mask)
-                    draw.text((525, 50), f"{safe_guild_name}", font=font_small, fill=(180, 180, 180, 255))
-                except Exception:
-                    draw.text((480, 50), f"Server: {safe_guild_name}", font=font_small, fill=(180, 180, 180, 255))
-            else:
-                draw.text((480, 50), f"Server: {safe_guild_name}", font=font_small, fill=(180, 180, 180, 255))
-
-            draw.text((480, 85), f"{safe_target_name}", font=font_title, fill=(255, 255, 255, 255))
-            draw.text((480, 145), f"Level {level}", font=font_subtitle, fill=(0, 255, 200, 255))
-            draw.text((650, 155), f"|  Saldo: {balance} RSWN", font=font_text, fill=(255, 215, 0, 255))
-
-            with Pilmoji(background) as pilmoji:
-                pilmoji.text((480, 195), f"Badges: {badges_str}", font=font_text, fill=(200, 200, 200, 255))
-
-            draw.text((950, 80), f"#{rank_pos}", font=font_rank, fill=(255, 215, 0, 255), anchor="ra")
-
-            bar_x1, bar_y1, bar_x2, bar_y2 = 480, 235, 950, 260
-            draw.rounded_rectangle([(bar_x1, bar_y1), (bar_x2, bar_y2)], radius=12, fill=(40, 45, 55, 255))
-
-            if progress_ratio > 0:
-                current_bar_x2 = bar_x1 + (bar_x2 - bar_x1) * progress_ratio
-                if current_bar_x2 < bar_x1 + 24:
-                    current_bar_x2 = bar_x1 + 24
-                draw.rounded_rectangle([(bar_x1, bar_y1), (current_bar_x2, bar_y2)], radius=12, fill=(0, 255, 200, 255))
-
-            draw.text((950, 210), display_text, font=font_small, fill=(185, 187, 190, 255), anchor="ra")
-
-            if bot_avatar_bytes:
-                try:
-                    bot_img = Image.open(BytesIO(bot_avatar_bytes)).convert("RGBA").resize((25, 25))
-                    bot_mask = Image.new("L", (25, 25), 0)
-                    ImageDraw.Draw(bot_mask).ellipse((0, 0, 25, 25), fill=255)
-                    background.paste(bot_img, (740, 285), bot_mask)
-                    draw.text((775, 288), f"© {self.bot.user.name} Leveling System", font=font_small, fill=(100, 100, 100, 255))
-                except Exception:
-                    draw.text((775, 288), f"© {self.bot.user.name} Leveling System", font=font_small, fill=(100, 100, 100, 255))
-            else:
-                draw.text((775, 288), f"© {self.bot.user.name} Leveling System", font=font_small, fill=(100, 100, 100, 255))
-
-            buffer = BytesIO()
-            background.save(buffer, format="PNG")
-            buffer.seek(0)
-            return buffer
-
-        buffer = await asyncio.to_thread(_render_card)
+        # Fallback sederhana jika modul generator tidak tersedia
+        buffer = BytesIO()
+        img = Image.new("RGBA", (800, 300), (30, 30, 35, 255))
+        draw = ImageDraw.Draw(img)
+        draw.text((50, 50), f"{target.display_name} - Level {level} - Rank #{rank_pos}", fill=(255, 255, 255, 255))
+        img.save(buffer, format="PNG")
+        buffer.seek(0)
         return discord.File(buffer, filename=f"rank_{target.name}.png")
 
 
@@ -2702,7 +2571,11 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
             await self.update_voice_panel(guild)
             await interaction.response.send_message("✅ Panel Voice berhasil diperbarui ke data terbaru!", ephemeral=True)
         
-    @commands.hybrid_command(name="rank", description="Lihat kartu rank, progress level, dan status RSWN dengan visual eksklusif")
+    @commands.hybrid_command(
+        name="rank",
+        aliases=["karturank", "rankdetektif", "detectiverank", "level", "lvl"],
+        description="Lihat kartu lisensi resmi keanggotaan server, progress level, dan status RSWN"
+    )
     @app_commands.describe(member="Pilih member untuk melihat rank mereka (opsional)")
     async def rank(self, ctx: commands.Context, member: discord.Member = None):
         await ctx.defer()

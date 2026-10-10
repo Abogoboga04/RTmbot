@@ -15,6 +15,11 @@ from PIL import Image, ImageDraw, ImageFont
 import io
 import unicodedata
 
+try:
+    from cogs.card_generator import generate_official_member_card
+except ImportError:
+    generate_official_member_card = None
+
 WIB = timezone(timedelta(hours=7))
 
 def load_data(file_path):
@@ -820,6 +825,42 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         self.cleanup_spam_history.cancel()
 
     async def _create_welcome_card(self, member: discord.Member, title: str) -> io.BytesIO:
+        if generate_official_member_card:
+            try:
+                # Ambil data level dan saldo jika ada (default 0)
+                exp = 0
+                level = 0
+                balance = 0
+                try:
+                    lvl_path = "data/level_data.json"
+                    bank_path = "data/bank_data.json"
+                    if os.path.exists(lvl_path):
+                        with open(lvl_path, 'r', encoding='utf-8') as f:
+                            l_data = json.load(f)
+                            u_lvl = l_data.get(str(member.guild.id), {}).get(str(member.id), {})
+                            exp = u_lvl.get("exp", 0)
+                            level = u_lvl.get("level", 0)
+                    if os.path.exists(bank_path):
+                        with open(bank_path, 'r', encoding='utf-8') as f:
+                            b_data = json.load(f)
+                            balance = b_data.get(str(member.id), {}).get("balance", 0)
+                except Exception:
+                    pass
+
+                card_buffer = await generate_official_member_card(
+                    bot=self.bot,
+                    target=member,
+                    guild=member.guild,
+                    exp=exp,
+                    level=level,
+                    balance=balance,
+                    rank_pos=member.guild.member_count,
+                    custom_title=f"KARTU RESMI ANGGOTA • {member.guild.name.upper()}"
+                )
+                return card_buffer
+            except Exception:
+                pass
+
         width = 800
         height = 250
         background = Image.new('RGBA', (width, height), (20, 22, 26, 255))
@@ -840,35 +881,15 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         except Exception:
             pass
 
-        try:
-            url_bold = "https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-Bold.ttf"
-            url_reg = "https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-Regular.ttf"
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url_bold) as r1:
-                    font_bold_bytes = await r1.read()
-                    font_bold = ImageFont.truetype(io.BytesIO(font_bold_bytes), 42)
-                    font_title = ImageFont.truetype(io.BytesIO(font_bold_bytes), 22)
-                async with session.get(url_reg) as r2:
-                    font_reg_bytes = await r2.read()
-                    font_sub = ImageFont.truetype(io.BytesIO(font_reg_bytes), 20)
-                    font_small = ImageFont.truetype(io.BytesIO(font_reg_bytes), 16)
-        except Exception:
-            font_bold = ImageFont.load_default()
-            font_title = ImageFont.load_default()
-            font_sub = ImageFont.load_default()
-            font_small = ImageFont.load_default()
+        font_bold = font_title = font_sub = font_small = ImageFont.load_default()
 
-        import unicodedata
         safe_guild = unicodedata.normalize('NFKC', member.guild.name)
         safe_name = unicodedata.normalize('NFKC', member.display_name)
         
         text_x = 360
-        
         draw.text((text_x, 40), title, font=font_title, fill=(114, 137, 218, 255))
         draw.text((text_x, 70), safe_name, font=font_bold, fill=(255, 255, 255, 255))
-        
         draw.line([(text_x, 135), (750, 135)], fill=(100, 100, 100, 80), width=2)
-        
         draw.text((text_x, 150), f"Selamat datang di {safe_guild}!", font=font_sub, fill=(200, 200, 200, 255))
         draw.text((text_x, 185), "Semoga betah dan aktif terus ya!", font=font_sub, fill=(150, 255, 150, 255))
         
