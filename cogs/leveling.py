@@ -21,6 +21,13 @@ try:
 except ImportError:
     generate_official_member_card = None
 
+try:
+    from cogs.v2_layout import build_v2_card, send_v2_message, edit_v2_message
+except ImportError:
+    build_v2_card = None
+    send_v2_message = None
+    edit_v2_message = None
+
 LEVEL_FILE = "data/level_data.json"
 BANK_FILE = "data/bank_data.json"
 SHOP_FILE = "data/shop_items.json"
