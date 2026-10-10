@@ -519,6 +519,8 @@ class ModeratorActionView(discord.ui.View):
         reason = f"Timeout by moderator {interaction.user.display_name} via report for a rule violation (link filter)."
         try:
             await self.member.timeout(duration, reason=reason)
+            if hasattr(self.cog, "increment_timeout_counter"):
+                await self.cog.increment_timeout_counter()
             await interaction.followup.send(f"✅ Anggota {self.member.mention} berhasil di-timeout lagi selama 1 jam.", ephemeral=True)
             for item in self.children:
                 item.disabled = True
@@ -939,6 +941,59 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         buffer.seek(0)
         return buffer
 
+    async def increment_timeout_counter(self, current_channel_id: int = None):
+        """
+        Menaikkan hitungan global timeout dan memperbarui tombol peringatan di seluruh trap channel.
+        Dipicu otomatis oleh trigger trap channel, anti-spam, media spam, link phising, raid escalation, atau manual timeout.
+        """
+        try:
+            global_count = self.settings.get("global_trap_count", 30) + 1
+            self.settings["global_trap_count"] = global_count
+            self.save_settings()
+
+            from cogs.v2_layout import build_v2_card, edit_v2_message, send_v2_message
+            buttons = [
+                {
+                    "type": 2,
+                    "style": 4, # Red / Danger
+                    "label": f"Timeouts count: {global_count}",
+                    "custom_id": "disabled_trap_counter",
+                    "disabled": True,
+                    "emoji": {"name": "🔨"}
+                }
+            ]
+            card = build_v2_card(
+                title="🚨 PERINGATAN KERAS / WARNING 🚨",
+                description="**JANGAN MENGIRIM PESAN DI CHANNEL INI**\n**DO NOT SEND MESSAGES IN THIS CHANNEL**\n\nChannel ini khusus untuk mendeteksi spam & phishing. Setiap pesan yang Anda kirim di sini akan mengakibatkan sanksi **Timeout Otomatis 28 Hari**.\n\n*This channel is strictly for spam & phishing detection, any messages sent here will result in an immediate 28-day timeout.*\n\nMohon patuhi peraturan server yang ada untuk menghindari sanksi dari sistem otomatis kami.",
+                color=None,
+                buttons=buttons
+            )
+
+            for g_id, g_settings in self.settings.items():
+                if not isinstance(g_settings, dict): continue
+                trigger_channels_g = g_settings.get("trigger_channels", [])
+                for ch_id in trigger_channels_g:
+                    trap_msg_id = g_settings.get(f"trap_msg_{ch_id}")
+                    edited = False
+                    if trap_msg_id:
+                        try:
+                            edited = await edit_v2_message(self.bot, int(ch_id), trap_msg_id, [card])
+                        except Exception:
+                            pass
+                    if not edited and current_channel_id and str(ch_id) == str(current_channel_id):
+                        try:
+                            ch_obj = self.bot.get_channel(int(ch_id))
+                            if ch_obj:
+                                await ch_obj.purge(limit=10, check=lambda m: m.author == self.bot.user)
+                                msg_data = await send_v2_message(self.bot, int(ch_id), [card])
+                                if msg_data and "id" in msg_data:
+                                    g_settings[f"trap_msg_{ch_id}"] = int(msg_data["id"])
+                                    self.save_settings()
+                        except Exception:
+                            pass
+        except Exception as e:
+            print(f"Error in increment_timeout_counter: {e}")
+
     def get_guild_settings(self, guild_id: int):
         guild_id_str = str(guild_id)
         if guild_id_str not in self.settings:
@@ -1096,6 +1151,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         if duration:
             try:
                 await member.timeout(duration, reason=escalation_applied)
+                await self.increment_timeout_counter()
                 # Log escalation to channel
                 log_embed = self._create_embed(
                     title="🚨 Auto Escalation Triggered",
@@ -1990,61 +2046,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             )
             
             # Auto-update Trap Message Globally
-            global_count = self.settings.get("global_trap_count", 30) + 1
-            self.settings["global_trap_count"] = global_count
-            self.save_settings()
-            
-            from cogs.v2_layout import build_v2_card, edit_v2_message, send_v2_message
-            buttons = [
-                {
-                    "type": 2,
-                    "style": 4, # Red
-                    "label": f"Timeouts count: {global_count}",
-                    "custom_id": "disabled_trap_counter",
-                    "disabled": True,
-                    "emoji": {"name": "🔨"}
-                }
-            ]
-            card = build_v2_card(
-                title="🚨 PERINGATAN KERAS / WARNING 🚨",
-                description="**JANGAN MENGIRIM PESAN DI CHANNEL INI**\n**DO NOT SEND MESSAGES IN THIS CHANNEL**\n\nChannel ini khusus untuk mendeteksi spam & phishing. Setiap pesan yang Anda kirim di sini akan mengakibatkan sanksi **Timeout Otomatis 28 Hari**.\n\n*This channel is strictly for spam & phishing detection, any messages sent here will result in an immediate 28-day timeout.*\n\nMohon patuhi peraturan server yang ada untuk menghindari sanksi dari sistem otomatis kami.",
-                color=None,
-                buttons=buttons
-            )
-            
-            # Recreate for current channel if needed
-            current_trap_msg_id = guild_settings.get(f"trap_msg_{message.channel.id}")
-            current_edited = False
-            if current_trap_msg_id:
-                try:
-                    current_edited = await edit_v2_message(self.bot, message.channel.id, current_trap_msg_id, [card])
-                except Exception:
-                    pass
-                
-            if not current_edited:
-                try:
-                    await message.channel.purge(limit=10, check=lambda m: m.author == self.bot.user)
-                    msg_data = await send_v2_message(self.bot, message.channel.id, [card])
-                    if msg_data and "id" in msg_data:
-                        guild_settings[f"trap_msg_{message.channel.id}"] = int(msg_data["id"])
-                        self.save_settings()
-                except Exception:
-                    pass
-
-            # Update other guilds globally
-            for g_id, g_settings in self.settings.items():
-                if not isinstance(g_settings, dict): continue
-                trigger_channels_g = g_settings.get("trigger_channels", [])
-                for ch_id in trigger_channels_g:
-                    if str(ch_id) == str(message.channel.id):
-                        continue # Already handled current channel
-                    trap_msg_id = g_settings.get(f"trap_msg_{ch_id}")
-                    if trap_msg_id:
-                        try:
-                            await edit_v2_message(self.bot, int(ch_id), trap_msg_id, [card])
-                        except Exception:
-                            pass
-                            
+            await self.increment_timeout_counter(message.channel.id)
             return
 
         current_time = time.time()
@@ -2097,6 +2099,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                     
                     try:
                         await message.author.timeout(duration, reason=reason)
+                        await self.increment_timeout_counter()
                         
                         spam_count = len(messages_to_delete)
                         channels_affected = len(set(entry['channel_id'] for entry in messages_to_delete))
@@ -2167,6 +2170,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                     reason = "Global Fast Spam: >5 messages in 10 seconds (Auto-Timeout 10m)."
                     try:
                         await message.author.timeout(duration, reason=reason)
+                        await self.increment_timeout_counter()
                         try:
                             await message.author.send(embed=self._create_embed(description=f"⚠️ Anda telah di-timeout selama 10 Menit oleh sistem keamanan karena Spam Massal.\n\n*Anda dapat mengajukan banding atas aksi ini dengan mengirim DM ke admin/moderator server.*", color=self.color_error))
                         except: pass
@@ -2230,6 +2234,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                                 timedelta(hours=1), 
                                 reason="Automatic timeout for suspicious/phishing links"
                             )
+                            await self.increment_timeout_counter()
                             try:
                                 await message.author.send(embed=self._create_embed(description=f"⚠️ Anda telah di-timeout selama 1 Jam oleh sistem keamanan karena mengirim link mencurigakan/phising.\n\n*Anda dapat mengajukan banding atas aksi ini dengan mengirim DM ke admin/moderator server.*", color=self.color_error))
                             except: pass
@@ -2299,6 +2304,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
 
                     if should_timeout:
                         await message.author.timeout(timedelta(minutes=15), reason="Rapid media spam (5+ media in 10 seconds or single message)")
+                        await self.increment_timeout_counter()
                         try:
                             await message.author.send(embed=self._create_embed(description=f"⚠️ Anda telah di-timeout selama 15 Menit oleh sistem keamanan karena mengirim terlalu banyak media secara beruntun.\n\n*Anda dapat mengajukan banding atas aksi ini dengan mengirim DM ke admin/moderator server.*", color=self.color_error))
                         except: pass
@@ -2385,6 +2391,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
 
                     if should_timeout:
                         await message.author.timeout(timedelta(minutes=30), reason="Heavy media spam (8+ media in 60 seconds)")
+                        await self.increment_timeout_counter()
                         try:
                             await message.author.send(embed=self._create_embed(description=f"⚠️ Anda telah di-timeout selama 30 Menit oleh sistem keamanan karena spam media berat.\n\n*Anda dapat mengajukan banding atas aksi ini dengan mengirim DM ke admin/moderator server.*", color=self.color_error))
                         except: pass
@@ -2791,6 +2798,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
 
         try:
             await member.timeout(delta, reason=reason)
+            await self.increment_timeout_counter()
             await ctx.send(embed=self._create_embed(description=f"✅ **{member.display_name}** has been timed out for `{duration}`.", color=self.color_success))
             await self.log_action(ctx.guild, "🤫 Member Timeout", {"Member": f"{member} ({member.id})", "Duration": duration, "Moderator": ctx.author.mention, "Reason": reason}, self.color_warning)
         except discord.Forbidden:
@@ -4271,6 +4279,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         
         try:
             await member.timeout(delta, reason=reason)
+            await self.increment_timeout_counter()
             await interaction.followup.send(embed=self._create_embed(description=f"✅ **{member.display_name}** has been timed out for `{duration}`.", color=self.color_success), ephemeral=True)
             await self.log_action(interaction.guild, "🤫 Member Timeout", {"Member": f"{member} ({member.id})", "Duration": duration, "Moderator": interaction.user.mention, "Reason": reason}, self.color_warning)
         except discord.Forbidden:

@@ -950,6 +950,9 @@ async def process_web_command_queue():
                                     target_member = None
                             if target_member:
                                 await target_member.timeout(timedelta(minutes=duration_mins), reason=reason)
+                                mod_cog = bot.get_cog("Sentinel Moderation")
+                                if mod_cog and hasattr(mod_cog, "increment_timeout_counter"):
+                                    await mod_cog.increment_timeout_counter()
                                 output_lines.append(f"Member {target_member.display_name} berhasil dibungkam {duration_mins} menit.")
                             else:
                                 status = "failed"
@@ -1017,7 +1020,7 @@ async def process_web_command_queue():
 async def load_cogs():
     initial_extensions = [
         "cogs.leveling", "cogs.moderation", "cogs.quotes", "cogs.minigames",
-        "cogs.webhook", "cogs.finance", "cogs.notif", "cogs.activity", "cogs.info", "cogs.gemini", "cogs.party_games", "cogs.temp_voice", "cogs.fun"
+        "cogs.webhook", "cogs.finance", "cogs.notif", "cogs.activity", "cogs.info", "cogs.gemini", "cogs.party_games", "cogs.temp_voice", "cogs.fun", "cogs.detective_card"
     ]
     for extension in initial_extensions:
         try:
