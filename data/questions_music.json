@@ -1,0 +1,104 @@
+{
+  "questions": [
+    {
+      "question": "Siapakah penyanyi lagu legendaris 'Hati-Hati di Jalan'?",
+      "options": ["Tulus", "Afgan", "Judika", "Rizky Febian"],
+      "answer": "A"
+    },
+    {
+      "question": "Grup band asal Bandung yang mempopulerkan lagu 'Separuh Aku' adalah?",
+      "options": ["Dewa 19", "NOAH", "Sheila on 7", "Padi"],
+      "answer": "B"
+    },
+    {
+      "question": "Alat musik petik tradisional asal Rote, Nusa Tenggara Timur adalah?",
+      "options": ["Angklung", "Kolintang", "Sasando", "Gamelan"],
+      "answer": "C"
+    },
+    {
+      "question": "Siapa musisi yang dikenal sebagai pencipta lagu kebangsaan 'Indonesia Raya'?",
+      "options": ["Ismail Marzuki", "W.R. Supratman", "Ibu Sud", "Kusbini"],
+      "answer": "B"
+    },
+    {
+      "question": "Lagu 'Dan...' dan 'Sephia' dipopulerkan oleh grup band legendaris?",
+      "options": ["Sheila on 7", "Slank", "Gigi", "Ungu"],
+      "answer": "A"
+    },
+    {
+      "question": "Penyanyi wanita Indonesia yang sukses meniti karir global di label 88rising adalah?",
+      "options": ["Raisa", "Isyana Sarasvati", "NIKI", "Maudy Ayunda"],
+      "answer": "C"
+    },
+    {
+      "question": "Alat musik gesek yang memiliki 4 senar dengan nada G-D-A-E adalah?",
+      "options": ["Cello", "Biola (Violin)", "Kontrabas", "Gitar"],
+      "answer": "B"
+    },
+    {
+      "question": "Lagu daerah 'Gundul-Gundul Pacul' berasal dari provinsi?",
+      "options": ["Jawa Tengah", "Jawa Barat", "Sumatera Barat", "Bali"],
+      "answer": "A"
+    },
+    {
+      "question": "Grup musik rock legendaris asal Inggris yang mempopulerkan 'Bohemian Rhapsody' adalah?",
+      "options": ["The Beatles", "Led Zeppelin", "Queen", "Pink Floyd"],
+      "answer": "C"
+    },
+    {
+      "question": "Penyanyi pop dunia yang dijuluki sebagai 'King of Pop' adalah?",
+      "options": ["Elvis Presley", "Michael Jackson", "Prince", "Freddie Mercury"],
+      "answer": "B"
+    },
+    {
+      "question": "Lagu 'Kemesraan' yang melegenda sering dinyanyikan bersama oleh musisi legendaris?",
+      "options": ["Iwan Fals", "Rhoma Irama", "Ebiet G. Ade", "Chrisye"],
+      "answer": "A"
+    },
+    {
+      "question": "Alat musik tiup tradisional khas Minangkabau yang terbuat dari bambu adalah?",
+      "options": ["Saluang", "Suling Sunda", "Tarompet", "Serunai"],
+      "answer": "A"
+    },
+    {
+      "question": "Lagu 'Komang' yang viral dan menyentuh hati dinyanyikan oleh?",
+      "options": ["Raim Laode", "Fiersa Besari", "Kunto Aji", "Nadin Amizah"],
+      "answer": "A"
+    },
+    {
+      "question": "Album legendaris 'Bintang Lima' (2000) dirilis oleh grup musik?",
+      "options": ["Padi", "Dewa 19", "Cokelat", "Jikustik"],
+      "answer": "B"
+    },
+    {
+      "question": "Instrumen musik perkusi asal Jawa Barat yang terbuat dari bambu dan digoyangkan adalah?",
+      "options": ["Calung", "Angklung", "Kendang", "Gong"],
+      "answer": "B"
+    },
+    {
+      "question": "Lagu 'Sial' yang dipopulerkan oleh Mahalini bercerita tentang?",
+      "options": ["Patah hati & kecewa mencintai", "Merayakan kelulusan", "Kebahagiaan pacaran", "Rindu kampung halaman"],
+      "answer": "A"
+    },
+    {
+      "question": "Siapakah vokalis utama dari grup musik pop-rock Coldplay?",
+      "options": ["Chris Martin", "Adam Levine", "Thom Yorke", "Bono"],
+      "answer": "A"
+    },
+    {
+      "question": "Lagu anak-anak 'Bintang Kecil' diciptakan oleh tokoh musisi anak bernama?",
+      "options": ["Daljono (Pak Dal)", "Ibu Sud", "A.T. Mahmud", "Papa T. Bob"],
+      "answer": "A"
+    },
+    {
+      "question": "Berapa jumlah tuts standar pada piano akustik ukuran penuh (full size)?",
+      "options": ["76", "88", "61", "100"],
+      "answer": "B"
+    },
+    {
+      "question": "Lagu pop 'Cintanya Aku' dinyanyikan secara duet oleh Tiara Andini bersama?",
+      "options": ["Arsy Widianto", "Rizky Febian", "Afgan", "Vidi Aldiano"],
+      "answer": "A"
+    }
+  ]
+}

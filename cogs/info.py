@@ -286,17 +286,24 @@ HELP_CATEGORIES = {
     },
     "games": {
         "title": "🎮 TAVERN PARTY & MINIGAMES",
-        "desc": "Game interaktif multipemain dan kuis asah otak komunitas:",
+        "desc": "Game interaktif multipemain, party voting, dan kuis asah otak komunitas:\n*(Gunakan `!games` untuk membuka menu katalog interaktif)*",
         "color": 0xF1C40F,
         "fields": [
-            {"name": "🏇 !balapan (alias !race)", "value": "Mulai arena taruhan balap kuda multiplayer berhadiah koin RSWN."},
+            {"name": "🎮 !games (alias !minigames)", "value": "Buka katalog interaktif seluruh minigames dan panduan bermain via menu dropdown."},
+            {"name": "🔗 !sambung (alias !sk, !ressambung)", "value": "Tantangan sambung suku kata berantai multiplayer dengan combo multiplier."},
+            {"name": "🗳️ !siapapaling (alias !paling, !vote)", "value": "Party game seru sistem voting rahasia 'Si Paling...' dengan grafik bar suara."},
+            {"name": "🧩 !tebakemoji (alias !emoji, !resmoji)", "value": "Tebak kata/frasa berdasarkan petunjuk deretan emoji."},
+            {"name": "🔤 !susunkata (alias !acak, !resacak)", "value": "Susun kembali kata yang diacak hurufnya (Anagram) secepat mungkin."},
+            {"name": "🔬 !kuisipa (alias !ipa, !resipa)", "value": "Kuis tebak fakta sains & pengetahuan umum berhadiah koin RSWN & EXP."},
+            {"name": "🪢 !hangman (alias !tebakkata, !resman)", "value": "Tebak kata rahasia huruf demi huruf dalam 10 ronde seru."},
+            {"name": "🕵️ !siapaaku (alias !tebaksiapa)", "value": "Kuis detektif tebak tokoh, benda, atau profesi via petunjuk bertahap."},
+            {"name": "⚡ !hitungcepat (alias !math)", "value": "Adu kecepatan dan ketelitian berhitung matematika dasar."},
+            {"name": "🤔 !pernahgak (alias !nhie)", "value": "Permainan kejujuran Never Have I Ever dengan tombol interaktif."},
+            {"name": "🎭 !matamata (alias !spyfall)", "value": "Game peran tersembunyi mengungkap mata-mata di antara pemain."},
+            {"name": "🏇 !balapan (alias !race)", "value": "Arena taruhan balap kuda multiplayer berhadiah koin RSWN."},
             {"name": "🪙 !taruhan <jumlah> <nomor_kuda>", "value": "Pasang taruhan pada kuda jagoanmu sebelum balapan dimulai."},
-            {"name": "🐺 /ww (alias !ww)", "value": "Mulai sesi game Werewolf klasik bersama warga server."},
-            {"name": "🧩 !resmoji", "value": "Tebak judul film atau lagu berdasarkan petunjuk deretan emoji."},
-            {"name": "🔤 !resacak", "value": "Susun kembali kata yang diacak hurufnya (Anagram)."},
-            {"name": "🔬 !resipa", "value": "Kuis tebak fakta sains dan pengetahuan umum berhadiah EXP."},
-            {"name": "🔗 !ressambung", "value": "Tantangan sambung suku kata berantai antar-pemain."},
-            {"name": "✍️ !jawab <jawaban>", "value": "Kirimkan jawaban kuis yang sedang berlangsung."}
+            {"name": "🐺 /ww (alias !ww)", "value": "Sesi game Werewolf klasik roleplay warga vs serigala."},
+            {"name": "🧹 !stopgame (alias !resetgame)", "value": "Reset dan bersihkan status game yang macet atau terkunci di channel."}
         ]
     },
     "leveling": {
