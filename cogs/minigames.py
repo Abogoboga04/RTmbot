@@ -114,7 +114,7 @@ class GameCatalogView(discord.ui.View):
             "tebakemoji": {
                 "title": "🧩 Tebak Emoji & Frasa",
                 "cmd": "`!tebakemoji` (alias: `!emoji`, `!tebakgambar`)",
-                "rules": "1. Bot menampilkan kombinasi emoji misterius.\n2. Tebak makna kata atau frasa yang dimaksud dalam 60 detik.\n3. Tersedia bantuan hint via `!bantuan`.",
+                "rules": "1. Bot menampilkan kombinasi emoji misterius.\n2. Tebak makna kata atau frasa yang dimaksud dalam 60 detik.\n3. Tersedia bantuan hint via `!hintemoji`.",
                 "reward": "30 RSWN & 60 EXP per jawaban benar",
                 "color": 0x8e44ad
             },
@@ -782,7 +782,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
     # 🗳️ NEW: SI PALING... (PARTY VOTING MINIGAME)
     # ==========================================================
 
-    @commands.command(name="siapapaling", aliases=['paling', 'wholikely', 'mostlikely', 'votepertanyaan', 'vote'])
+    @commands.command(name="siapapaling", aliases=['paling', 'wholikely', 'mostlikely', 'votepertanyaan', 'sipaling'])
     async def siapa_paling_cmd(self, ctx):
         """Memulai party game voting rahasia 'Si Paling...'."""
         if not self.is_channel_allowed('siapapaling', ctx.channel.id):
@@ -923,7 +923,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                         "📌 Bot akan memberikan petunjuk deretan emoji.\n"
                         "🫵 Tebak kata atau frasa yang sesuai dalam waktu 60 detik.\n"
                         f"🎁 Jawaban benar mendapatkan **+{self.reward_per_correct_emoji} RSWN**.\n\n"
-                        f"💡 Butuh petunjuk? Gunakan `!bantuan` (Biaya: {self.bantuan_price_emoji} RSWN via DM).",
+                        f"💡 Butuh petunjuk? Gunakan `!hintemoji` (Biaya: {self.bantuan_price_emoji} RSWN via DM).",
             color=0x8e44ad
         )
         async def on_start():
@@ -1014,7 +1014,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         save_json_to_root(self.bank_data, 'data/bank_data.json')
         await self.display_leaderboard(ctx, 'Tebak Emoji')
 
-    @commands.command(name="bantuan", aliases=['resplis', 'hintemoji'])
+    @commands.command(name="hintemoji", aliases=['bantuanemoji', 'resplis'])
     async def bantuan_emoji_cmd(self, ctx):
         """Membeli petunjuk jawaban tebak emoji via DM."""
         user_id = str(ctx.author.id)

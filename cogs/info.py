@@ -291,7 +291,7 @@ HELP_CATEGORIES = {
         "fields": [
             {"name": "🎮 !games (alias !minigames)", "value": "Buka katalog interaktif seluruh minigames dan panduan bermain via menu dropdown."},
             {"name": "🔗 !sambung (alias !sk, !ressambung)", "value": "Tantangan sambung suku kata berantai multiplayer dengan combo multiplier."},
-            {"name": "🗳️ !siapapaling (alias !paling, !vote)", "value": "Party game seru sistem voting rahasia 'Si Paling...' dengan grafik bar suara."},
+            {"name": "🗳️ !siapapaling (alias !paling, !sipaling)", "value": "Party game seru sistem voting rahasia 'Si Paling...' dengan grafik bar suara."},
             {"name": "🧩 !tebakemoji (alias !emoji, !resmoji)", "value": "Tebak kata/frasa berdasarkan petunjuk deretan emoji."},
             {"name": "🔤 !susunkata (alias !acak, !resacak)", "value": "Susun kembali kata yang diacak hurufnya (Anagram) secepat mungkin."},
             {"name": "🔬 !kuisipa (alias !ipa, !resipa)", "value": "Kuis tebak fakta sains & pengetahuan umum berhadiah koin RSWN & EXP."},
