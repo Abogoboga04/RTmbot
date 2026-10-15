@@ -15,6 +15,7 @@ import io
 import aiohttp
 import unicodedata
 import threading
+from typing import Optional
 
 try:
     from cogs.card_generator import generate_official_member_card
@@ -657,6 +658,81 @@ class RestockModal(discord.ui.Modal, title="Restock Item"):
             json.dump(data, f, indent=4)
         await interaction.response.send_message("📦 Stok diperbarui.", ephemeral=True)
         
+class GiveawayModal(discord.ui.Modal, title="Buat Giveaway Baru"):
+    def __init__(self, cog, ctx):
+        super().__init__()
+        self.cog = cog
+        self.ctx = ctx
+        self.prize_input = discord.ui.TextInput(
+            label="Nama Hadiah",
+            placeholder="Contoh: Discord Nitro 1 Bulan / Steam Wallet",
+            max_length=200,
+            required=True
+        )
+        self.duration_input = discord.ui.TextInput(
+            label="Durasi (contoh: 10m, 1h, 2d)",
+            placeholder="10m = 10 menit, 1h = 1 jam, 1d = 1 hari",
+            default="10m",
+            max_length=20,
+            required=True
+        )
+        self.winners_input = discord.ui.TextInput(
+            label="Jumlah Pemenang",
+            placeholder="1",
+            default="1",
+            max_length=5,
+            required=True
+        )
+        self.min_level_input = discord.ui.TextInput(
+            label="Syarat Minimal Level (Opsional)",
+            placeholder="0",
+            default="0",
+            max_length=5,
+            required=False
+        )
+        self.add_item(self.prize_input)
+        self.add_item(self.duration_input)
+        self.add_item(self.winners_input)
+        self.add_item(self.min_level_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        prize = self.prize_input.value.strip()
+        dur_str = self.duration_input.value.strip().lower()
+        
+        minutes = 10
+        try:
+            if dur_str.endswith("m"):
+                minutes = int(dur_str[:-1])
+            elif dur_str.endswith("h"):
+                minutes = int(dur_str[:-1]) * 60
+            elif dur_str.endswith("d"):
+                minutes = int(dur_str[:-1]) * 1440
+            else:
+                minutes = int(dur_str)
+        except ValueError:
+            minutes = 10
+
+        try:
+            winners = int(self.winners_input.value.strip())
+        except ValueError:
+            winners = 1
+
+        try:
+            min_lvl = int(self.min_level_input.value.strip()) if self.min_level_input.value.strip() else 0
+        except ValueError:
+            min_lvl = 0
+
+        await interaction.followup.send("✅ Giveaway sedang disiapkan...", ephemeral=True)
+        await self.cog._launch_giveaway(
+            self.ctx,
+            hadiah=prize,
+            durasi_menit=minutes,
+            jumlah_pemenang=winners,
+            min_level=min_lvl
+        )
+
+
 class GiveawayJoinView(discord.ui.View):
     def __init__(self, bot, message_id, min_level, min_messages, req_role_id):
         super().__init__(timeout=None)
@@ -667,7 +743,7 @@ class GiveawayJoinView(discord.ui.View):
         self.req_role_id = req_role_id
         self.participants = []
 
-    @discord.ui.button(label="Ikut Giveaway 🎉", style=discord.ButtonStyle.success, custom_id="giveaway_join_btn")
+    @discord.ui.button(label="Ikut Giveaway 🎉 (0)", style=discord.ButtonStyle.success, custom_id="giveaway_join_btn")
     async def join_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         user_id = str(interaction.user.id)
         guild_id = str(interaction.guild.id)
@@ -675,21 +751,29 @@ class GiveawayJoinView(discord.ui.View):
         user_data = all_level_data.get(guild_id, {}).get(user_id, {})
 
         if user_data.get("level", 0) < self.min_level:
-            return await interaction.response.send_message(f"Level kamu belum cukup! Minimal level {self.min_level}.", ephemeral=True)
+            return await interaction.response.send_message(f"❌ Level kamu belum cukup! Minimal level **{self.min_level}**.", ephemeral=True)
 
         if user_data.get("msg_count", 0) < self.min_messages:
-            return await interaction.response.send_message(f"Total interaksi pesanmu kurang! Minimal {self.min_messages} pesan.", ephemeral=True)
+            return await interaction.response.send_message(f"❌ Total pesan kamu belum cukup! Minimal **{self.min_messages}** pesan.", ephemeral=True)
 
         if self.req_role_id:
             role = interaction.guild.get_role(self.req_role_id)
-            if role not in interaction.user.roles:
-                return await interaction.response.send_message(f"Kamu harus memiliki role {role.mention} untuk ikut.", ephemeral=True)
+            if role and role not in interaction.user.roles:
+                return await interaction.response.send_message(f"❌ Kamu harus memiliki role {role.mention} untuk ikut.", ephemeral=True)
 
         if interaction.user.id in self.participants:
-            return await interaction.response.send_message("Kamu sudah terdaftar di giveaway ini!", ephemeral=True)
+            return await interaction.response.send_message("ℹ️ Kamu sudah terdaftar di giveaway ini!", ephemeral=True)
 
         self.participants.append(interaction.user.id)
-        await interaction.response.send_message("Berhasil terdaftar ke dalam giveaway!", ephemeral=True)
+        button.label = f"Ikut Giveaway 🎉 ({len(self.participants)})"
+        try:
+            await interaction.response.edit_message(view=self)
+            await interaction.followup.send("✅ Kamu berhasil terdaftar ke dalam undian giveaway! Semoga beruntung 🍀", ephemeral=True)
+        except Exception:
+            try:
+                await interaction.response.send_message("✅ Kamu berhasil terdaftar ke dalam undian giveaway! Semoga beruntung 🍀", ephemeral=True)
+            except Exception:
+                pass
 
 
 class ProgressionSystem(commands.Cog, name="Progression & Economy"):
@@ -1222,77 +1306,165 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         except Exception:
             pass
             
-    @commands.hybrid_command(name="giveaway", description="Mulai giveaway baru dengan syarat tertentu")
-    @commands.has_permissions(administrator=True)
-    async def start_giveaway(self, ctx: commands.Context, hadiah: str, durasi_menit: int, jumlah_pemenang: int, min_level: int = 0, min_messages: int = 0, req_role: discord.Role = None):
+    async def _launch_giveaway(self, ctx: commands.Context, hadiah: str, durasi_menit: int, jumlah_pemenang: int, min_level: int = 0, min_messages: int = 0, req_role: Optional[discord.Role] = None):
         end_time = datetime.utcnow() + timedelta(minutes=durasi_menit)
+        end_timestamp = int(end_time.timestamp())
         role_id = req_role.id if req_role else None
 
-        embed = discord.Embed(
-            title="🎉 GIVEAWAY BARU 🎉", 
-            description=f"**Hadiah:** {hadiah}\n**Jumlah Pemenang:** {jumlah_pemenang}\n**Berakhir:** <t:{int(end_time.timestamp())}:R>", 
-            color=discord.Color.purple()
+        from cogs.v2_layout import build_v2_card, send_v2_message
+
+        syarat_list = [f"• **Level Minimal:** `{min_level}`"]
+        if min_messages > 0:
+            syarat_list.append(f"• **Pesan Minimal:** `{min_messages}`")
+        if req_role:
+            syarat_list.append(f"• **Role Wajib:** {req_role.mention}")
+
+        card = build_v2_card(
+            title=f"🎁 GIVEAWAY: {hadiah}",
+            description=(
+                f"Sebuah undian giveaway baru telah dimulai!\n"
+                f"Klik tombol **Ikut Giveaway** di bawah ini untuk berpartisipasi.\n\n"
+                f"**Hadiah:** 🏆 **{hadiah}**\n"
+                f"**Jumlah Pemenang:** 👥 `{jumlah_pemenang}` Orang\n"
+                f"**Waktu Berakhir:** ⏳ <t:{end_timestamp}:R> (<t:{end_timestamp}:f>)"
+            ),
+            fields=[
+                {"name": "📜 Syarat & Ketentuan", "value": "\n".join(syarat_list)}
+            ],
+            color=0xF1C40F,
+            footer="Klik tombol Ikut Giveaway di bawah untuk mendaftar!"
         )
-        
-        syarat_teks = f"**Level Minimal:** {min_level}\n**Pesan Minimal:** {min_messages}\n**Role Wajib:** {req_role.mention if req_role else 'Tidak ada'}"
-        embed.add_field(name="📜 Syarat & Ketentuan", value=syarat_teks)
 
         view = GiveawayJoinView(self.bot, None, min_level, min_messages, role_id)
-        msg = await ctx.send(embed=embed, view=view)
+
+        resp = await send_v2_message(self.bot, ctx.channel.id, [card])
+        if not resp:
+            embed = discord.Embed(
+                title=f"🎁 GIVEAWAY: {hadiah}",
+                description=(
+                    f"**Hadiah:** 🏆 **{hadiah}**\n"
+                    f"**Pemenang:** `{jumlah_pemenang}` Orang\n"
+                    f"**Berakhir:** <t:{end_timestamp}:R>"
+                ),
+                color=0xF1C40F
+            )
+            embed.add_field(name="📜 Syarat", value="\n".join(syarat_list))
+            msg = await ctx.send(embed=embed, view=view)
+        else:
+            msg_id = int(resp["id"])
+            msg = await ctx.channel.fetch_message(msg_id)
+            await msg.edit(view=view)
+
         view.message_id = msg.id
+        self.giveaways[msg.id] = view.participants
 
         await asyncio.sleep(durasi_menit * 60)
 
         try:
             msg = await ctx.channel.fetch_message(msg.id)
-        except discord.NotFound:
+        except Exception:
             return
 
-        anim_texts = ["Mengocok dadu 🎲...", "Mencari pemenang yang beruntung 🔍...", "Menyiapkan hadiah ⏳..."]
+        anim_texts = ["Mengocok dadu keberuntungan 🎲...", "Menyeleksi peserta yang beruntung 🔍...", "Menyiapkan hadiah untuk pemenang ⏳..."]
         for teks in anim_texts:
-            anim_embed = discord.Embed(title="🎉 MENGUNGKAP PEMENANG... 🎉", description=teks, color=discord.Color.gold())
+            anim_embed = discord.Embed(title="🎉 MENGUNGKAP PEMENANG... 🎉", description=teks, color=0xF1C40F)
             await msg.edit(embed=anim_embed, view=None)
             await asyncio.sleep(1.5)
 
         if len(view.participants) == 0:
-            fail_embed = discord.Embed(title="🎉 GIVEAWAY SELESAI 🎉", description="Tidak ada yang mengikuti atau memenuhi syarat giveaway ini.", color=discord.Color.red())
-            return await msg.edit(embed=fail_embed, view=None)
+            fail_card = build_v2_card(
+                title="🎁 GIVEAWAY SELESAI",
+                description=f"Hadiah: **{hadiah}**\n\n❌ Tidak ada peserta yang berpartisipasi atau memenuhi syarat pada giveaway ini.",
+                color=0xED4245,
+                footer="Giveaway berakhir tanpa pemenang."
+            )
+            resp = await send_v2_message(self.bot, ctx.channel.id, [fail_card])
+            if not resp:
+                fail_embed = discord.Embed(title="🎁 GIVEAWAY SELESAI", description=f"Hadiah: **{hadiah}**\nTidak ada peserta yang berpartisipasi.", color=0xED4245)
+                await msg.edit(embed=fail_embed, view=None)
+            return
 
-        winners = random.sample(view.participants, min(jumlah_pemenang, len(view.participants)))
+        winner_count = min(jumlah_pemenang, len(view.participants))
+        winners = random.sample(view.participants, winner_count)
         winner_mentions = ", ".join([f"<@{w}>" for w in winners])
 
-        win_embed = discord.Embed(
-            title="🎉 GIVEAWAY SELESAI 🎉", 
-            description=f"**Hadiah:** {hadiah}\n**Pemenang:** {winner_mentions}", 
-            color=discord.Color.green()
+        win_card = build_v2_card(
+            title=f"🎉 PEMENANG GIVEAWAY: {hadiah} 🎉",
+            description=(
+                f"Selamat kepada pemenang yang beruntung!\n\n"
+                f"🏆 **Hadiah:** **{hadiah}**\n"
+                f"👑 **Pemenang:** {winner_mentions}\n\n"
+                f"Total peserta: `{len(view.participants)}` orang.\n"
+                f"Silakan hubungi staf/admin untuk mengklaim hadiah Anda!"
+            ),
+            color=0x57F287,
+            footer=f"Giveaway Selesai • {winner_count} Pemenang Terpilih"
         )
-        await msg.edit(embed=win_embed, view=None)
-        await ctx.send(f"Selamat kepada {winner_mentions}! Kalian memenangkan **{hadiah}**! Silakan hubungi admin untuk klaim hadiah.")
-        
-    @commands.hybrid_command(name="reroll", description="Pilih ulang pemenang giveaway")
+        resp = await send_v2_message(self.bot, ctx.channel.id, [win_card])
+        if not resp:
+            win_embed = discord.Embed(
+                title=f"🎉 PEMENANG GIVEAWAY: {hadiah} 🎉",
+                description=f"**Hadiah:** {hadiah}\n**Pemenang:** {winner_mentions}",
+                color=0x57F287
+            )
+            await msg.edit(embed=win_embed, view=None)
+        await ctx.send(f"🎊 Selamat kepada {winner_mentions}! Kalian memenangkan **{hadiah}**! 🎁")
+
+    @commands.hybrid_command(name="giveaway", aliases=["kocok", "gstart"], description="Mulai giveaway baru (ketik tanpa argumen untuk buka formulir)")
+    @commands.has_permissions(administrator=True)
+    async def start_giveaway(
+        self,
+        ctx: commands.Context,
+        hadiah: Optional[str] = None,
+        durasi_menit: Optional[int] = None,
+        jumlah_pemenang: Optional[int] = None,
+        min_level: int = 0,
+        min_messages: int = 0,
+        req_role: Optional[discord.Role] = None
+    ):
+        if hadiah is None or durasi_menit is None or jumlah_pemenang is None:
+            if ctx.interaction:
+                modal = GiveawayModal(self, ctx)
+                await ctx.interaction.response.send_modal(modal)
+                return
+            else:
+                view = discord.ui.View(timeout=120)
+                btn = discord.ui.Button(label="Buka Form Giveaway", style=discord.ButtonStyle.primary, emoji="🎁")
+                async def btn_cb(inter: discord.Interaction):
+                    if inter.user.id != ctx.author.id:
+                        return await inter.response.send_message("Bukan sesi Anda.", ephemeral=True)
+                    await inter.response.send_modal(GiveawayModal(self, ctx))
+                btn.callback = btn_cb
+                view.add_item(btn)
+                await ctx.send("Klik tombol di bawah ini untuk membuka formulir giveaway interaktif:", view=view)
+                return
+
+        await self._launch_giveaway(ctx, hadiah, durasi_menit, jumlah_pemenang, min_level, min_messages, req_role)
+
+    @commands.hybrid_command(name="reroll", aliases=["kocokulang", "greroll"], description="Pilih ulang pemenang giveaway")
     @commands.has_permissions(administrator=True)
     async def reroll_giveaway(self, ctx: commands.Context, message_id: str):
         try:
             msg_id_int = int(message_id)
         except ValueError:
-            return await ctx.send("ID Pesan tidak valid. Pastikan kamu memasukkan deretan angka ID pesan.")
+            return await ctx.send("❌ ID Pesan tidak valid. Pastikan kamu memasukkan deretan angka ID pesan.")
 
         participants = self.giveaways.get(msg_id_int)
-        
+
         if not participants:
-            return await ctx.send("Data giveaway tidak ditemukan. Pastikan bot belum direstart sejak giveaway dibuat.")
+            return await ctx.send("❌ Data giveaway tidak ditemukan. Pastikan bot belum direstart sejak giveaway dibuat.")
 
         if len(participants) == 0:
-            return await ctx.send("Tidak ada peserta yang bisa diundi ulang untuk giveaway ini.")
+            return await ctx.send("❌ Tidak ada peserta yang bisa diundi ulang untuk giveaway ini.")
 
         winner = random.choice(participants)
-        
+
         embed = discord.Embed(
             title="🎲 REROLL GIVEAWAY 🎲",
-            description=f"Pemenang baru telah terpilih!\nSelamat kepada <@{winner}>!",
+            description=f"Pemenang baru telah terpilih!\nSelamat kepada <@{winner}>! 🎉",
             color=discord.Color.blue()
         )
-        
+
         await ctx.send(content=f"<@{winner}>", embed=embed)
            
 

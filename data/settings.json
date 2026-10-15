@@ -274,9 +274,9 @@
         "role_panels": {}
     },
     "765138959625486357": {
-        "auto_role_id": null,
+        "auto_role_id": 1498673916208746506,
         "welcome_channel_id": 1255219778407366688,
-        "welcome_message": "Selamat datang di {guild_name}! \ud83d\udc4b\n\nHalo {user}, kami gembira sekali kamu sudah bergabung dengan komunitas kami. Agar kamu bisa langsung nyaman dan berinteraksi, yuk, baca beberapa hal penting ini:\n- **Aturan:** Baca dulu ya, biar kita semua bisa enjoy bareng: **[klik di sini](https://canary.discord.com/channels/765138959625486357/1255220296508768326)**.\n- **Butuh Bantuan?**: Cek **[FAQ](https://discord.com/channels/765138959625486357/1410342866760241162)** untuk jawaban cepat.\n\nSelamat menikmati waktu di server ini! Enjoy! \u270c\ufe0f",
+        "welcome_message": "Selamat datang di {guild_name}! \ud83d\udc4b\n\nHalo {user}, kami gembira sekali kamu sudah bergabung Bersama kami. Agar kamu bisa langsung nyaman dan berinteraksi, yuk, baca beberapa hal penting ini:\n- **Aturan:** Baca dulu ya, biar kita semua bisa enjoy bareng: **[klik di sini](https://canary.discord.com/channels/765138959625486357/1255220296508768326)**.\n- **Butuh Bantuan?**: Cek **[FAQ](https://discord.com/channels/765138959625486357/1410342866760241162)** untuk jawaban cepat.\n\nSelamat menikmati waktu di server ini! Enjoy! \u270c\ufe0f",
         "log_channel_id": null,
         "reaction_roles": {},
         "channel_rules": {
@@ -323,11 +323,11 @@
                 "auto_delete_seconds": 0
             },
             "965586009859452928": {
-                "disallow_bots": false,
+                "disallow_bots": true,
                 "disallow_media": false,
                 "disallow_prefix": false,
                 "disallow_url": false,
-                "auto_delete_seconds": 300
+                "auto_delete_seconds": 0
             },
             "1394076149000175656": {
                 "disallow_bots": false,
@@ -449,7 +449,7 @@
                 "auto_delete_seconds": 0
             },
             "1382486705113927811": {
-                "disallow_bots": false,
+                "disallow_bots": true,
                 "disallow_media": false,
                 "disallow_prefix": false,
                 "disallow_url": false,
@@ -657,6 +657,13 @@
                 "disallow_prefix": false,
                 "disallow_url": false,
                 "auto_delete_seconds": 0
+            },
+            "1555865396316344382": {
+                "disallow_bots": false,
+                "disallow_media": false,
+                "disallow_prefix": false,
+                "disallow_url": false,
+                "auto_delete_seconds": 0
             }
         },
         "welcome_embed_title": "Halo",
@@ -669,8 +676,8 @@
         "announcement_webhooks": {
             "851069782803742720": "https://discord.com/api/webhooks/1412652444776792174/pyW8DIvAxKQvHs3FBf3sSgcIhfg64ykwmTAAs_ui93CZs1sdNXyZGEm4FCHQA1PKL_Ak"
         },
-        "welcome_banner_url": "https://raw.githubusercontent.com/Kawansejalanproduction2019/my-projek/main/welcome1.gif",
-        "mod_panel_message_id": 1555311442587291803,
+        "welcome_banner_url": "",
+        "mod_panel_message_id": 1559681857119846473,
         "mod_panel_channel_id": 1413604641421398069,
         "spam_whitelist_roles": [
             765141076691386428,
@@ -1051,5 +1058,41 @@
         "role_panels": {},
         "announcement_webhooks": {}
     },
-    "global_trap_count": 32
+    "global_trap_count": 85,
+    "1431215187305959477": {
+        "auto_role_id": null,
+        "welcome_channel_id": null,
+        "welcome_message": "Selamat datang di **{guild_name}**, {user}! \ud83c\udf89",
+        "welcome_embed_title": "SELAMAT DATANG!",
+        "welcome_sender_name": "Admin Server",
+        "welcome_banner_url": null,
+        "log_channel_id": null,
+        "reaction_roles": {},
+        "channel_rules": {
+            "1431218836446773332": {
+                "disallow_bots": false,
+                "disallow_media": false,
+                "disallow_prefix": false,
+                "disallow_url": false,
+                "auto_delete_seconds": 0
+            }
+        },
+        "boost_channel_id": null,
+        "boost_message": "Terima kasih banyak, {user}, telah menjadi **Server Booster** kami di {guild_name}! Kami sangat menghargai dukunganmu! \u2764\ufe0f",
+        "boost_embed_title": "TERIMA KASIH SERVER BOOSTER!",
+        "boost_sender_name": "Tim Server",
+        "boost_image_url": null,
+        "mod_panel_message_id": null,
+        "mod_panel_channel_id": null,
+        "main_membership_role_id": null,
+        "membership_roles": {},
+        "membership_invite_message": "\ud83e\udd7a Anda belum menjadi anggota channel YouTube. Silakan berlangganan untuk mendapatkan role eksklusif! [LINK MEMBERSHIP]",
+        "membership_confirm_message": "\ud83c\udf89 Anda sudah menjadi anggota! Anda adalah anggota tier: **{tier_name}**.",
+        "verification_button_label": "Verifikasi Membership",
+        "spam_whitelist_roles": [],
+        "goodbye_message": "Selamat tinggal, **{user}**. Sampai jumpa lagi! \ud83d\udc4b",
+        "panel_role_stats": [],
+        "role_panels": {},
+        "announcement_webhooks": {}
+    }
 }

@@ -151,6 +151,242 @@ class DestructModal(discord.ui.Modal, title='Auto-Hapus (Self Destruct)'):
             self.config['destruct'] = None
         await interaction.response.edit_message(embed=self.view.build_embed())
 
+class UrlInputModal(discord.ui.Modal, title='Tautan Link URL'):
+    def __init__(self, config, parent_view, builder_message, label, style):
+        super().__init__()
+        self.config = config
+        self.parent_view = parent_view
+        self.builder_message = builder_message
+        self.btn_label = label
+        self.btn_style = style
+        self.url_input = discord.ui.TextInput(
+            label='Alamat Web (URL)',
+            placeholder='https://example.com',
+            max_length=500,
+            required=True
+        )
+        self.add_item(self.url_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        url = self.url_input.value.strip()
+        if not (url.startswith('http://') or url.startswith('https://')):
+            return await interaction.response.send_message("❌ URL harus dimulai dengan `http://` atau `https://`", ephemeral=True)
+        if 'buttons' not in self.config or not isinstance(self.config['buttons'], list):
+            self.config['buttons'] = []
+        self.config['buttons'].append({
+            "label": self.btn_label,
+            "style": self.btn_style,
+            "action": "url",
+            "value": url
+        })
+        try:
+            await self.builder_message.edit(embed=self.parent_view.build_embed())
+        except Exception:
+            pass
+        await interaction.response.send_message(f"✅ Tombol Link URL `{self.btn_label}` berhasil ditambahkan!", ephemeral=True)
+
+
+class ZeroJsonActionPickerView(discord.ui.View):
+    def __init__(self, config, parent_view, builder_message, label, style):
+        super().__init__(timeout=180)
+        self.config = config
+        self.parent_view = parent_view
+        self.builder_message = builder_message
+        self.btn_label = label
+        self.btn_style = style
+        self.ticket_category_id = None
+        self.ticket_support_role_id = None
+
+        self.action_select = discord.ui.Select(
+            placeholder="Pilih Aksi Tombol (100% No-JSON)...",
+            options=[
+                discord.SelectOption(label="Ambil Role Mandiri", value="role", emoji="🎭", description="Member klik untuk ambil / lepas role"),
+                discord.SelectOption(label="Buka Tiket Bantuan", value="ticket", emoji="🎫", description="Buat kanal tiket privat bersama tim staf"),
+                discord.SelectOption(label="Buka Link URL", value="url", emoji="🔗", description="Membuka link website luar"),
+                discord.SelectOption(label="Buka Akses Kanal", value="channel", emoji="📢", description="Membuka akses ke text/voice channel"),
+                discord.SelectOption(label="Terjemahkan AI", value="translate", emoji="🌐", description="Terjemahkan teks embed otomatis"),
+                discord.SelectOption(label="Mode Manual (Advanced/JSON)", value="manual", emoji="⚙️", description="Ketik ID target atau JSON manual")
+            ],
+            row=0
+        )
+        self.action_select.callback = self.on_action_selected
+        self.add_item(self.action_select)
+
+    async def on_action_selected(self, interaction: discord.Interaction):
+        selected = self.action_select.values[0]
+        if selected == "role":
+            self.clear_items()
+            role_select = discord.ui.RoleSelect(placeholder="Pilih Role yang ingin diberikan...", row=0)
+            async def role_cb(inter: discord.Interaction):
+                role_id = inter.data.get("values", [None])[0]
+                if role_id:
+                    if 'buttons' not in self.config or not isinstance(self.config['buttons'], list):
+                        self.config['buttons'] = []
+                    self.config['buttons'].append({
+                        "label": self.btn_label,
+                        "style": self.btn_style,
+                        "action": "role",
+                        "value": str(role_id)
+                    })
+                    try:
+                        await self.builder_message.edit(embed=self.parent_view.build_embed())
+                    except Exception:
+                        pass
+                    await inter.response.send_message(f"✅ Tombol Ambil Role `{self.btn_label}` (<@&{role_id}>) berhasil ditambahkan!", ephemeral=True)
+            role_select.callback = role_cb
+            self.add_item(role_select)
+            await interaction.response.edit_message(content="👉 **Pilih role** dari menu dropdown di bawah:", view=self)
+
+        elif selected == "ticket":
+            self.clear_items()
+            cat_select = discord.ui.ChannelSelect(
+                channel_types=[discord.ChannelType.category],
+                placeholder="1. Pilih Kategori Kanal Tiket (Opsional)...",
+                row=0
+            )
+            async def cat_cb(inter: discord.Interaction):
+                self.ticket_category_id = inter.data.get("values", [None])[0]
+                await inter.response.send_message("✅ Kategori dipilih! Sekarang pilih role staf di bawah.", ephemeral=True)
+            cat_select.callback = cat_cb
+            self.add_item(cat_select)
+
+            role_select = discord.ui.RoleSelect(
+                placeholder="2. Pilih Role Tim Staf Tiket (Opsional)...",
+                row=1
+            )
+            async def role_cb(inter: discord.Interaction):
+                self.ticket_support_role_id = inter.data.get("values", [None])[0]
+                await inter.response.send_message("✅ Role staf dipilih! Klik 'Simpan Tombol Tiket' di bawah.", ephemeral=True)
+            role_select.callback = role_cb
+            self.add_item(role_select)
+
+            save_btn = discord.ui.Button(label="Simpan Tombol Tiket", style=discord.ButtonStyle.success, emoji="💾", row=2)
+            async def save_cb(inter: discord.Interaction):
+                cfg_val = {
+                    "category_id": str(self.ticket_category_id) if self.ticket_category_id else "",
+                    "allowed_roles": [str(self.ticket_support_role_id)] if self.ticket_support_role_id else [],
+                    "blocked_roles": []
+                }
+                if 'buttons' not in self.config or not isinstance(self.config['buttons'], list):
+                    self.config['buttons'] = []
+                self.config['buttons'].append({
+                    "label": self.btn_label,
+                    "style": self.btn_style,
+                    "action": "ticket",
+                    "value": cfg_val
+                })
+                try:
+                    await self.builder_message.edit(embed=self.parent_view.build_embed())
+                except Exception:
+                    pass
+                await inter.response.send_message(f"✅ Tombol Buka Tiket `{self.btn_label}` berhasil ditambahkan tanpa JSON!", ephemeral=True)
+            save_btn.callback = save_cb
+            self.add_item(save_btn)
+
+            await interaction.response.edit_message(content="👉 **Konfigurasi Tombol Tiket:**\nPilih kategori & role staf, lalu klik **Simpan Tombol Tiket**:", view=self)
+
+        elif selected == "url":
+            modal = UrlInputModal(self.config, self.parent_view, self.builder_message, self.btn_label, self.btn_style)
+            await interaction.response.send_modal(modal)
+
+        elif selected == "channel":
+            self.clear_items()
+            ch_select = discord.ui.ChannelSelect(
+                channel_types=[discord.ChannelType.text, discord.ChannelType.voice],
+                placeholder="Pilih kanal target...",
+                row=0
+            )
+            async def ch_cb(inter: discord.Interaction):
+                ch_id = inter.data.get("values", [None])[0]
+                if ch_id:
+                    if 'buttons' not in self.config or not isinstance(self.config['buttons'], list):
+                        self.config['buttons'] = []
+                    self.config['buttons'].append({
+                        "label": self.btn_label,
+                        "style": self.btn_style,
+                        "action": "channel",
+                        "value": str(ch_id)
+                    })
+                    try:
+                        await self.builder_message.edit(embed=self.parent_view.build_embed())
+                    except Exception:
+                        pass
+                    await inter.response.send_message(f"✅ Tombol Buka Kanal `{self.btn_label}` (<#{ch_id}>) berhasil ditambahkan!", ephemeral=True)
+            ch_select.callback = ch_cb
+            self.add_item(ch_select)
+            await interaction.response.edit_message(content="👉 **Pilih kanal target** yang akan dibuka saat tombol diklik:", view=self)
+
+        elif selected == "translate":
+            self.clear_items()
+            lang_select = discord.ui.Select(
+                placeholder="Pilih Bahasa Tujuan...",
+                options=[
+                    discord.SelectOption(label="Indonesia", value="Indonesia", emoji="🇮🇩"),
+                    discord.SelectOption(label="English", value="English", emoji="🇬🇧"),
+                    discord.SelectOption(label="Japanese", value="Japanese", emoji="🇯🇵"),
+                    discord.SelectOption(label="Arabic", value="Arabic", emoji="🇸🇦"),
+                    discord.SelectOption(label="Spanish", value="Spanish", emoji="🇪🇸")
+                ],
+                row=0
+            )
+            async def lang_cb(inter: discord.Interaction):
+                lang = inter.data.get("values", ["English"])[0]
+                if 'buttons' not in self.config or not isinstance(self.config['buttons'], list):
+                    self.config['buttons'] = []
+                self.config['buttons'].append({
+                    "label": self.btn_label,
+                    "style": self.btn_style,
+                    "action": "translate",
+                    "value": lang
+                })
+                try:
+                    await self.builder_message.edit(embed=self.parent_view.build_embed())
+                except Exception:
+                    pass
+                await inter.response.send_message(f"✅ Tombol Terjemahan AI (`{lang}`) berhasil ditambahkan!", ephemeral=True)
+            lang_select.callback = lang_cb
+            self.add_item(lang_select)
+            await interaction.response.edit_message(content="👉 **Pilih bahasa target terjemahan:**", view=self)
+
+        elif selected == "manual":
+            await interaction.response.send_modal(ButtonBuilderModal(self.config, self.parent_view))
+
+
+class ButtonVisualInitModal(discord.ui.Modal, title='Tambah Tombol Aksi'):
+    def __init__(self, config, parent_view, builder_message):
+        super().__init__()
+        self.config = config
+        self.parent_view = parent_view
+        self.builder_message = builder_message
+        self.label_input = discord.ui.TextInput(
+            label='Label / Teks Tombol',
+            placeholder='Misal: Ambil Role Notif / Buka Tiket',
+            max_length=80,
+            required=True
+        )
+        self.style_input = discord.ui.TextInput(
+            label='Warna Tombol (blurple/green/red/grey)',
+            placeholder='blurple, green, red, atau grey',
+            default='blurple',
+            max_length=20,
+            required=False
+        )
+        self.add_item(self.label_input)
+        self.add_item(self.style_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        style = self.style_input.value.strip().lower()
+        if style not in ['blurple', 'green', 'red', 'grey']:
+            style = 'blurple'
+        label = self.label_input.value.strip()
+        picker_view = ZeroJsonActionPickerView(self.config, self.parent_view, self.builder_message, label, style)
+        await interaction.response.send_message(
+            content=f"👉 **Tombol:** `{label}` (Warna: `{style}`)\nSekarang pilih aksi tombol dari menu di bawah (100% No-JSON):",
+            view=picker_view,
+            ephemeral=True
+        )
+
+
 class ButtonBuilderModal(discord.ui.Modal, title='Wizard Tambah Tombol'):
     def __init__(self, config, view):
         super().__init__()
@@ -350,7 +586,7 @@ class WebhookConfigView(discord.ui.View):
 
     @discord.ui.button(label="Tambah Tombol (+)", style=discord.ButtonStyle.green, row=1)
     async def add_btn_wizard(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(ButtonBuilderModal(self.config, self))
+        await interaction.response.send_modal(ButtonVisualInitModal(self.config, self, interaction.message))
 
     @discord.ui.button(label="JSON Tombol", style=discord.ButtonStyle.secondary, row=1)
     async def buttons_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -944,7 +1180,8 @@ class BroadcastNexus(commands.Cog, name="Broadcast & Webhooks"):
                 if ch: targets.append(ch)
         if not targets: targets = [ctx.channel]
         view = WebhookConfigView(self.bot, targets)
-        await ctx.send(embed=view.build_embed(), view=view)
+        msg = await ctx.send(embed=view.build_embed(), view=view)
+        view.message = msg
 
     @commands.command(aliases=['eb'])
     @commands.has_permissions(manage_messages=True)
@@ -960,7 +1197,8 @@ class BroadcastNexus(commands.Cog, name="Broadcast & Webhooks"):
                 e = msg.embeds[0]
                 cfg.update({'title': e.title, 'desc': e.description, 'color': f"#{e.color.value:06x}" if e.color else None, 'media_url': e.image.url if e.image else None})
             view = WebhookConfigView(self.bot, [ch], cfg, msg_id)
-            await ctx.send(embed=view.build_embed(), view=view)
+            m = await ctx.send(embed=view.build_embed(), view=view)
+            view.message = m
         except:
             await ctx.send("Pesan gagal diambil.", ephemeral=True, delete_after=5)
 
@@ -1192,8 +1430,8 @@ class BroadcastNexus(commands.Cog, name="Broadcast & Webhooks"):
         elif action == 'ticket':
             cfg = value if isinstance(value, dict) else {'category_id': value, 'allowed_roles': [], 'blocked_roles': []}
             cat_id = int(cfg.get('category_id')) if cfg.get('category_id') else None
-            allowed = [int(r) for r in cfg.get('allowed_roles', [])]
-            blocked = [int(r) for r in cfg.get('blocked_roles', [])]
+            allowed = [int(r) for r in cfg.get('allowed_roles', []) if r]
+            blocked = [int(r) for r in cfg.get('blocked_roles', []) if r]
             u_roles = [r.id for r in interaction.user.roles]
 
             if any(r in blocked for r in u_roles): return await interaction.response.send_message("Akses ditolak.", ephemeral=True)
@@ -1201,26 +1439,78 @@ class BroadcastNexus(commands.Cog, name="Broadcast & Webhooks"):
             if interaction.user.id in self.active_tickets: return await interaction.response.send_message("Tiket aktif sudah ada.", ephemeral=True)
 
             await interaction.response.defer(ephemeral=True)
+
+            guild_settings = {}
+            settings_path = "data/settings.json"
+            if os.path.exists(settings_path):
+                try:
+                    with open(settings_path, 'r', encoding='utf-8') as f:
+                        settings_data = json.load(f)
+                        guild_settings = settings_data.get(str(interaction.guild.id), {})
+                except Exception:
+                    pass
+
+            if not cat_id and guild_settings.get("ticket_category_id"):
+                cat_id = guild_settings.get("ticket_category_id")
+
             category = interaction.guild.get_channel(cat_id) if cat_id else None
-            support_role_id = int(os.getenv("TICKET_SUPPORT_ROLE_ID", 1264935423184998422))
-            specific_role = interaction.guild.get_role(support_role_id)
+
+            support_role_id = None
+            if allowed:
+                support_role_id = allowed[0]
+            elif guild_settings.get("ticket_support_role_id"):
+                support_role_id = guild_settings.get("ticket_support_role_id")
+            else:
+                support_role_id = int(os.getenv("TICKET_SUPPORT_ROLE_ID", 1264935423184998422))
+
+            specific_role = interaction.guild.get_role(support_role_id) if support_role_id else None
             if not specific_role:
                 specific_role = next((r for r in interaction.guild.roles if r.permissions.manage_channels or r.permissions.administrator), None)
 
             ow = {
                 interaction.guild.default_role: discord.PermissionOverwrite(view_channel=False),
-                interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True)
+                interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True, attach_files=True),
+                interaction.guild.me: discord.PermissionOverwrite(view_channel=True, send_messages=True, manage_channels=True, manage_messages=True)
             }
-            if specific_role: ow[specific_role] = discord.PermissionOverwrite(view_channel=True, send_messages=True)
+            if specific_role: ow[specific_role] = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
 
-            tc = await interaction.guild.create_text_channel(f"ticket-{interaction.user.name.lower()}", overwrites=ow, category=category)
+            tc = await interaction.guild.create_text_channel(
+                f"ticket-{interaction.user.name.lower()}",
+                overwrites=ow,
+                category=category,
+                topic=f"Tiket Bantuan untuk {interaction.user.name} (ID: {interaction.user.id})"
+            )
             cid = str(uuid.uuid4())
             self.button_actions[cid] = {'action': 'close_ticket', 'value': str(interaction.user.id)}
             view = discord.ui.View(timeout=None)
-            view.add_item(discord.ui.Button(label="Tutup Tiket", style=discord.ButtonStyle.red, custom_id=cid))
-            m_str = specific_role.mention if specific_role else ""
-            await tc.send(f"Tiket dari {interaction.user.mention} {m_str}", view=view)
-            await interaction.followup.send(f"Tiket: {tc.mention}", ephemeral=True)
+            view.add_item(discord.ui.Button(label="Tutup Tiket", style=discord.ButtonStyle.red, custom_id=cid, emoji="🔒"))
+            
+            from cogs.v2_layout import build_v2_card, send_v2_message
+            card = build_v2_card(
+                title=f"🎫 Tiket Bantuan • {interaction.user.display_name}",
+                description=(
+                    f"Halo {interaction.user.mention}, selamat datang di kanal dukungan pribadi Anda!\n"
+                    "Silakan jelaskan kendala atau pertanyaan Anda dengan jelas.\n"
+                    "Tim staf kami akan segera merespons Anda secepatnya."
+                ),
+                fields=[
+                    {"name": "👤 Pembuat Tiket", "value": f"{interaction.user.mention} (`{interaction.user.id}`)"},
+                    {"name": "🛡️ Tim Staf", "value": specific_role.mention if specific_role else "`Staf / Admin`"}
+                ],
+                color=0x2ECC71,
+                footer="Klik tombol Tutup Tiket di bawah jika urusan Anda telah selesai."
+            )
+            staff_ping = specific_role.mention if specific_role else ""
+            resp = await send_v2_message(self.bot, tc.id, [card])
+            if not resp:
+                await tc.send(f"Tiket dari {interaction.user.mention} {staff_ping}", view=view)
+            else:
+                real_msg = await tc.fetch_message(int(resp["id"]))
+                await real_msg.edit(view=view)
+                if staff_ping:
+                    await tc.send(f"{interaction.user.mention} {staff_ping}", delete_after=5)
+
+            await interaction.followup.send(f"✅ Tiket dibuka: {tc.mention}", ephemeral=True)
             self.active_tickets[interaction.user.id] = tc.id
             self.bot.loop.create_task(self.delete_ticket_after_delay(tc, interaction.user.id))
 
@@ -1254,17 +1544,23 @@ class BroadcastNexus(commands.Cog, name="Broadcast & Webhooks"):
             except Exception as e: await interaction.followup.send(f"Error AI: {e}", ephemeral=True)
 
     async def delete_ticket_after_delay(self, channel, user_id):
-        await asyncio.sleep(3600)
+        await asyncio.sleep(3300)
         if user_id in self.active_tickets and self.active_tickets[user_id] == channel.id:
-            replied = False
-            async for msg in channel.history(limit=50):
-                if msg.author.guild_permissions.manage_channels and msg.author.id != self.bot.user.id:
-                    replied = True
-                    break
-            if not replied:
-                try: await channel.delete()
-                except: pass
-                if user_id in self.active_tickets: del self.active_tickets[user_id]
+            try:
+                await channel.send("⚠️ **Peringatan:** Kanal tiket ini tidak memiliki aktivitas staf selama 55 menit dan akan dihapus otomatis dalam **5 menit**.")
+            except Exception:
+                pass
+            await asyncio.sleep(300)
+            if user_id in self.active_tickets and self.active_tickets[user_id] == channel.id:
+                replied = False
+                async for msg in channel.history(limit=50):
+                    if msg.author.guild_permissions.manage_channels and msg.author.id != self.bot.user.id:
+                        replied = True
+                        break
+                if not replied:
+                    try: await channel.delete()
+                    except: pass
+                    if user_id in self.active_tickets: del self.active_tickets[user_id]
 
 async def setup(bot):
     await bot.add_cog(BroadcastNexus(bot))
