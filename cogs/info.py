@@ -239,9 +239,9 @@ HELP_CATEGORIES = {
         "desc": "Sistem penegakan disiplin dan pertahanan otomatis server:",
         "color": 0xE74C3C,
         "fields": [
-            {"name": "⚙️ /setup (alias !settings, !config)", "value": "Master Server Control Center: Auto Role, Log, Booster, Tiket, & Panel Role."},
+            {"name": "⚙️ /setup (alias !settings, !setupserver)", "value": "Master Server Control Center: Auto Role, Log, Booster, Tiket, & Panel Role."},
             {"name": "🎭 /panelrole (alias !ambilrole, !roles)", "value": "Wizard pembuatan panel ambil role mandiri (Dropdown Menu / Tombol)."},
-            {"name": "🎫 /ticket (alias !tiket, !setupticket)", "value": "Setup kategori & pasang panel tiket bantuan interaktif V2."},
+            {"name": "🎫 /ticket (alias !tiket, !setupticket)", "value": "Setup kategori & pasang panel tiket bantuan interaktif terpadu."},
             {"name": "🛡️ /modpanel", "value": "Dasbor moderasi real-time: Voice Pulse, status keamanan, timeout aktif, & quick actions."},
             {"name": "🔨 /ban <member> [alasan]", "value": "Blokir member permanen dari server dengan proteksi hierarki role."},
             {"name": "🔓 /unban <user_id> [alasan]", "value": "Buka kembali blokir pengguna berdasarkan ID akun Discord."},

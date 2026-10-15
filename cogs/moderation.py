@@ -20,6 +20,9 @@ try:
 except ImportError:
     generate_official_member_card = None
 
+from cogs.v2_layout import build_v2_card, send_v2_message, send_v2_interaction
+
+
 WIB = timezone(timedelta(hours=7))
 
 def load_data(file_path):
@@ -1016,9 +1019,9 @@ class TicketSetupView(discord.ui.View):
         ch_val = interaction.data.get("values", [None])[0]
         if ch_val:
             self.target_channel_id = int(ch_val)
-            await interaction.response.send_message(f"✅ Kanal target dipilih! Klik tombol 'Pasang Panel Tiket V2' di bawah untuk memposting.", ephemeral=True)
+            await interaction.response.send_message(f"✅ Kanal target dipilih! Klik tombol 'Pasang Panel Tiket' di bawah untuk memposting.", ephemeral=True)
 
-    @discord.ui.button(label="Pasang Panel Tiket V2", style=discord.ButtonStyle.success, emoji="🚀", row=3)
+    @discord.ui.button(label="Pasang Panel Tiket", style=discord.ButtonStyle.success, emoji="🚀", row=3)
     async def deploy_ticket_panel(self, interaction: discord.Interaction, button: discord.ui.Button):
         settings = self.cog.get_guild_settings(self.guild.id)
         target_ch = self.guild.get_channel(self.target_channel_id) if self.target_channel_id else interaction.channel
@@ -1026,7 +1029,6 @@ class TicketSetupView(discord.ui.View):
             return await interaction.response.send_message("❌ Kanal target tidak valid atau bot tidak memiliki izin mengirim pesan.", ephemeral=True)
 
         await interaction.response.defer(ephemeral=True)
-        from cogs.v2_layout import build_v2_card, send_v2_message
         ticket_view = GlobalTicketButtonView(self.cog)
         card = build_v2_card(
             title="🎫 Pusat Bantuan & Tiket Server",
@@ -1041,8 +1043,9 @@ class TicketSetupView(discord.ui.View):
             color=0x2ECC71,
             footer="Klik tombol Buka Tiket di bawah untuk memulai."
         )
-        resp = await send_v2_message(self.cog.bot, target_ch.id, [card])
-        if not resp:
+        components = [card, *ticket_view.to_components()]
+        resp = await send_v2_message(self.cog.bot, target_ch.id, components)
+        if not resp or "id" not in resp:
             embed = discord.Embed(
                 title="🎫 Pusat Bantuan & Tiket Server",
                 description="Klik tombol di bawah ini untuk membuka tiket dukungan pribadi bersama tim staf kami.",
@@ -1050,10 +1053,10 @@ class TicketSetupView(discord.ui.View):
             )
             await target_ch.send(embed=embed, view=ticket_view)
         else:
-            real_msg = await target_ch.fetch_message(int(resp["id"]))
-            await real_msg.edit(view=ticket_view)
+            self.cog.bot.add_view(ticket_view, message_id=int(resp["id"]))
 
-        await interaction.followup.send(f"✅ Panel tiket V2 berhasil dipasang di {target_ch.mention}!", ephemeral=True)
+        await interaction.followup.send(f"✅ Panel tiket berhasil dipasang di {target_ch.mention}!", ephemeral=True)
+
 
 
 class RolePanelRolePickerView(discord.ui.View):
@@ -1105,8 +1108,9 @@ class RolePanelRolePickerView(discord.ui.View):
             footer="Klik untuk mengambil atau melepas role secara mandiri."
         )
         
-        resp = await send_v2_message(self.cog.bot, self.target_channel.id, [card])
-        if not resp:
+        components = [card, *panel_view.to_components()]
+        resp = await send_v2_message(self.cog.bot, self.target_channel.id, components)
+        if not resp or "id" not in resp:
             embed = discord.Embed(
                 title=self.panel_title,
                 description=f"{self.panel_desc}\n\n**Daftar Role Tersedia:**\n{role_list_text}",
@@ -1117,14 +1121,14 @@ class RolePanelRolePickerView(discord.ui.View):
             msg_id = msg.id
         else:
             msg_id = int(resp["id"])
-            real_msg = await self.target_channel.fetch_message(msg_id)
             panel_view = DynamicRoleView(self.mode, roles_data, msg_id, self.placeholder)
-            await real_msg.edit(view=panel_view)
+            self.cog.bot.add_view(panel_view, message_id=msg_id)
 
         guild_settings = self.cog.get_guild_settings(guild.id)
         if "role_panels" not in guild_settings:
             guild_settings["role_panels"] = {}
         guild_settings["role_panels"][str(msg_id)] = {
+
             "mode": self.mode,
             "roles_data": roles_data,
             "placeholder": self.placeholder,
@@ -1246,39 +1250,47 @@ class BaseSettingsSubView(discord.ui.View):
     async def auto_role_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         settings = self.cog.get_guild_settings(self.guild.id)
         current_r = self.guild.get_role(settings.get("auto_role_id")) if settings.get("auto_role_id") else None
-        await interaction.response.send_message(
-            embed=self.cog._create_embed(
-                title="👤 Atur Auto Role Member Baru",
-                description=f"Role saat ini: {current_r.mention if current_r else '`Belum diatur`'}\n\nPilih role dari menu di bawah atau klik tombol untuk mematikan:",
-                color=self.cog.color_info
-            ),
-            view=AutoRoleSetupView(self.cog, self.guild, self.author),
-            ephemeral=True
+        card = build_v2_card(
+            title="👤 Atur Auto Role Member Baru",
+            description="Berikan role otomatis secara instan kepada setiap anggota baru yang bergabung ke server.",
+            fields=[
+                {"name": "🎭 Role Saat Ini", "value": current_r.mention if current_r else "`Belum diatur`"}
+            ],
+            color=0x5865F2,
+            footer="Pilih role dari menu di bawah atau klik tombol untuk mematikan."
         )
+        await send_v2_interaction(self.cog.bot, interaction, card, AutoRoleSetupView(self.cog, self.guild, self.author), ephemeral=True)
 
     @discord.ui.button(label="Welcome Channel", style=discord.ButtonStyle.primary, emoji="💬")
     async def welcome_ch_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message(
-            embed=self.cog._create_embed(
-                title="💬 Atur Kanal Selamat Datang",
-                description="Pilih kanal selamat datang dari dropdown di bawah:",
-                color=self.cog.color_info
-            ),
-            view=WelcomeChannelSetupView(self.cog, self.guild, self.author),
-            ephemeral=True
+        settings = self.cog.get_guild_settings(self.guild.id)
+        current_ch = self.guild.get_channel(settings.get("welcome_channel_id")) if settings.get("welcome_channel_id") else None
+        card = build_v2_card(
+            title="💬 Atur Kanal Selamat Datang",
+            description="Kirim pesan sambutan otomatis saat ada member baru bergabung ke server.",
+            fields=[
+                {"name": "📢 Kanal Saat Ini", "value": current_ch.mention if current_ch else "`Belum diatur`"}
+            ],
+            color=self.cog.color_info,
+            footer="Pilih kanal selamat datang dari dropdown di bawah."
         )
+        await send_v2_interaction(self.cog.bot, interaction, card, WelcomeChannelSetupView(self.cog, self.guild, self.author), ephemeral=True)
 
     @discord.ui.button(label="Log Channel", style=discord.ButtonStyle.primary, emoji="📝")
     async def log_ch_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message(
-            embed=self.cog._create_embed(
-                title="📝 Atur Kanal Audit Log",
-                description="Pilih kanal log bot dari dropdown di bawah:",
-                color=self.cog.color_info
-            ),
-            view=LogChannelSetupView(self.cog, self.guild, self.author),
-            ephemeral=True
+        settings = self.cog.get_guild_settings(self.guild.id)
+        current_ch = self.guild.get_channel(settings.get("log_channel_id")) if settings.get("log_channel_id") else None
+        card = build_v2_card(
+            title="📝 Atur Kanal Audit Log",
+            description="Catat seluruh aktivitas moderasi, filter kata, dan event server secara otomatis.",
+            fields=[
+                {"name": "📋 Kanal Saat Ini", "value": current_ch.mention if current_ch else "`Belum diatur`"}
+            ],
+            color=self.cog.color_info,
+            footer="Pilih kanal audit log dari dropdown di bawah."
         )
+        await send_v2_interaction(self.cog.bot, interaction, card, LogChannelSetupView(self.cog, self.guild, self.author), ephemeral=True)
+
 
 
 class AddFilterModal(discord.ui.Modal, title="Tambah Filter"):
@@ -1390,61 +1402,84 @@ class MasterSetupDashboardView(discord.ui.View):
     async def on_menu_select(self, interaction: discord.Interaction):
         val = interaction.data.get("values", [""])[0]
         if val == "base":
-            await interaction.response.send_message(
-                embed=self.cog._create_embed(
-                    title="⚙️ Pengaturan Dasar Server",
-                    description="Pilih komponen dasar yang ingin Anda atur di bawah ini:",
-                    color=self.cog.color_info
-                ),
-                view=BaseSettingsSubView(self.cog, self.guild, self.author),
-                ephemeral=True
+            settings = self.cog.get_guild_settings(self.guild.id)
+            auto_r = self.guild.get_role(settings.get("auto_role_id")) if settings.get("auto_role_id") else None
+            welcome_c = self.guild.get_channel(settings.get("welcome_channel_id")) if settings.get("welcome_channel_id") else None
+            log_c = self.guild.get_channel(settings.get("log_channel_id")) if settings.get("log_channel_id") else None
+            card = build_v2_card(
+                title="⚙️ Pengaturan Dasar Server",
+                description="Kelola fitur otomatisasi dasar server Anda:",
+                fields=[
+                    {"name": "👤 Auto Role", "value": auto_r.mention if auto_r else "`Belum diatur`"},
+                    {"name": "💬 Welcome Channel", "value": welcome_c.mention if welcome_c else "`Belum diatur`"},
+                    {"name": "📝 Log Channel", "value": log_c.mention if log_c else "`Belum diatur`"}
+                ],
+                color=self.cog.color_info,
+                footer="Pilih tombol di bawah untuk mengatur komponen dasar."
             )
+            await send_v2_interaction(self.cog.bot, interaction, card, BaseSettingsSubView(self.cog, self.guild, self.author), ephemeral=True)
         elif val == "booster":
             settings = self.cog.get_guild_settings(self.guild.id)
             ch = self.guild.get_channel(settings.get("boost_channel_id")) if settings.get("boost_channel_id") else None
             status_txt = "🟢 Aktif" if settings.get("boost_enabled", True) else "🔴 Nonaktif"
-            await interaction.response.send_message(
-                embed=self.cog._create_embed(
-                    title="🚀 Pengaturan Pesan Sambutan Booster",
-                    description=f"Status: **{status_txt}**\nKanal Saat Ini: {ch.mention if ch else '`Belum diatur`'}\n\nGunakan kontrol di bawah untuk mengatur kanal, mengubah teks, atau simulasi uji coba:",
-                    color=0xF47FFF
-                ),
-                view=BoosterSetupView(self.cog, self.guild, self.author),
-                ephemeral=True
+            default_preview = "🎉 Terima kasih telah mem-boost server kami!"
+            preview_msg = settings.get("boost_message") or default_preview
+            if len(preview_msg) > 120:
+                preview_msg = preview_msg[:117] + "..."
+            card = build_v2_card(
+                title="🚀 Pengaturan Pesan Sambutan Booster",
+                description="Fitur pengumuman otomatis saat ada member yang melakukan Server Boost.",
+                fields=[
+                    {"name": "📊 Status", "value": status_txt},
+                    {"name": "📢 Kanal Saat Ini", "value": ch.mention if ch else "`Belum diatur`"},
+                    {"name": "💬 Cuplikan Pesan", "value": f"> {preview_msg}"}
+                ],
+                color=0xF47FFF,
+                footer="Atur kanal, edit teks pesan, atau jalankan simulasi uji coba di bawah."
             )
+            await send_v2_interaction(self.cog.bot, interaction, card, BoosterSetupView(self.cog, self.guild, self.author), ephemeral=True)
         elif val == "ticket":
             settings = self.cog.get_guild_settings(self.guild.id)
             cat = self.guild.get_channel(settings.get("ticket_category_id")) if settings.get("ticket_category_id") else None
             role = self.guild.get_role(settings.get("ticket_support_role_id")) if settings.get("ticket_support_role_id") else None
-            await interaction.response.send_message(
-                embed=self.cog._create_embed(
-                    title="🎫 Pengaturan Sistem Tiket Bantuan",
-                    description=f"Kategori Saat Ini: {cat.name if cat else '`Belum diatur`'}\nRole Staf: {role.mention if role else '`Belum diatur`'}\n\nPilih kategori, role staf, lalu pasang panel tiket ke channel yang Anda inginkan:",
-                    color=0x2ECC71
-                ),
-                view=TicketSetupView(self.cog, self.guild, self.author),
-                ephemeral=True
+            card = build_v2_card(
+                title="🎫 Pengaturan Sistem Tiket Bantuan",
+                description="Sistem tiket bantuan privat untuk mempermudah anggota menghubungi tim staf.",
+                fields=[
+                    {"name": "📁 Kategori Kanal", "value": cat.name if cat else "`Belum diatur`"},
+                    {"name": "🛡️ Role Tim Staf", "value": role.mention if role else "`Belum diatur`"}
+                ],
+                color=0x2ECC71,
+                footer="Pilih kategori, role staf, lalu pasang panel tiket ke channel target."
             )
+            await send_v2_interaction(self.cog.bot, interaction, card, TicketSetupView(self.cog, self.guild, self.author), ephemeral=True)
         elif val == "roles":
-            await interaction.response.send_message(
-                embed=self.cog._create_embed(
-                    title="🎭 Wizard Panel Ambil Role (Self-Role)",
-                    description="Pilih kanal target dan mode tampilan (Dropdown Menu yang rapi atau Tombol Interaktif) untuk membuat panel ambil role mandiri:",
-                    color=0x5865F2
-                ),
-                view=RolePanelWizardMenuView(self.cog, self.guild, self.author),
-                ephemeral=True
+            card = build_v2_card(
+                title="🎭 Wizard Panel Ambil Role Mandiri",
+                description="Buat panel interaktif agar anggota dapat mengambil atau melepas role secara mandiri.",
+                fields=[
+                    {"name": "1️⃣ Pilih Kanal", "value": "`Tentukan kanal tempat panel dipasang`"},
+                    {"name": "2️⃣ Pilih Tampilan", "value": "`Dropdown Menu (rapi) atau Tombol (interaktif)`"}
+                ],
+                color=0x5865F2,
+                footer="Gunakan kontrol di bawah untuk memulai wizard."
             )
+            await send_v2_interaction(self.cog.bot, interaction, card, RolePanelWizardMenuView(self.cog, self.guild, self.author), ephemeral=True)
         elif val == "security":
-            await interaction.response.send_message(
-                embed=self.cog._create_embed(
-                    title="🛡️ Keamanan & Filter Server",
-                    description="Kelola kata-kata kasar yang dilarang dan pola tautan:",
-                    color=self.cog.color_info
-                ),
-                view=FilterManageView(self.cog, self.author),
-                ephemeral=True
+            filters = self.cog.get_guild_filters(self.guild.id)
+            bad_words = filters.get('bad_words', [])
+            link_patterns = filters.get('link_patterns', [])
+            card = build_v2_card(
+                title="🛡️ Keamanan & Filter Server",
+                description="Perlindungan otomatis dari spam, kata-kata kasar, dan tautan berbahaya.",
+                fields=[
+                    {"name": "🚫 Sensor Kata Kasar", "value": f"`{len(bad_words)} kata dilarang`"},
+                    {"name": "🔗 Proteksi Tautan", "value": f"`{len(link_patterns)} pola terdeteksi`"}
+                ],
+                color=self.cog.color_info,
+                footer="Gunakan tombol di bawah untuk menambah atau menghapus filter."
             )
+            await send_v2_interaction(self.cog.bot, interaction, card, FilterManageView(self.cog, self.author), ephemeral=True)
         elif val == "summary":
             settings = self.cog.get_guild_settings(self.guild.id)
             filters = self.cog.get_guild_filters(self.guild.id)
@@ -1456,30 +1491,50 @@ class MasterSetupDashboardView(discord.ui.View):
             cat = self.guild.get_channel(settings.get("ticket_category_id")) if settings.get("ticket_category_id") else "Tidak diatur"
             role = self.guild.get_role(settings.get("ticket_support_role_id")) if settings.get("ticket_support_role_id") else "Tidak diatur"
             active_panels = len(settings.get("role_panels", {}))
+            bad_words = filters.get('bad_words', [])
+            link_patterns = filters.get('link_patterns', [])
 
-            embed = self.cog._create_embed(title=f"📋 Ringkasan Konfigurasi • {self.guild.name}", color=self.cog.color_info)
-            embed.add_field(
-                name="Pengaturan Dasar",
-                value=(
-                    f"• **Auto Role**: {auto_role.mention if isinstance(auto_role, discord.Role) else auto_role}\n"
-                    f"• **Welcome Channel**: {welcome_ch.mention if isinstance(welcome_ch, discord.TextChannel) else welcome_ch}\n"
-                    f"• **Log Channel**: {log_ch.mention if isinstance(log_ch, discord.TextChannel) else log_ch}"
-                ),
-                inline=False
+            auto_role_str = auto_role.mention if isinstance(auto_role, discord.Role) else f"`{auto_role}`"
+            welcome_str = welcome_ch.mention if isinstance(welcome_ch, discord.TextChannel) else f"`{welcome_ch}`"
+            log_str = log_ch.mention if isinstance(log_ch, discord.TextChannel) else f"`{log_ch}`"
+            boost_str = boost_ch.mention if isinstance(boost_ch, discord.TextChannel) else f"`{boost_ch}`"
+            cat_str = cat.name if isinstance(cat, discord.CategoryChannel) else f"`{cat}`"
+            role_str = role.mention if isinstance(role, discord.Role) else f"`{role}`"
+
+            card = build_v2_card(
+                title=f"📋 Ringkasan Konfigurasi • {self.guild.name}",
+                description="Seluruh konfigurasi otomatisasi server yang sedang aktif saat ini:",
+                fields=[
+                    {
+                        "name": "⚙️ Pengaturan Dasar",
+                        "value": (
+                            f"• **Auto Role**: {auto_role_str}\n"
+                            f"• **Welcome Channel**: {welcome_str}\n"
+                            f"• **Log Channel**: {log_str}"
+                        )
+                    },
+                    {
+                        "name": "🚀 Booster & Tiket",
+                        "value": (
+                            f"• **Booster Channel**: {boost_str} ({boost_status})\n"
+                            f"• **Kategori Tiket**: {cat_str}\n"
+                            f"• **Role Staf Tiket**: {role_str}\n"
+                            f"• **Panel Role Aktif**: `{active_panels}` panel"
+                        )
+                    },
+                    {
+                        "name": "🛡️ Filter Keamanan",
+                        "value": (
+                            f"• Total Filter Kata: `{len(bad_words)}` kata\n"
+                            f"• Total Filter Link: `{len(link_patterns)}` pola"
+                        )
+                    }
+                ],
+                color=self.cog.color_info,
+                footer="Ringkasan Konfigurasi Server • RTM-Bot"
             )
-            embed.add_field(
-                name="Booster & Tiket",
-                value=(
-                    f"• **Booster Channel**: {boost_ch.mention if isinstance(boost_ch, discord.TextChannel) else boost_ch} ({boost_status})\n"
-                    f"• **Kategori Tiket**: {cat.name if isinstance(cat, discord.CategoryChannel) else cat}\n"
-                    f"• **Role Staf Tiket**: {role.mention if isinstance(role, discord.Role) else role}\n"
-                    f"• **Panel Role Aktif**: `{active_panels}` panel"
-                ),
-                inline=False
-            )
-            embed.add_field(name="Filter Kata Kasar", value=f"Total: {len(filters.get('bad_words', []))} kata", inline=True)
-            embed.add_field(name="Filter Link", value=f"Total: {len(filters.get('link_patterns', []))} pola", inline=True)
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await send_v2_interaction(self.cog.bot, interaction, card, ephemeral=True)
+
 
 
 class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
@@ -4162,8 +4217,9 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         )
         
         staff_ping = support_role.mention if support_role else ""
-        resp = await send_v2_message(self.bot, tc.id, [card])
-        if not resp:
+        components = [card, *close_view.to_components()]
+        resp = await send_v2_message(self.bot, tc.id, components)
+        if not resp or "id" not in resp:
             embed = discord.Embed(
                 title=f"🎫 Tiket Bantuan • {user.display_name}",
                 description=f"Halo {user.mention}! Jelaskan kebutuhan Anda di sini. Tim kami akan segera membantu.",
@@ -4171,8 +4227,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             )
             await tc.send(content=f"{user.mention} {staff_ping}", embed=embed, view=close_view)
         else:
-            real_msg = await tc.fetch_message(int(resp["id"]))
-            await real_msg.edit(view=close_view)
+            self.bot.add_view(close_view, message_id=int(resp["id"]))
             if staff_ping:
                 await tc.send(f"{user.mention} {staff_ping}", delete_after=5)
                 
@@ -4203,7 +4258,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
     @commands.hybrid_command(name="setup", aliases=["settings", "setupserver"], description="Buka Master Server Control Center untuk konfigurasi terpadu")
     @commands.has_permissions(manage_guild=True)
     async def setup(self, ctx: commands.Context):
-        from cogs.v2_layout import build_v2_card, send_v2_message
         view_instance = MasterSetupDashboardView(self, ctx.guild, ctx.author)
         card = build_v2_card(
             title=f"⚙️ Master Server Control Center • {ctx.guild.name}",
@@ -4215,14 +4269,15 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             fields=[
                 {"name": "👤 Auto Role & Welcome", "value": "`Tersedia via Dropdown`"},
                 {"name": "🚀 Pesan Booster", "value": "`Dual-Detection & Preview`"},
-                {"name": "🎫 Sistem Tiket", "value": "`V2 Layout Terpadu`"},
+                {"name": "🎫 Sistem Tiket", "value": "`Kanal Bantuan Terpadu`"},
                 {"name": "🎭 Panel Ambil Role", "value": "`Dropdown Menu & Tombol`"}
             ],
             color=self.color_info,
             footer="RTM-Bot Master Control • Pilih modul di bawah ini"
         )
-        resp = await send_v2_message(self.bot, ctx.channel.id, [card])
-        if not resp:
+        components = [card, *view_instance.to_components()]
+        resp = await send_v2_message(self.bot, ctx.channel.id, components)
+        if not resp or "id" not in resp:
             embed = self._create_embed(
                 title=f"⚙️ Master Server Control Center • {ctx.guild.name}",
                 description="Pilih modul yang ingin Anda konfigurasi dari menu dropdown di bawah ini:",
@@ -4232,8 +4287,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             )
             await ctx.send(embed=embed, view=view_instance)
         else:
-            real_msg = await ctx.channel.fetch_message(int(resp["id"]))
-            await real_msg.edit(view=view_instance)
+            self.bot.add_view(view_instance, message_id=int(resp["id"]))
 
     @commands.hybrid_command(name="panelrole", aliases=["ambilrole", "roles"], description="Buka wizard visual pembuatan panel ambil role mandiri (Dropdown / Tombol)")
     @commands.has_permissions(manage_guild=True)
@@ -4261,11 +4315,12 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                 "Atur sistem tiket bantuan server dengan 3 langkah mudah:\n\n"
                 "1. **Pilih Kategori Kanal** tempat kanal tiket privat akan dibuat.\n"
                 "2. **Pilih Role Staf / Support** yang dapat melihat dan menjawab tiket.\n"
-                "3. **Pilih Kanal Target** dan klik **Pasang Panel Tiket V2**."
+                "3. **Pilih Kanal Target** dan klik **Pasang Panel Tiket**."
             ),
             color=0x2ECC71
         )
         await ctx.send(embed=embed, view=view, ephemeral=True)
+
 
     @commands.hybrid_command(name="announce", aliases=["pengumuman", "broadcast"], description="Kirim pengumuman langsung via modal (Mendukung Webhook, Polling & Voice Channel)")
     @app_commands.describe(channel_identifier="Tag channel, ID, atau nama channel (Teks / Voice)")

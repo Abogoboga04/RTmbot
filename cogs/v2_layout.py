@@ -141,25 +141,46 @@ async def send_v2_webhook(bot, webhook, components: list, content: str = "", use
     route = discord.http.Route('POST', f'/webhooks/{webhook.id}/{webhook.token}')
     return await bot.http.request(route, json=payload)
 
-async def edit_v2_message(bot, channel_id: int, message_id: int, components: list, files: list = None):
+async def send_v2_interaction(bot, interaction: discord.Interaction, card: dict, view: discord.ui.View = None, ephemeral: bool = True):
     """
-    Mengedit pesan V2 menggunakan HTTP request mentah.
+    Mengirim respon interaksi dengan komponen Container Card dan View interaktif.
     """
-    route = discord.http.Route('PATCH', f'/channels/{channel_id}/messages/{message_id}')
-    
+    components = [card]
+    if view:
+        components.extend(view.to_components())
     payload = {
-        "components": components
+        "type": 4,
+        "data": {
+            "flags": 32768 | (64 if ephemeral else 0),
+            "components": components
+        }
     }
-    
+    route = discord.http.Route(
+        'POST',
+        '/interactions/{interaction_id}/{interaction_token}/callback',
+        interaction_id=interaction.id,
+        interaction_token=interaction.token
+    )
     try:
-        if files:
-            return await bot.http.request(route, payload=payload, files=files)
-        else:
-            return await bot.http.request(route, json=payload)
+        resp = await bot.http.request(route, json=payload)
+        interaction._response_type = discord.InteractionResponseType.channel_message
+        if view and not view.is_finished():
+            bot.add_view(view)
+        return resp
     except Exception as e:
-        print(f"Failed to edit V2 layout: {e}")
-        return None
+        print(f"Failed to send layout interaction: {e}")
+        if not interaction.response.is_done():
+            desc = ""
+            for c in card.get("components", []):
+                if c.get("type") == 10:
+                    desc += c.get("content", "")
+            embed = discord.Embed(description=desc, color=card.get("accent_color", 0x3498db))
+            if view:
+                await interaction.response.send_message(embed=embed, view=view, ephemeral=ephemeral)
+            else:
+                await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
 async def setup(bot):
     pass
+
 
