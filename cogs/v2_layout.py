@@ -198,7 +198,27 @@ async def send_v2_interaction(bot, interaction: discord.Interaction, card: dict,
             else:
                 await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
+async def edit_v2_message(bot, channel_id: int, message_id: int, components: list, files: list = None):
+    """
+    Mengedit pesan layout menggunakan HTTP request mentah.
+    """
+    route = discord.http.Route('PATCH', f'/channels/{channel_id}/messages/{message_id}')
+    
+    payload = {
+        "components": components
+    }
+    
+    try:
+        if files:
+            return await bot.http.request(route, payload=payload, files=files)
+        else:
+            return await bot.http.request(route, json=payload)
+    except Exception as e:
+        print(f"Failed to edit layout: {e}")
+        return None
+
 async def setup(bot):
     pass
+
 
 
