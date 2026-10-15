@@ -141,6 +141,23 @@ async def send_v2_webhook(bot, webhook, components: list, content: str = "", use
     route = discord.http.Route('POST', f'/webhooks/{webhook.id}/{webhook.token}')
     return await bot.http.request(route, json=payload)
 
+def register_view(bot, view: discord.ui.View, message_id: int = None):
+    """
+    Mendaftarkan View ke listener bot secara aman (mendukung persistent view dan view ber-timeout).
+    """
+    if not view or view.is_finished():
+        return
+    try:
+        if view.is_persistent():
+            bot.add_view(view, message_id=message_id)
+        else:
+            bot._connection.store_view(view, message_id)
+    except Exception:
+        try:
+            bot._connection.store_view(view, message_id)
+        except Exception:
+            pass
+
 async def send_v2_interaction(bot, interaction: discord.Interaction, card: dict, view: discord.ui.View = None, ephemeral: bool = True):
     """
     Mengirim respon interaksi dengan komponen Container Card dan View interaktif.
@@ -165,10 +182,11 @@ async def send_v2_interaction(bot, interaction: discord.Interaction, card: dict,
         resp = await bot.http.request(route, json=payload)
         interaction._response_type = discord.InteractionResponseType.channel_message
         if view and not view.is_finished():
-            bot.add_view(view)
+            register_view(bot, view)
         return resp
     except Exception as e:
         print(f"Failed to send layout interaction: {e}")
+
         if not interaction.response.is_done():
             desc = ""
             for c in card.get("components", []):

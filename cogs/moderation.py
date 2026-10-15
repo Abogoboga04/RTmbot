@@ -20,7 +20,8 @@ try:
 except ImportError:
     generate_official_member_card = None
 
-from cogs.v2_layout import build_v2_card, send_v2_message, send_v2_interaction
+from cogs.v2_layout import build_v2_card, send_v2_message, send_v2_interaction, register_view
+
 
 
 WIB = timezone(timedelta(hours=7))
@@ -1105,9 +1106,10 @@ class TicketSetupView(discord.ui.View):
             embed.set_footer(text="Klik tombol di bawah untuk membuka tiket bantuan.")
             await target_ch.send(embed=embed, view=ticket_view)
         else:
-            self.cog.bot.add_view(ticket_view, message_id=int(resp["id"]))
+            register_view(self.cog.bot, ticket_view, message_id=int(resp["id"]))
 
         await interaction.followup.send(f"✅ Panel tiket berhasil dipasang di {target_ch.mention}!", ephemeral=True)
+
 
 
 
@@ -1175,7 +1177,8 @@ class RolePanelRolePickerView(discord.ui.View):
         else:
             msg_id = int(resp["id"])
             panel_view = DynamicRoleView(self.mode, roles_data, msg_id, self.placeholder)
-            self.cog.bot.add_view(panel_view, message_id=msg_id)
+            register_view(self.cog.bot, panel_view, message_id=msg_id)
+
 
         guild_settings = self.cog.get_guild_settings(guild.id)
         if "role_panels" not in guild_settings:
@@ -1433,6 +1436,7 @@ class MasterSetupDashboardView(discord.ui.View):
         self.author = author
 
         menu = discord.ui.Select(
+            custom_id="rtm_master_setup_dropdown",
             placeholder="Pilih Modul Pengaturan Server...",
             options=[
                 discord.SelectOption(label="Pengaturan Dasar", value="base", emoji="⚙️", description="Auto Role, Welcome & Log Channel"),
@@ -1443,6 +1447,7 @@ class MasterSetupDashboardView(discord.ui.View):
                 discord.SelectOption(label="Ringkasan Konfigurasi", value="summary", emoji="📋", description="Lihat seluruh konfigurasi server aktif")
             ]
         )
+
         menu.callback = self.on_menu_select
         self.add_item(menu)
 
@@ -4289,7 +4294,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             await tc.send(content=f"{user.mention} {staff_ping}", embed=embed, view=close_view)
 
         else:
-            self.bot.add_view(close_view, message_id=int(resp["id"]))
+            register_view(self.bot, close_view, message_id=int(resp["id"]))
             if staff_ping:
                 await tc.send(f"{user.mention} {staff_ping}", delete_after=5)
                 
@@ -4349,7 +4354,8 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             )
             await ctx.send(embed=embed, view=view_instance)
         else:
-            self.bot.add_view(view_instance, message_id=int(resp["id"]))
+            register_view(self.bot, view_instance, message_id=int(resp["id"]))
+
 
     @commands.hybrid_command(name="panelrole", aliases=["ambilrole", "roles"], description="Buka wizard visual pembuatan panel ambil role mandiri (Dropdown / Tombol)")
     @commands.has_permissions(manage_guild=True)
