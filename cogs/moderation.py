@@ -961,6 +961,45 @@ class BoosterSetupView(discord.ui.View):
         await interaction.response.send_message(f"Status pesan booster kini: **{status_str}**", ephemeral=True)
 
 
+class TicketMessageModal(discord.ui.Modal, title="Atur Pesan Panel Tiket"):
+    def __init__(self, cog_instance, guild_id, current_settings):
+        super().__init__()
+        self.cog = cog_instance
+        self.guild_id = guild_id
+
+        default_title = "🎫 Pusat Bantuan & Tiket Server"
+        default_desc = (
+            "Butuh bantuan, verifikasi staf, atau ingin melaporkan kendala?\n"
+            "Klik tombol Buka Tiket di bawah untuk membuka kanal percakapan pribadi langsung bersama tim staf kami."
+        )
+        self.title_input = discord.ui.TextInput(
+            label="Judul Panel Tiket",
+            default=current_settings.get("ticket_panel_title") or default_title,
+            max_length=100,
+            required=True
+        )
+        self.desc_input = discord.ui.TextInput(
+            label="Deskripsi / Isi Pesan Panel",
+            default=current_settings.get("ticket_panel_desc") or default_desc,
+            style=discord.TextStyle.paragraph,
+            max_length=2000,
+            required=True
+        )
+        self.add_item(self.title_input)
+        self.add_item(self.desc_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        guild_settings = self.cog.get_guild_settings(self.guild_id)
+        guild_settings["ticket_panel_title"] = self.title_input.value.strip()
+        guild_settings["ticket_panel_desc"] = self.desc_input.value.strip()
+        self.cog.save_settings()
+        await interaction.followup.send(
+            embed=self.cog._create_embed(description="✅ Pesan panel tiket berhasil disimpan!", color=self.cog.color_success),
+            ephemeral=True
+        )
+
+
 class TicketSetupView(discord.ui.View):
     def __init__(self, cog, guild, author):
         super().__init__(timeout=180)
@@ -1021,6 +1060,11 @@ class TicketSetupView(discord.ui.View):
             self.target_channel_id = int(ch_val)
             await interaction.response.send_message(f"✅ Kanal target dipilih! Klik tombol 'Pasang Panel Tiket' di bawah untuk memposting.", ephemeral=True)
 
+    @discord.ui.button(label="Edit Teks Pesan", style=discord.ButtonStyle.primary, emoji="✏️", row=3)
+    async def edit_panel_text(self, interaction: discord.Interaction, button: discord.ui.Button):
+        settings = self.cog.get_guild_settings(self.guild.id)
+        await interaction.response.send_modal(TicketMessageModal(self.cog, self.guild.id, settings))
+
     @discord.ui.button(label="Pasang Panel Tiket", style=discord.ButtonStyle.success, emoji="🚀", row=3)
     async def deploy_ticket_panel(self, interaction: discord.Interaction, button: discord.ui.Button):
         settings = self.cog.get_guild_settings(self.guild.id)
@@ -1030,32 +1074,41 @@ class TicketSetupView(discord.ui.View):
 
         await interaction.response.defer(ephemeral=True)
         ticket_view = GlobalTicketButtonView(self.cog)
+        
+        panel_title = settings.get("ticket_panel_title") or "🎫 Pusat Bantuan & Tiket Server"
+        panel_desc = settings.get("ticket_panel_desc") or (
+            "Butuh bantuan, verifikasi staf, atau ingin melaporkan kendala?\n"
+            "Klik tombol **Buka Tiket Bantuan** di bawah ini untuk memulai percakapan pribadi langsung dengan tim staf kami."
+        )
+        support_role = self.guild.get_role(settings.get("ticket_support_role_id")) if settings.get("ticket_support_role_id") else None
+
         card = build_v2_card(
-            title="🎫 Pusat Bantuan & Tiket Server",
-            description=(
-                "> Butuh bantuan atau verifikasi staf? Klik tombol di bawah ini untuk membuka tiket dukungan pribadi.\n"
-                "> Sebuah kanal privat akan dibuat khusus untuk Anda dan tim staf kami."
-            ),
+            title=panel_title,
+            description=f"> {panel_desc.replace(chr(10), chr(10) + '> ')}",
             fields=[
                 {"name": "⏰ Waktu Respon", "value": "`Cepat & Tanggap`"},
-                {"name": "🔒 Keamanan", "value": "`Kanal Privat Terenkripsi`"}
+                {"name": "🔒 Keamanan & Privasi", "value": "`Kanal Khusus Pribadi (Terenkripsi)`"},
+                {"name": "🛡️ Tim Staf Siaga", "value": support_role.mention if support_role else "`Admin & Staf`"}
             ],
             color=0x2ECC71,
-            footer="Klik tombol Buka Tiket di bawah untuk memulai."
+            footer="Klik tombol Buka Tiket Bantuan di bawah untuk membuat kanal tiket Anda."
         )
         components = [card, *ticket_view.to_components()]
         resp = await send_v2_message(self.cog.bot, target_ch.id, components)
         if not resp or "id" not in resp:
             embed = discord.Embed(
-                title="🎫 Pusat Bantuan & Tiket Server",
-                description="Klik tombol di bawah ini untuk membuka tiket dukungan pribadi bersama tim staf kami.",
+                title=panel_title,
+                description=panel_desc,
                 color=0x2ECC71
             )
+            embed.add_field(name="🛡️ Tim Staf Siaga", value=support_role.mention if support_role else "Admin & Staf", inline=False)
+            embed.set_footer(text="Klik tombol di bawah untuk membuka tiket bantuan.")
             await target_ch.send(embed=embed, view=ticket_view)
         else:
             self.cog.bot.add_view(ticket_view, message_id=int(resp["id"]))
 
         await interaction.followup.send(f"✅ Panel tiket berhasil dipasang di {target_ch.mention}!", ephemeral=True)
+
 
 
 
@@ -4204,16 +4257,17 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         card = build_v2_card(
             title=f"🎫 Tiket Bantuan • {user.display_name}",
             description=(
-                f"Halo {user.mention}, selamat datang di kanal dukungan pribadi Anda!\n"
-                "Silakan jelaskan kendala, pertanyaan, atau permohonan Anda dengan jelas.\n"
-                "Tim staf kami akan segera merespons Anda secepatnya."
+                f"Halo {user.mention}, selamat datang di kanal dukungan pribadi Anda!\n\n"
+                "Silakan sampaikan pertanyaan, kendala, atau kebutuhan Anda dengan jelas dan lengkap.\n"
+                "Tim staf kami telah diberi tahu dan akan segera merespons Anda secepatnya."
             ),
             fields=[
                 {"name": "👤 Pembuat Tiket", "value": f"{user.mention} (`{user.id}`)"},
-                {"name": "🛡️ Tim Staf", "value": support_role.mention if support_role else "`Staf / Admin`"}
+                {"name": "🛡️ Tim Staf Siaga", "value": support_role.mention if support_role else "`Staf / Admin`"},
+                {"name": "💡 Panduan Penggunaan Tiket", "value": "• Sampaikan kronologi atau pertanyaan secara detail.\n• Lampirkan tangkapan layar/bukti pendukung jika ada.\n• Jangan melakukan spam tag staf.\n• Klik tombol **Tutup Tiket** di bawah jika urusan telah selesai."}
             ],
             color=0x2ECC71,
-            footer="Klik tombol Tutup Tiket di bawah jika urusan Anda telah selesai."
+            footer="RTM-Bot Ticket System • Klik tombol Tutup Tiket di bawah jika urusan telah selesai"
         )
         
         staff_ping = support_role.mention if support_role else ""
@@ -4222,10 +4276,18 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         if not resp or "id" not in resp:
             embed = discord.Embed(
                 title=f"🎫 Tiket Bantuan • {user.display_name}",
-                description=f"Halo {user.mention}! Jelaskan kebutuhan Anda di sini. Tim kami akan segera membantu.",
+                description=(
+                    f"Halo {user.mention}! Silakan jelaskan kebutuhan Anda di sini.\n"
+                    "Tim staf kami akan segera membantu Anda."
+                ),
                 color=0x2ECC71
             )
+            embed.add_field(name="👤 Pembuat Tiket", value=f"{user.mention} (`{user.id}`)", inline=True)
+            embed.add_field(name="🛡️ Tim Staf", value=support_role.mention if support_role else "`Staf / Admin`", inline=True)
+            embed.add_field(name="💡 Panduan", value="Sampaikan keluhan dengan jelas, lalu klik Tutup Tiket jika selesai.", inline=False)
+            embed.set_footer(text="Klik tombol Tutup Tiket di bawah jika urusan telah selesai.")
             await tc.send(content=f"{user.mention} {staff_ping}", embed=embed, view=close_view)
+
         else:
             self.bot.add_view(close_view, message_id=int(resp["id"]))
             if staff_ping:
