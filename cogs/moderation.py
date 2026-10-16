@@ -2798,37 +2798,79 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             welcome_sender_name = guild_settings.get("welcome_sender_name", "Admin Server")
             welcome_banner_url = guild_settings.get("welcome_banner_url")
 
-            embed = discord.Embed(
-                description=welcome_message_content.format(user=member.mention, guild_name=member.guild.name), 
-                color=self.color_welcome,
-                timestamp=discord.utils.utcnow()
-            )
-            
-            embed.set_author(name=welcome_sender_name, icon_url=member.guild.icon.url if member.guild.icon else None)
-            embed.title = welcome_embed_title 
-            embed.set_thumbnail(url=member.display_avatar.url)
-            embed.set_footer(text=f"Kamu adalah anggota ke-{member.guild.member_count}!")
+            try:
+                formatted_desc = welcome_message_content.format(user=member.mention, guild_name=member.guild.name)
+            except Exception:
+                formatted_desc = welcome_message_content
 
+            content_text = f"Halo, {member.mention}! Selamat datang!"
+            footer_text = f"Kamu adalah anggota ke-{member.guild.member_count}! • {member.guild.name}"
+
+            # Siapkan kartu resmi sambutan (berisi foto profil member & sertifikat) jika tidak ada custom banner URL
+            card_bytes = None
             file = None
-            if welcome_banner_url:
-                embed.set_image(url=welcome_banner_url)
-            else:
+            if not welcome_banner_url:
                 try:
                     card_buffer = await self._create_welcome_card(member, welcome_embed_title)
-                    file = discord.File(fp=card_buffer, filename="welcome.png")
-                    embed.set_image(url="attachment://welcome.png")
+                    if card_buffer:
+                        card_bytes = card_buffer.getvalue()
+                        file = discord.File(fp=io.BytesIO(card_bytes), filename="welcome.png")
                 except Exception:
                     pass
-            
+
+            card = build_v2_card(
+                title=welcome_embed_title,
+                description=formatted_desc,
+                color=None,
+                footer=footer_text,
+                attachment_filename="welcome.png" if file else None,
+                media_url=welcome_banner_url if (welcome_banner_url and not file) else None
+            )
+
+            v2_sent = False
             try:
-                if file:
-                    await channel.send(f"Halo, {member.mention}! Selamat datang!", embed=embed, file=file)
-                else:
-                    await channel.send(f"Halo, {member.mention}! Selamat datang!", embed=embed)
-            except discord.Forbidden:
+                files_payload = [file] if file else None
+                res = await send_v2_message(
+                    bot=self.bot,
+                    channel_id=channel.id,
+                    components=[card],
+                    files=files_payload,
+                    content=content_text
+                )
+                if res and isinstance(res, dict) and "id" in res:
+                    v2_sent = True
+            except Exception:
                 pass
-            except Exception as e:
-                pass
+
+            # Fallback ke format embed standar jika pengiriman komponen mengalami kendala
+            if not v2_sent:
+                try:
+                    legacy_embed = discord.Embed(
+                        description=formatted_desc,
+                        color=self.color_welcome,
+                        timestamp=discord.utils.utcnow()
+                    )
+                    if welcome_sender_name:
+                        legacy_embed.set_author(name=welcome_sender_name, icon_url=member.guild.icon.url if member.guild.icon else None)
+                    legacy_embed.title = welcome_embed_title
+                    legacy_embed.set_thumbnail(url=member.display_avatar.url)
+                    legacy_embed.set_footer(text=f"Kamu adalah anggota ke-{member.guild.member_count}!")
+
+                    fallback_file = None
+                    if welcome_banner_url:
+                        legacy_embed.set_image(url=welcome_banner_url)
+                    elif card_bytes:
+                        fallback_file = discord.File(fp=io.BytesIO(card_bytes), filename="welcome.png")
+                        legacy_embed.set_image(url="attachment://welcome.png")
+
+                    if fallback_file:
+                        await channel.send(content_text, embed=legacy_embed, file=fallback_file)
+                    else:
+                        await channel.send(content_text, embed=legacy_embed)
+                except discord.Forbidden:
+                    pass
+                except Exception:
+                    pass
     
         if (auto_role_id := guild_settings.get("auto_role_id")) and (role := member.guild.get_role(auto_role_id)):
             try:

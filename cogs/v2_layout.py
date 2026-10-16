@@ -19,7 +19,9 @@ def build_v2_card(title: str = None, description: str = None, fields: list = Non
             value = field.get("value", "")
             content_text += f"**{name}**\n{value}\n\n"
             
-    if footer:
+    has_media = bool(media_url or attachment_filename is not None)
+    
+    if not has_media and footer:
         content_text += f"*{footer}*"
         
     if content_text.strip():
@@ -30,7 +32,7 @@ def build_v2_card(title: str = None, description: str = None, fields: list = Non
         })
     
     # Add media if provided
-    if media_url or attachment_filename is not None:
+    if has_media:
         media_obj = {}
         if attachment_filename is not None:
             media_obj["url"] = f"attachment://{attachment_filename}"
@@ -46,6 +48,13 @@ def build_v2_card(title: str = None, description: str = None, fields: list = Non
                 "spoiler": False
             }]
         })
+        
+        if footer:
+            card_components.append({
+                "type": 10,
+                "id": 160,
+                "content": f"*{footer}*"
+            })
     
     # Add buttons
     if buttons:
@@ -97,7 +106,7 @@ async def send_v2_message(bot, channel_id: int, components: list, files: list = 
     """
     Mengirim pesan V2 menggunakan HTTP request mentah.
     """
-    route = discord.http.Route('POST', f'/channels/{channel_id}/messages')
+    route = discord.http.Route('POST', '/channels/{channel_id}/messages', channel_id=channel_id)
     
     payload = {
         "components": components,
@@ -109,7 +118,13 @@ async def send_v2_message(bot, channel_id: int, components: list, files: list = 
     
     try:
         if files:
-            payload["attachments"] = [{"id": i, "filename": f.filename} for i, f in enumerate(files)]
+            payload["attachments"] = [f.to_dict(i) if hasattr(f, 'to_dict') else {"id": i, "filename": f.filename} for i, f in enumerate(files)]
+            for file in files:
+                if hasattr(file, 'fp') and hasattr(file.fp, 'seek'):
+                    try:
+                        file.fp.seek(0)
+                    except Exception:
+                        pass
             multipart = [{'name': 'payload_json', 'value': discord.utils._to_json(payload)}]
             for i, file in enumerate(files):
                 multipart.append({
