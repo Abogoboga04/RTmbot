@@ -73,6 +73,8 @@ def build_v2_card(title: str = None, description: str = None, fields: list = Non
                     b["url"] = btn["url"]
                 if "emoji" in btn:
                     b["emoji"] = {"name": btn["emoji"]} if isinstance(btn["emoji"], str) else btn["emoji"]
+                if "disabled" in btn:
+                    b["disabled"] = bool(btn["disabled"])
                 button_components.append(b)
                 
             card_components.append({
@@ -161,10 +163,50 @@ def register_view(bot, view: discord.ui.View, message_id: int = None):
 async def send_v2_interaction(bot, interaction: discord.Interaction, card: dict, view: discord.ui.View = None, ephemeral: bool = True):
     """
     Mengirim respon interaksi dengan komponen Container Card dan View interaktif.
+    Aman dari double-acknowledgement (HTTP 40060) dan mendukung fallback.
     """
     components = [card]
     if view:
         components.extend(view.to_components())
+        
+    # Jika interaksi telah diakui sebelumnya (misal sudah di-defer), kirim melalui webhook followup
+    if interaction.response.is_done():
+        payload = {
+            "flags": 32768 | (64 if ephemeral else 0),
+            "components": components
+        }
+        app_id = getattr(bot, "application_id", None) or (bot.user.id if bot.user else None)
+        if app_id:
+            route = discord.http.Route(
+                'POST',
+                '/webhooks/{application_id}/{interaction_token}',
+                application_id=app_id,
+                interaction_token=interaction.token
+            )
+            try:
+                resp = await bot.http.request(route, json=payload)
+                if view and not view.is_finished():
+                    register_view(bot, view, message_id=int(resp["id"]) if resp and "id" in resp else None)
+                return resp
+            except Exception as e:
+                print(f"Failed to send layout followup: {e}")
+
+        # Fallback followup biasa
+        desc = ""
+        for c in card.get("components", []):
+            if c.get("type") == 10:
+                desc += c.get("content", "")
+        embed = discord.Embed(description=desc, color=card.get("accent_color", 0x3498db))
+        try:
+            if view:
+                return await interaction.followup.send(embed=embed, view=view, ephemeral=ephemeral)
+            else:
+                return await interaction.followup.send(embed=embed, ephemeral=ephemeral)
+        except Exception as e:
+            print(f"Fallback followup.send failed: {e}")
+            return None
+
+    # Respon interaksi baru (Initial Callback)
     payload = {
         "type": 4,
         "data": {
@@ -178,31 +220,53 @@ async def send_v2_interaction(bot, interaction: discord.Interaction, card: dict,
         interaction_id=interaction.id,
         interaction_token=interaction.token
     )
+    
+    request_success = False
+    resp = None
     try:
         resp = await bot.http.request(route, json=payload)
-        interaction._response_type = discord.InteractionResponseType.channel_message
-        if view and not view.is_finished():
-            register_view(bot, view)
-        return resp
+        request_success = True
     except Exception as e:
-        print(f"Failed to send layout interaction: {e}")
+        print(f"Failed to send layout interaction via HTTP: {e}")
 
-        if not interaction.response.is_done():
-            desc = ""
-            for c in card.get("components", []):
-                if c.get("type") == 10:
-                    desc += c.get("content", "")
-            embed = discord.Embed(description=desc, color=card.get("accent_color", 0x3498db))
+    if request_success:
+        try:
+            interaction.response._response_type = discord.InteractionResponseType.channel_message
+        except Exception:
+            pass
+        if view and not view.is_finished():
+            try:
+                register_view(bot, view)
+            except Exception:
+                pass
+        return resp
+
+    # Fallback hanya jika HTTP callback belum diterima dan response belum selesai
+    if not interaction.response.is_done():
+        desc = ""
+        for c in card.get("components", []):
+            if c.get("type") == 10:
+                desc += c.get("content", "")
+        embed = discord.Embed(description=desc, color=card.get("accent_color", 0x3498db))
+        try:
             if view:
-                await interaction.response.send_message(embed=embed, view=view, ephemeral=ephemeral)
+                return await interaction.response.send_message(embed=embed, view=view, ephemeral=ephemeral)
             else:
-                await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
+                return await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
+        except Exception as e:
+            print(f"Fallback send_message failed: {e}")
+            return None
 
 async def edit_v2_message(bot, channel_id: int, message_id: int, components: list, files: list = None):
     """
-    Mengedit pesan layout menggunakan HTTP request mentah.
+    Mengedit pesan layout menggunakan HTTP request mentah dengan parameter route yang benar.
     """
-    route = discord.http.Route('PATCH', f'/channels/{channel_id}/messages/{message_id}')
+    route = discord.http.Route(
+        'PATCH',
+        '/channels/{channel_id}/messages/{message_id}',
+        channel_id=channel_id,
+        message_id=message_id
+    )
     
     payload = {
         "components": components

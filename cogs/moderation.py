@@ -1874,16 +1874,17 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                     edited = False
                     if trap_msg_id:
                         try:
-                            edited = await edit_v2_message(self.bot, int(ch_id), trap_msg_id, [card])
+                            resp = await edit_v2_message(self.bot, int(ch_id), trap_msg_id, [card])
+                            if resp and isinstance(resp, dict) and "id" in resp:
+                                edited = True
                         except Exception:
                             pass
-                    if not edited and current_channel_id and str(ch_id) == str(current_channel_id):
+                    if not edited:
                         try:
                             ch_obj = self.bot.get_channel(int(ch_id))
-                            if ch_obj:
-                                await ch_obj.purge(limit=10, check=lambda m: m.author == self.bot.user)
+                            if ch_obj and ch_obj.permissions_for(ch_obj.guild.me).send_messages:
                                 msg_data = await send_v2_message(self.bot, int(ch_id), [card])
-                                if msg_data and "id" in msg_data:
+                                if msg_data and isinstance(msg_data, dict) and "id" in msg_data:
                                     g_settings[f"trap_msg_{ch_id}"] = int(msg_data["id"])
                                     self.save_settings()
                         except Exception:
@@ -4326,21 +4327,40 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
     @commands.has_permissions(manage_guild=True)
     async def setup(self, ctx: commands.Context):
         view_instance = MasterSetupDashboardView(self, ctx.guild, ctx.author)
+        settings = self.get_guild_settings(ctx.guild.id)
+        auto_r = ctx.guild.get_role(settings.get("auto_role_id")) if settings.get("auto_role_id") else None
+        welcome_c = ctx.guild.get_channel(settings.get("welcome_channel_id")) if settings.get("welcome_channel_id") else None
+        boost_c = ctx.guild.get_channel(settings.get("boost_channel_id")) if settings.get("boost_channel_id") else None
+        ticket_cat = ctx.guild.get_channel(settings.get("ticket_category_id")) if settings.get("ticket_category_id") else None
+        ticket_role = ctx.guild.get_role(settings.get("ticket_support_role_id")) if settings.get("ticket_support_role_id") else None
+
+        role_txt = auto_r.name if auto_r else "Belum diatur"
+        welcome_txt = f"#{welcome_c.name}" if welcome_c else "Belum diatur"
+        boost_status = "Aktif" if settings.get("boost_enabled", True) else "Nonaktif"
+        boost_txt = f"#{boost_c.name} ({boost_status})" if boost_c else "Belum diatur"
+
+        ticket_parts = []
+        if ticket_cat:
+            ticket_parts.append(f"Kategori: {ticket_cat.name}")
+        if ticket_role:
+            ticket_parts.append(f"Staf: @{ticket_role.name}")
+        ticket_txt = " • ".join(ticket_parts) if ticket_parts else "Belum diatur"
+
         card = build_v2_card(
             title=f"⚙️ Master Server Control Center • {ctx.guild.name}",
             description=(
-                "**Pusat Otomatisasi Administrasi, Tiket, Booster & Komunitas**\n\n"
-                "Pilih modul yang ingin Anda konfigurasikan dari menu dropdown interaktif di bawah ini.\n"
-                "Semua perubahan akan langsung disimpan secara permanen."
+                "**Pusat Kendali Administrasi & Otomatisasi Komunitas**\n\n"
+                "Pilih modul konfigurasi pada menu di bawah untuk mengelola sistem server secara langsung. "
+                "Seluruh perubahan disimpan dan diterapkan secara instan."
             ),
             fields=[
-                {"name": "👤 Auto Role & Welcome", "value": "`Tersedia via Dropdown`"},
-                {"name": "🚀 Pesan Booster", "value": "`Dual-Detection & Preview`"},
-                {"name": "🎫 Sistem Tiket", "value": "`Kanal Bantuan Terpadu`"},
-                {"name": "🎭 Panel Ambil Role", "value": "`Dropdown Menu & Tombol`"}
+                {"name": "👤 Auto Role & Sambutan", "value": f"`Role: {role_txt}` • `Kanal: {welcome_txt}`"},
+                {"name": "🚀 Notifikasi Server Booster", "value": f"`{boost_txt}`"},
+                {"name": "🎫 Sistem Layanan Tiket", "value": f"`{ticket_txt}`"},
+                {"name": "🎭 Pengambilan Peran Mandiri", "value": "`Konfigurasi Panel Self-Role Interaktif`"}
             ],
             color=self.color_info,
-            footer="RTM-Bot Master Control • Pilih modul di bawah ini"
+            footer="RTM-Bot • Pilih modul pengaturan pada menu di bawah ini"
         )
         components = [card, *view_instance.to_components()]
         resp = await send_v2_message(self.bot, ctx.channel.id, components)
@@ -4477,20 +4497,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         status_data = load_data(self.status_file)
         current_status = status_data.get("status", "online")
         
-        import random
-        TIPS = [
-            "Nyari teman mabar itu gampang, yang susah itu nyari yang nggak ngilang setelah sebulan.",
-            "Online tiap hari di server, tapi tetep aja nggak ada yang nyadar pas off seminggu. 🚬",
-            "Mute server sana-sini demi nungguin notif dari satu orang. Eh dia lagi DnD.",
-            "Level di server udah mentok, tapi skill mabar masih di situ-situ aja. 🥲",
-            "Discord cuma tempat mampir, dunia nyata tetep tempat kembali.",
-            "Udah join banyak server, tetep aja ujung-ujungnya nongkrong di satu voice channel yang itu-itu lagi.",
-            "Ngetik panjang di general, dibalesnya pake reaction doang. Sabar ya.",
-            "Role lu emang paling atas, tapi kalau soal cari teman ngobrol, kita semua sama.",
-            "Kalau sepi ya ngeramein sendiri, kalau rame malah jadi sider. Valid no debat.",
-            "Kadang yang dicari di Discord bukan game-nya, tapi obrolan random jam 3 paginya. ☕"
-        ]
-        
         if current_status == "online":
             status_emoji = '🟢'
             status_text = 'Online & Berjalan'
@@ -4498,8 +4504,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             status_emoji = '🔴'
             status_text = 'Offline / DnD'
 
-        tip = random.choice(TIPS)
-        
         from cogs.v2_layout import build_v2_card, edit_v2_message
         
         v2_fields = self._build_modpanel_fields(guild, guild_settings, total_members, human_members, bot_members, total_channels, status_emoji, status_text)
@@ -4510,7 +4514,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             fields=v2_fields,
             color=None,
             buttons=self.modpanel_buttons,
-            footer=f"Terakhir diperbarui: {datetime.now(WIB).strftime('%d/%m/%Y %H:%M:%S')} WIB\n💡 Tips: {tip}"
+            footer=f"Terakhir diperbarui: {datetime.now(WIB).strftime('%d/%m/%Y %H:%M:%S')} WIB"
         )
         
         try:
@@ -4575,20 +4579,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                 status_data = load_data(self.status_file)
                 current_status = status_data.get("status", "online")
                 
-                import random
-                TIPS = [
-                    "Nyari teman mabar itu gampang, yang susah itu nyari yang nggak ngilang setelah sebulan.",
-                    "Online tiap hari di server, tapi tetep aja nggak ada yang nyadar pas off seminggu. 🚬",
-                    "Mute server sana-sini demi nungguin notif dari satu orang. Eh dia lagi DnD.",
-                    "Level di server udah mentok, tapi skill mabar masih di situ-situ aja. 🥲",
-                    "Discord cuma tempat mampir, dunia nyata tetep tempat kembali.",
-                    "Udah join banyak server, tetep aja ujung-ujungnya nongkrong di satu voice channel yang itu-itu lagi.",
-                    "Ngetik panjang di general, dibalesnya pake reaction doang. Sabar ya.",
-                    "Role lu emang paling atas, tapi kalau soal cari teman ngobrol, kita semua sama.",
-                    "Kalau sepi ya ngeramein sendiri, kalau rame malah jadi sider. Valid no debat.",
-                    "Kadang yang dicari di Discord bukan game-nya, tapi obrolan random jam 3 paginya. ☕"
-                ]
-                
                 if current_status == "online":
                     status_emoji = '🟢'
                     status_text = 'Online & Berjalan'
@@ -4596,8 +4586,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                     status_emoji = '🔴'
                     status_text = 'Offline / DnD'
 
-                tip = random.choice(TIPS)
-                
                 from cogs.v2_layout import build_v2_card, send_v2_message
                 
                 v2_fields = self._build_modpanel_fields(guild, guild_settings, total_members, human_members, bot_members, total_channels, status_emoji, status_text)
@@ -4608,7 +4596,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                     fields=v2_fields,
                     color=None,
                     buttons=self.modpanel_buttons,
-                    footer=f"Terakhir diperbarui: {datetime.now(WIB).strftime('%d/%m/%Y %H:%M:%S')} WIB\n💡 Tips: {tip}"
+                    footer=f"Terakhir diperbarui: {datetime.now(WIB).strftime('%d/%m/%Y %H:%M:%S')} WIB"
                 )
                 
                 response = await send_v2_message(self.bot, channel.id, [card])
@@ -4649,28 +4637,12 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             status_data = load_data(self.status_file)
             current_status = status_data.get("status", "online")
             
-            import random
-            TIPS = [
-                "Nyari teman mabar itu gampang, yang susah itu nyari yang nggak ngilang setelah sebulan.",
-                "Online tiap hari di server, tapi tetep aja nggak ada yang nyadar pas off seminggu. 🚬",
-                "Mute server sana-sini demi nungguin notif dari satu orang. Eh dia lagi DnD.",
-                "Level di server udah mentok, tapi skill mabar masih di situ-situ aja. 🥲",
-                "Discord cuma tempat mampir, dunia nyata tetep tempat kembali.",
-                "Udah join banyak server, tetep aja ujung-ujungnya nongkrong di satu voice channel yang itu-itu lagi.",
-                "Ngetik panjang di general, dibalesnya pake reaction doang. Sabar ya.",
-                "Role lu emang paling atas, tapi kalau soal cari teman ngobrol, kita semua sama.",
-                "Kalau sepi ya ngeramein sendiri, kalau rame malah jadi sider. Valid no debat.",
-                "Kadang yang dicari di Discord bukan game-nya, tapi obrolan random jam 3 paginya. ☕"
-            ]
-            
             if current_status == "online":
                 status_emoji = '🟢'
                 status_text = 'Online & Berjalan'
             else:
                 status_emoji = '🔴'
                 status_text = 'Offline / DnD'
-
-            tip = random.choice(TIPS)
             
             from cogs.v2_layout import build_v2_card, send_v2_message
             

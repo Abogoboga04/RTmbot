@@ -972,6 +972,12 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                         log.info(f"[SAFE_TIMEOUT] Skipped: {member} sisa timeout {remaining} >= {duration}")
                         return False
                 await fresh_member.timeout(duration, reason=t_reason)
+                try:
+                    mod_cog = self.bot.get_cog("Sentinel Moderation")
+                    if mod_cog and hasattr(mod_cog, "increment_timeout_counter"):
+                        await mod_cog.increment_timeout_counter()
+                except Exception:
+                    pass
                 return True
             except Exception as e:
                 log.error(f"[SAFE_TIMEOUT_FAIL] {e}")
