@@ -2796,7 +2796,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             welcome_message_content = guild_settings.get("welcome_message", "Selamat datang di **{guild_name}**, {user}! 🎉")
             welcome_embed_title = guild_settings.get("welcome_embed_title", "SELAMAT DATANG!")
             welcome_sender_name = guild_settings.get("welcome_sender_name", "Admin Server")
-            welcome_banner_url = guild_settings.get("welcome_banner_url")
+            welcome_banner_url = (guild_settings.get("welcome_banner_url") or "").strip() or None
 
             try:
                 formatted_desc = welcome_message_content.format(user=member.mention, guild_name=member.guild.name)
@@ -2837,10 +2837,12 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                     files=files_payload,
                     content=content_text
                 )
-                if res and isinstance(res, dict) and "id" in res:
+                if res and (getattr(res, "id", None) or (isinstance(res, dict) and "id" in res and "error_msg" not in res)):
                     v2_sent = True
-            except Exception:
-                pass
+                else:
+                    print(f"[WELCOME] send_v2_message did not succeed: {res}")
+            except Exception as e:
+                print(f"[WELCOME] Exception during send_v2_message: {e}")
 
             # Fallback ke format embed standar jika pengiriman komponen mengalami kendala
             if not v2_sent:

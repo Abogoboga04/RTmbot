@@ -43,9 +43,7 @@ def build_v2_card(title: str = None, description: str = None, fields: list = Non
             "type": 12,
             "id": 150,
             "items": [{
-                "media": media_obj,
-                "description": None,
-                "spoiler": False
+                "media": media_obj
             }]
         })
         
@@ -108,13 +106,23 @@ async def send_v2_message(bot, channel_id: int, components: list, files: list = 
     """
     route = discord.http.Route('POST', '/channels/{channel_id}/messages', channel_id=channel_id)
     
+    comp_list = list(components)
+    if content and str(content).strip():
+        # Dalam Discord Components V2 (flag 32768), pesan teks tidak boleh ditaruh di root payload['content'] (akan menyebabkan HTTP 400 Bad Request).
+        # Teks pesan harus dikirim sebagai komponen Text Display (Type 10).
+        comp_list.insert(0, {
+            "type": 10,
+            "id": 80,
+            "content": str(content).strip()
+        })
+        
     payload = {
-        "components": components,
-        "flags": 32768
+        "components": comp_list,
+        "flags": 32768,
+        "allowed_mentions": {
+            "parse": ["users", "roles", "everyone"]
+        }
     }
-    
-    if content:
-        payload["content"] = content
     
     try:
         if files:
@@ -138,17 +146,27 @@ async def send_v2_message(bot, channel_id: int, components: list, files: list = 
         else:
             return await bot.http.request(route, json=payload)
     except Exception as e:
-        print(f"Failed to send V2 layout: {e}")
+        print(f"[V2_LAYOUT] Failed to send V2 layout to channel {channel_id}: {e}")
         return {"error_msg": str(e)}
 
 async def send_v2_webhook(bot, webhook, components: list, content: str = "", username: str = None, avatar_url: str = None):
     """
     Mengirim pesan V2 melalui webhook.
     """
+    comp_list = list(components)
+    if content and str(content).strip():
+        comp_list.insert(0, {
+            "type": 10,
+            "id": 80,
+            "content": str(content).strip()
+        })
+        
     payload = {
-        "content": content,
-        "components": components,
-        "flags": 32768
+        "components": comp_list,
+        "flags": 32768,
+        "allowed_mentions": {
+            "parse": ["users", "roles", "everyone"]
+        }
     }
     if username:
         payload["username"] = username
