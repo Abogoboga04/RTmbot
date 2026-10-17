@@ -314,8 +314,10 @@ async def generate_official_member_card(
             user_header_text = user_header_text[:33] + "..."
         draw.text((246, 154), user_header_text, font=fonts["name_header"], fill=text_dark)
 
+        user_suffix = str(target.id)[-5:]
+        guild_suffix = str(guild.id)[-4:] if guild else "0000"
+        license_number = f"{user_suffix}-{guild_suffix}"
         field_y = 205
-        license_number = f"RTM-{target.id}"
         fields = [
             ("NOMOR LISENSI :", license_number),
             ("TANGGAL RESMI :", official_date_str),

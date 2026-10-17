@@ -477,6 +477,15 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
             if history_list:
                 final_context_str += "\n[SHORT-TERM MEMORY (15 Chat Terakhir dari Berbagai User di Sini)]:\n" + "\n".join(history_list) + "\n"
 
+        # Memori Pengetahuan Kode & Fitur Bot RTMBOT
+        try:
+            from cogs.bot_knowledge_engine import find_relevant_knowledge
+            codebase_kb = find_relevant_knowledge(message_content)
+            if codebase_kb:
+                final_context_str += f"\n[MEMORI INTERNAL KODE & FITUR RTMBOT (Gunakan data ini untuk menjawab jika user bertanya soal command/fitur bot)]:\n{codebase_kb}\n"
+        except Exception:
+            pass
+
         return final_context_str
 
     def build_prompt(self, user, ctx_data, prompt_text, guild_id=None):
@@ -1316,15 +1325,50 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                         log.error(f"[PREFIX_CHAT_ERROR] {e}")
                     return
 
-        if not message.guild and not message.content.startswith(prefix):
-            try:
-                async with message.channel.typing():
-                    images = await self.get_images_from_message(message)
-                    ctx_data = self.get_brain_context(message.content, None, message.channel.id)
-                    await self.process_and_send_response(message, message.author, ctx_data, message.content, images, guild_id=guild_id)
-            except Exception as e:
-                log.error(f"[DM_CHAT_ERROR] {e}")
-            return
+        if not message.guild:
+            raw_text = message.content.strip()
+            lower_cmd = raw_text.lower()
+            is_clear = False
+            del_limit = 100
+            
+            if lower_cmd in ["!clear", "!cleardm", "!reset", "!hapus", "clear", "cleardm", "!purge", "/clear", "/cleardm"]:
+                is_clear = True
+            elif lower_cmd.startswith(("!clear ", "!cleardm ", "!purge ", "clear ", "cleardm ")):
+                parts = lower_cmd.split()
+                if len(parts) >= 2 and parts[1].isdigit():
+                    del_limit = min(100, max(1, int(parts[1])))
+                is_clear = True
+
+            if is_clear:
+                try:
+                    deleted_count = 0
+                    async for msg in message.channel.history(limit=del_limit):
+                        if msg.author.id == self.bot.user.id:
+                            try:
+                                await msg.delete()
+                                deleted_count += 1
+                                await asyncio.sleep(0.2)
+                            except Exception:
+                                pass
+                    if message.author.id in self.dm_history:
+                        self.dm_history[message.author.id].clear()
+                    await message.channel.send(
+                        f"🧹 Berhasil membersihkan **{deleted_count}** pesan bot di DM pribadi ini dan mereset memori percakapan.",
+                        delete_after=10
+                    )
+                except Exception as e:
+                    log.error(f"[DM_CLEAR_ERROR] {e}")
+                return
+
+            if not message.content.startswith(prefix):
+                try:
+                    async with message.channel.typing():
+                        images = await self.get_images_from_message(message)
+                        ctx_data = self.get_brain_context(message.content, None, message.channel.id)
+                        await self.process_and_send_response(message, message.author, ctx_data, message.content, images, guild_id=guild_id)
+                except Exception as e:
+                    log.error(f"[DM_CHAT_ERROR] {e}")
+                return
 
         # Perbaikan: Bot akan merespons jika di-tag ATAU jika pesannya di-reply (di semua server)
         if message.guild and (self.bot.user in message.mentions or is_reply_to_bot):

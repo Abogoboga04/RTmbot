@@ -331,20 +331,34 @@ HELP_CATEGORIES = {
             {"name": "📜 /daily_quest", "value": "Periksa quest harian dan klaim hadiah EXP serta koin RSWN."},
             {"name": "💸 /transfercoins <member> <jumlah>", "value": "Kirimkan saldo koin RSWN milikmu ke pengguna lain."},
             {"name": "🏦 /bank (alias /balance)", "value": "Periksa saldo rekening bank RSWN dan status utang/kredit."},
-            {"name": "💼 !work, !daily, !crime, !rob", "value": "Perintah ekonomi kasual untuk mengumpulkan koin RSWN tambahan."}
+            {"name": "💼 !work, !daily, !crime, !rob", "value": "Perintah ekonomi kasual untuk mengumpulkan koin RSWN tambahan."},
+            {"name": "🆔 Format Lisensi Kartu", "value": "Kartu profil anggota dilengkapi nomor lisensi resmi ringkas format: `5-digit ID User + 4-digit ID Server`."}
         ]
     },
     "ai": {
-        "title": "🤖 ASISTEN AI RAKA & HIBURAN",
-        "desc": "Kecerdasan buatan Gemini persona Raka dan fitur interaksi kasual:",
+        "title": "🤖 ASISTEN AI RAKA & SELF-KNOWLEDGE MEMORY",
+        "desc": "Kecerdasan buatan Gemini persona Raka dengan memori internal seluruh kode bot & interaksi kasual:",
         "color": 0x1ABC9C,
         "fields": [
-            {"name": "💬 @Mention / Reply Bot", "value": "Ajak Raka ngobrol santai dengan persona khas anak tongkrongan."},
+            {"name": "🧠 Self-Knowledge Codebase Memory", "value": "Tanyakan apa saja seputar kode, cara pakai perintah, izin admin, atau alur modul bot! Cukup tag `@RTMBOT <tanya>`, reply pesan bot, atau gunakan awalan `!<pertanyaan>`."},
+            {"name": "💬 DM Asisten Pribadi", "value": "Kirim pesan langsung (DM) ke bot untuk konsultasi pribadi atau asisten kode."},
+            {"name": "🧹 !cleardm (alias !clear)", "value": "Bersihkan pesan bot di percakapan DM pribadi dan reset sesi memori obrolan."},
             {"name": "🔮 /tarot", "value": "Tarik 3 kartu Tarot (Masa Lalu, Sekarang, Depan) dengan tafsiran filosofis."},
             {"name": "♈ /zodiak <nama/tanggal>", "value": "Ramalan peruntungan zodiak hari ini ala Raka."},
             {"name": "💘 /ship <user1> [user2]", "value": "Kalkulator kecocokan persentase cinta dua pengguna."},
             {"name": "🔥 /roast [user]", "value": "Minta Raka meroast seseorang dengan sindiran pedas tapi kocak."},
             {"name": "🤫 /confess", "value": "Buka formulir modal rahasia untuk mengirim curhatan anonim."}
+        ]
+    },
+    "webhook": {
+        "title": "🪝 WEBHOOK RELAY & MIRRORING",
+        "desc": "Sistem relayer dan pencerminan pesan otomatis antar channel atau server:",
+        "color": 0x16A085,
+        "fields": [
+            {"name": "🔗 !setwebhook <target_url>", "value": "Tautkan channel ini ke Webhook tujuan untuk mencerminkan seluruh pesan."},
+            {"name": "🗑️ !delwebhook", "value": "Hapus relayer webhook aktif di channel ini."},
+            {"name": "📋 !listwebhook", "value": "Daftar channel yang memiliki relay webhook aktif di server."},
+            {"name": "🧪 !teswebhook [pesan]", "value": "Kirim pesan uji coba untuk memverifikasi koneksi webhook target."}
         ]
     },
     "utility": {
@@ -379,7 +393,8 @@ class HelpView(discord.ui.View):
             discord.SelectOption(label="Radar & Notifikasi Media", value="notif", description="Deteksi & notifikasi YouTube, TikTok, Instagram", emoji="📡"),
             discord.SelectOption(label="Games & Minigames", value="games", description="Balapan kuda taruhan, Werewolf, kuis", emoji="🎮"),
             discord.SelectOption(label="Leveling & Ekonomi", value="leveling", description="Kartu rank, leaderboard, toko item", emoji="⭐"),
-            discord.SelectOption(label="AI Raka & Hiburan", value="ai", description="Chat persona Raka, tarot, zodiak, confess", emoji="🤖"),
+            discord.SelectOption(label="AI Raka & Memori Kode", value="ai", description="Chat persona Raka, tanya kode bot, DM clear", emoji="🤖"),
+            discord.SelectOption(label="Webhook Mirroring", value="webhook", description="Relay pesan otomatis antar channel/server", emoji="🪝"),
             discord.SelectOption(label="Voice & Utilitas", value="utility", description="Temp Voice channel, tulis tangan, profil", emoji="🎙️")
         ]
     )

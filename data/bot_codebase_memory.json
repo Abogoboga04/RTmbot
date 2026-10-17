@@ -1,0 +1,2468 @@
+{
+  "bot_name": "RTMBOT",
+  "description": "Multi-purpose Discord Bot Profesional untuk Moderasi, Keamanan Sentinel, Leveling Bersertifikat Resmi, Tiket Support, Voice Sementara, AI Gemini, Ekonomi RSWN, dan Party Minigames.",
+  "modules": {
+    "main.py": {
+      "metadata": {
+        "name": "main.py",
+        "category": "Modul Sistem",
+        "description": "Modul fungsional main.py",
+        "key_features": []
+      },
+      "commands_count": 0,
+      "commands": []
+    },
+    "activity.py": {
+      "metadata": {
+        "name": "Server Activity & Voice Tracker",
+        "category": "Statistik & Keaktifan",
+        "description": "Pelacak durasi keaktifan suara, streaming, dan bermain game para anggota server.",
+        "key_features": [
+          "Pencatatan jam aktif di voice channel server",
+          "Statistik aktivitas member mingguan dan bulanan"
+        ]
+      },
+      "commands_count": 1,
+      "commands": [
+        {
+          "name": "act",
+          "aliases": [
+            "setact",
+            "statusbot"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Tidak ada deskripsi"
+        }
+      ]
+    },
+    "bot_knowledge_engine.py": {
+      "metadata": {
+        "name": "bot_knowledge_engine.py",
+        "category": "Modul Sistem",
+        "description": "Modul fungsional bot_knowledge_engine.py",
+        "key_features": []
+      },
+      "commands_count": 0,
+      "commands": []
+    },
+    "card_generator.py": {
+      "metadata": {
+        "name": "Member Card Generator Engine",
+        "category": "Grafis & Sertifikasi",
+        "description": "Mesin pembuat kartu sertifikat anggota resolusi tinggi (1050x660 PNG) via Pillow dengan wax seal scalloped emas dan nomor lisensi ringkas (5 digit user ID + 4 digit server ID).",
+        "key_features": [
+          "Rendering kartu sertifikat resmi dengan foto profil pengguna konsentris",
+          "Stempel lilin mewah (luxury wax seal) scalloped 16 kelopak dan lis konsentris emas",
+          "Nomor lisensi terverifikasi berformat ringkas: 5 angka user ID + 4 angka server ID",
+          "Tanda tangan digital Owner Server dan Bot Developer (Rhdevs & RTM Team)"
+        ]
+      },
+      "commands_count": 0,
+      "commands": []
+    },
+    "finance.py": {
+      "metadata": {
+        "name": "Virtual Economy & Kas Server (RSWN)",
+        "category": "Ekonomi & Gamifikasi",
+        "description": "Sistem perbankan dan mata uang virtual server RSWN, pekerjaan harian, investasi, dan kasino komunitas.",
+        "key_features": [
+          "Klaim gaji harian (!daily) dan bekerja dengan pekerjaan random (!work)",
+          "Cek saldo dompet & kas bank (!balance / !bal, !bank)",
+          "Transfer saldo antar member (!transfer, !pay)",
+          "Investasi dan mini-games ekonomi (!invest, !gamble, !slots)"
+        ]
+      },
+      "commands_count": 8,
+      "commands": [
+        {
+          "name": "cash_in",
+          "aliases": [
+            "in",
+            "masuk",
+            "pemasukan"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "nominal",
+            "kategori"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "cash_out",
+          "aliases": [
+            "out",
+            "keluar",
+            "pengeluaran"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "nominal",
+            "kategori"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "keuangan",
+          "aliases": [
+            "saldo",
+            "wallet",
+            "dompet"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "cashflow",
+          "aliases": [
+            "mutasi",
+            "laporan_keuangan"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "anggaran",
+          "aliases": [
+            "budget",
+            "setbudget"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "nominal"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "konsultasi_keuangan",
+          "aliases": [
+            "evaluasi_keuangan",
+            "fin_advice",
+            "nasehat_keuangan"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "export_keuangan",
+          "aliases": [
+            "exportfin",
+            "unduh_keuangan"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "reset_keuangan",
+          "aliases": [
+            "resetfin"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        }
+      ]
+    },
+    "fun.py": {
+      "metadata": {
+        "name": "Fun Interactions & Roleplay",
+        "category": "Hiburan & Interaksi",
+        "description": "Perintah interaksi sosial seru antar member, anime roleplay (peluk, tampar), dan candaan komunitas.",
+        "key_features": [
+          "Interaksi sosial: slap, hug, pat, kiss",
+          "Meme generator dan lelucon ringan komunitas"
+        ]
+      },
+      "commands_count": 11,
+      "commands": [
+        {
+          "name": "pranknama",
+          "aliases": [
+            "hewanlucu",
+            "ubahsemua"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "duration"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Ubah nickname semua member di server menjadi nama hewan lucu!"
+        },
+        {
+          "name": "resetnama",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Hapus nickname semua member agar kembali normal."
+        },
+        {
+          "name": "set_confess_channel",
+          "aliases": [],
+          "type": "Slash (/)",
+          "parameters": [
+            "channel"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "confess_setup",
+          "aliases": [],
+          "type": "Slash (/)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "confess",
+          "aliases": [],
+          "type": "Slash (/)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "tarot",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "zodiak",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "lifepath",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "roast",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "user"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "ship",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "user1",
+            "user2"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "8ball",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        }
+      ]
+    },
+    "gemini.py": {
+      "metadata": {
+        "name": "Unified AI Assistant & Cyber Security Engine",
+        "category": "Kecerdasan Buatan & Keamanan",
+        "description": "Asisten AI cerdas berbasis Google Gemini 2.5 Flash, reasoning gambar, filter phising/SARA cerdas, persona dinamis, dan memori percakapan.",
+        "key_features": [
+          "AI Chatbot percakapan alami melalui tag @RTMBOT, reply pesan, atau awalan !",
+          "Codebase Self-Aware Memory: Mengetahui seluruh fitur, sintaks perintah, dan panduan bot",
+          "Deteksi link phising dan gambar spam berbahaya dengan visual reasoning",
+          "Clear chat DM (!clear / !cleardm di DM pribadi untuk menghapus pesan bot & reset memori)"
+        ]
+      },
+      "commands_count": 15,
+      "commands": [
+        {
+          "name": "cyber_toggle",
+          "aliases": [
+            "cybertoggle",
+            "onoffcyber"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "addadmin",
+          "aliases": [
+            "+admin",
+            "tambahadmin"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "deladmin",
+          "aliases": [
+            "-admin",
+            "hapusadmin"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "ai_whitelist_kata",
+          "aliases": [
+            "aw",
+            "aman_kata"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "ai_unwhitelist_kata",
+          "aliases": [
+            "auw",
+            "hapus_aman_kata"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "expert",
+          "aliases": [
+            "exp",
+            "ahli",
+            "konsul"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "stop_expert",
+          "aliases": [
+            "stop_konsul"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "dewa_prompt",
+          "aliases": [
+            "dp",
+            "prompt",
+            "dewa"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "black_ai",
+          "aliases": [
+            "ba",
+            "black",
+            "hack"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "balas",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "channel_id",
+            "message_id"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "ai",
+          "aliases": [],
+          "type": "Command Group",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "aimemori",
+          "aliases": [],
+          "type": "Command Group",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "aisifat",
+          "aliases": [],
+          "type": "Command Group",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "aifilter",
+          "aliases": [],
+          "type": "Command Group",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "aiconfig",
+          "aliases": [],
+          "type": "Command Group",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        }
+      ]
+    },
+    "info.py": {
+      "metadata": {
+        "name": "Information & Utility Specs",
+        "category": "Informasi & Diagnostik",
+        "description": "Pemeriksa profil pengguna, avatar HD, banner, informasi detail server, statistik bot, uptime, dan latensi ping.",
+        "key_features": [
+          "Informasi pengguna (/userinfo, !userinfo) dan server (/serverinfo, !serverinfo)",
+          "Unduh avatar resolusi penuh (/avatar, !avatar) dan banner (/banner, !banner)",
+          "Statistik bot, memory usage, uptime, dan ping (/botinfo, !ping)"
+        ]
+      },
+      "commands_count": 6,
+      "commands": [
+        {
+          "name": "tulis",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "nama"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "faq",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "user",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "user"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "avatar",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "user"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "set_gender",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "help",
+          "aliases": [
+            "h",
+            "bantuan"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        }
+      ]
+    },
+    "leveling.py": {
+      "metadata": {
+        "name": "Leveling & Luxury Member Certification",
+        "category": "Komunitas & Gamifikasi",
+        "description": "Sistem XP berbasis pesan dan voice, leaderboard server, role rewards otomatis, custom badge, dan sertifikat kartu anggota resmi.",
+        "key_features": [
+          "Perintah /rank dan !rank untuk melihat kartu keanggotaan resmi berlisensi emas dengan avatar dan stempel wax seal",
+          "Papan peringkat /leaderboard dan !top dengan visualisasi status interaktif",
+          "Pengaturan konfigurasi level (/setlevelconfig) dan badge eksklusif (/setlevelbadge)",
+          "Voice XP & Message XP tracking otomatis dengan proteksi spam XP"
+        ]
+      },
+      "commands_count": 44,
+      "commands": [
+        {
+          "name": "giveaway",
+          "aliases": [
+            "kocok",
+            "gstart"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "hadiah",
+            "durasi_menit",
+            "jumlah_pemenang",
+            "min_level",
+            "min_messages",
+            "req_role"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "reroll",
+          "aliases": [
+            "kocokulang",
+            "greroll"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "message_id"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setlevelconfig",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "exp_per_level",
+            "max_level"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setlevelbadge",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "level",
+            "emoji"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "removelevelbadge",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "level"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "viewlevelconfig",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setlevelannouncement",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "channel",
+            "pesan"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "configrates",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setlevelrole",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "level",
+            "role"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "removelevelrole",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "level"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setvoicerole",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "hours",
+            "role"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "removevoicerole",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "hours"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "listvoiceroles",
+          "aliases": [
+            "voiceroles"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setvoiceboost",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "channel",
+            "multiplier"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "removevoiceboost",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "channel"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "listvoiceboost",
+          "aliases": [
+            "voiceboosts"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "uangall",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "amount"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "xpall",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "amount"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "addquest",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "description",
+            "reward_exp",
+            "reward_coins"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "daily_quest",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "complete_quest",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "giveexp",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "member",
+            "amount"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "givecoins",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "member",
+            "amount"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "transfercoins",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "member",
+            "amount"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setlevel",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "member",
+            "level"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "leaderboard",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "weekly",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "voicepanel",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "voicepanel_remove",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "voicetime",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "addvoicetime",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "jam",
+            "menit",
+            "detik",
+            "member",
+            "weekly"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setvoicetime",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "jam",
+            "menit",
+            "detik",
+            "member",
+            "weekly"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setchannelrecord",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "channel",
+            "jam",
+            "menit",
+            "detik",
+            "sedang_aktif"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "voicerecord",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "rank",
+          "aliases": [
+            "karturank",
+            "rankdetektif",
+            "detectiverank",
+            "level",
+            "lvl"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "reduceuser",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "member",
+            "exp",
+            "rswn",
+            "reason"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "resetall",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "manageitems",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "shop",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "toggleshop",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "toggleexpshop",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "additem",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "category",
+            "name",
+            "price",
+            "description",
+            "emoji_or_type",
+            "stock",
+            "extra_1",
+            "extra_2"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "addcollage",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "url"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "removeitem",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "category",
+            "name"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        }
+      ]
+    },
+    "minigames.py": {
+      "metadata": {
+        "name": "Interactive Minigames Hub",
+        "category": "Hiburan & Permainan",
+        "description": "Koleksi permainan interaktif teks dan tebak-tebakan multipemain untuk menghidupkan obrolan server.",
+        "key_features": [
+          "Katalog permainan interaktif via !games",
+          "Sambung Kata berantai (!sambung / !sk)",
+          "Tebak Emoji (!tebakemoji) dengan opsi petunjuk via DM (!hintemoji)",
+          "Susun Kata / Anagram (!susunkata / !acak)",
+          "Party Game voting rahasia Si Paling (!siapapaling / !sipaling)",
+          "Kuis IPA dan pengetahuan sains (!kuisipa)"
+        ]
+      },
+      "commands_count": 22,
+      "commands": [
+        {
+          "name": "games",
+          "aliases": [
+            "minigames",
+            "daftargame",
+            "listgame"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Membuka menu katalog minigames interaktif."
+        },
+        {
+          "name": "stopgame",
+          "aliases": [
+            "resetgame",
+            "batalgame",
+            "cancelgame",
+            "endgame"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Memaksa reset status game di channel jika macet."
+        },
+        {
+          "name": "setgamechannel",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "game_name",
+            "action",
+            "channel"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "sambung",
+          "aliases": [
+            "sk",
+            "sambungkata",
+            "ressambung"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Memulai permainan Sambung Kata multiplayer berantai."
+        },
+        {
+          "name": "siapapaling",
+          "aliases": [
+            "paling",
+            "wholikely",
+            "mostlikely",
+            "votepertanyaan",
+            "sipaling"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Memulai party game voting rahasia 'Si Paling...'."
+        },
+        {
+          "name": "tebakemoji",
+          "aliases": [
+            "emoji",
+            "resmoji",
+            "tebakgambar"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Memulai permainan Kuis Tebak Emoji."
+        },
+        {
+          "name": "hintemoji",
+          "aliases": [
+            "bantuanemoji",
+            "resplis"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Membeli petunjuk jawaban tebak emoji via DM."
+        },
+        {
+          "name": "susunkata",
+          "aliases": [
+            "acak",
+            "resacak"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Memulai permainan Susun Kata (Anagram)."
+        },
+        {
+          "name": "kuisipa",
+          "aliases": [
+            "ipa",
+            "resipa",
+            "sains"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Memulai Kuis IPA dan Pengetahuan Sains."
+        },
+        {
+          "name": "hangman",
+          "aliases": [
+            "tebakkata",
+            "resman"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Memulai permainan Hangman klasik."
+        },
+        {
+          "name": "bantuanhangman",
+          "aliases": [
+            "hmanplis",
+            "hinthangman"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Membeli bocoran jawaban Hangman via DM."
+        },
+        {
+          "name": "siapaaku",
+          "aliases": [
+            "tebaksiapa",
+            "siapakahaku"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Kuis petunjuk bertahap tebak tokoh, hewan, atau benda."
+        },
+        {
+          "name": "hitungcepat",
+          "aliases": [
+            "math",
+            "hitung",
+            "matematika"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Adu kecepatan perhitungan matematika dasar."
+        },
+        {
+          "name": "pernahgak",
+          "aliases": [
+            "nhie",
+            "pernah"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Permainan kejujuran Never Have I Ever via tombol interaktif."
+        },
+        {
+          "name": "matamata",
+          "aliases": [
+            "spyfall",
+            "spy"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Memulai permainan peran Mata-Mata (Spyfall)."
+        },
+        {
+          "name": "tuduh",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [],
+          "description": "Menuduh seorang pemain sebagai mata-mata dalam sesi game Mata-Mata."
+        },
+        {
+          "name": "ungkap_lokasi",
+          "aliases": [
+            "ulokasi"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Mata-mata mencoba menebak lokasi rahasia."
+        },
+        {
+          "name": "kuismusik",
+          "aliases": [
+            "startquiz",
+            "musicquiz"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Memulai Kuis Trivia Musik di Voice Channel."
+        },
+        {
+          "name": "jawab",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Menjawab Teka-Teki Harian bot."
+        },
+        {
+          "name": "adddonasibtn",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "label",
+            "url"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "listdonasibtn",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "removedonasibtn",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "index"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        }
+      ]
+    },
+    "moderation.py": {
+      "metadata": {
+        "name": "Sentinel Moderation & Server Security",
+        "category": "Keamanan & Pengaturan Server",
+        "description": "Sistem proteksi menyeluruh, anti-spam trap card self-healing, anti-phishing, timeout otomatis, audit logs, panel role, sistem tiket, dan master dashboard /setup.",
+        "key_features": [
+          "Master Setup Dashboard (/setup) untuk konfigurasi kanal welcome, booster, tiket, audit log, trap spam",
+          "Kartu Jebakan Spam Self-Healing: Otomatis mendeteksi spam/phishing di kanal trap dan auto-timeout pelanggar",
+          "Panel Role (/setuppanelrole, /addpanelrole) dengan gaya Dropdown Select atau Button interaktif",
+          "Sistem Tiket Terisolasi dengan tombol tutup manual countdown 5 detik dan transkrip",
+          "Welcome & Farewell V2 Container Card borderless dengan sertifikat member 1050x660 PNG",
+          "Tindakan moderasi lengkap: !mute, !unmute, !warn, !kick, !ban, !clear, !slowmode"
+        ]
+      },
+      "commands_count": 43,
+      "commands": [
+        {
+          "name": "addtrapcount",
+          "aliases": [
+            "addtimeoutcount"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [
+            "amount"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "settrapcount",
+          "aliases": [
+            "settimeoutcount"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [
+            "new_count"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setuppanelrole",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "channel",
+            "mode",
+            "judul",
+            "deskripsi_judul",
+            "konten_embed2",
+            "placeholder_select"
+          ],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "addpanelrole",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "message_id",
+            "role",
+            "emoji",
+            "label_teks",
+            "deskripsi_role"
+          ],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "removepanelrole",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "message_id",
+            "role"
+          ],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "editpanelrole",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "message_id",
+            "judul",
+            "deskripsi_judul",
+            "konten_embed2",
+            "placeholder_select"
+          ],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setmainmembershiprole",
+          "aliases": [
+            "smr"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [
+            "role"
+          ],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "addmembershiprole",
+          "aliases": [
+            "amr"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [
+            "role"
+          ],
+          "permissions": [
+            "manage_roles"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "removemembershiprole",
+          "aliases": [
+            "rmr"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [
+            "role"
+          ],
+          "permissions": [
+            "manage_roles"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setmembershipmessage",
+          "aliases": [
+            "smm"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [
+            "type"
+          ],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "sendverificationbutton",
+          "aliases": [
+            "svb"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "kick",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [
+            "kick_members",
+            "kick_members"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "ban",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [
+            "ban_members",
+            "ban_members"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "softban",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [
+            "ban_members",
+            "ban_members"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "unban",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            "ban_members",
+            "ban_members"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "warn",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [
+            "kick_members",
+            "kick_members"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "unwarn",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "member",
+            "warning_index"
+          ],
+          "permissions": [
+            "kick_members",
+            "kick_members"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "warnings",
+          "aliases": [
+            "history"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [
+            "kick_members"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setgoodbye",
+          "aliases": [
+            "sbm"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "timeout",
+          "aliases": [
+            "mute"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "member",
+            "duration"
+          ],
+          "permissions": [
+            "moderate_members",
+            "moderate_members"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "removetimeout",
+          "aliases": [
+            "unmute"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [
+            "moderate_members",
+            "moderate_members"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "disconnect",
+          "aliases": [
+            "voicedisconnect",
+            "vkick"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "clear",
+          "aliases": [
+            "purge",
+            "bersihkan"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "amount",
+            "channel"
+          ],
+          "permissions": [
+            "manage_messages",
+            "manage_messages"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "slowmode",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "seconds"
+          ],
+          "permissions": [
+            "manage_channels",
+            "manage_channels"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "lock",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "channel"
+          ],
+          "permissions": [
+            "manage_channels",
+            "manage_channels"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "unlock",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "channel"
+          ],
+          "permissions": [
+            "manage_channels",
+            "manage_channels"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "addrole",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "member",
+            "role"
+          ],
+          "permissions": [
+            "manage_roles"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "removerole",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "member",
+            "role"
+          ],
+          "permissions": [
+            "manage_roles"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "nick",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [
+            "manage_nicknames"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "channelrules",
+          "aliases": [
+            "cr"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [
+            "channel"
+          ],
+          "permissions": [
+            "manage_channels"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setwelcomechannel",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "channel"
+          ],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setspamlog",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "channel"
+          ],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "addwhitelistrole",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "role_id"
+          ],
+          "permissions": [
+            "manage_roles"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "removewhitelistrole",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "role_id"
+          ],
+          "permissions": [
+            "manage_roles"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setreactionrole",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "message",
+            "emoji",
+            "role"
+          ],
+          "permissions": [
+            "manage_roles"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "setup",
+          "aliases": [
+            "settings",
+            "setupserver"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "panelrole",
+          "aliases": [
+            "ambilrole",
+            "roles"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "ticket",
+          "aliases": [
+            "tiket",
+            "setupticket"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "announce",
+          "aliases": [
+            "pengumuman",
+            "broadcast"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "channel_identifier"
+          ],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "modpanel",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "toggle_status",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "remove_modpanel",
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "trap",
+          "aliases": [
+            "setjebakan",
+            "triggerchannel"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "action",
+            "channel"
+          ],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        }
+      ]
+    },
+    "notif.py": {
+      "metadata": {
+        "name": "Social Media Live Feed Broadcaster",
+        "category": "Notifikasi & Penyiaran",
+        "description": "Pemantau siaran langsung dan unggahan konten baru dari platform YouTube, Instagram, dan TikTok.",
+        "key_features": [
+          "Setup kanal feed notifikasi via !config",
+          "Tambah dan hapus pemantauan feed via !addpath dan !removepath",
+          "Pengecekan dan reset cache feed via !checkcache dan !resetcache"
+        ]
+      },
+      "commands_count": 5,
+      "commands": [
+        {
+          "name": "resetcache",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "addpath",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "source_channel_id",
+            "target_channel_id"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "removepath",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "path_id"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "config",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "checkcache",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        }
+      ]
+    },
+    "party_games.py": {
+      "metadata": {
+        "name": "Werewolf Multiplayer Party Game",
+        "category": "Hiburan & Permainan",
+        "description": "Permainan klasik Werewolf terintegrasi bot dengan peran Warga, Serigala, Peramal, Dokter, dan narasi malam/siang otomatis.",
+        "key_features": [
+          "Lobi antrean pemain: !ww join (gabung), !ww keluar (keluar)",
+          "Mulai permainan: !ww mulai (start oleh host/admin)",
+          "Sistem peran tersembunyi via DM bot dengan alur pemungutan suara transparan"
+        ]
+      },
+      "commands_count": 6,
+      "commands": [
+        {
+          "name": "ww",
+          "aliases": [],
+          "type": "Command Group",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "vote",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "target_num"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "stopwerewolfaudio",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "balapan",
+          "aliases": [
+            "race"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "taruhan",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "amount",
+            "horse_num"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "stopbalapan",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        }
+      ]
+    },
+    "quotes.py": {
+      "metadata": {
+        "name": "Daily Quotes & Inscriptions",
+        "category": "Komunitas & Hiburan",
+        "description": "Pengirim kutipan inspiratif harian, manajemen kanal quote server, dan quote submit member.",
+        "key_features": [
+          "Kirim quote inspiratif via /resq atau !resq",
+          "Admin setup kanal kutipan via !setchannelq",
+          "Manajemen daftar kutipan via !listquotes dan !deletequote"
+        ]
+      },
+      "commands_count": 5,
+      "commands": [
+        {
+          "name": "setchannelq",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "channel"
+          ],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "sendquote",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "Tampilkan nama? (yes/no)",
+          "aliases": [
+            "quote",
+            "kirimquote"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "show_name"
+          ],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "deletequote",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "quote_id"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "listquotes",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tidak ada deskripsi"
+        }
+      ]
+    },
+    "temp_voice.py": {
+      "metadata": {
+        "name": "Temporary Voice Channel (Join-to-Create)",
+        "category": "Suara & Utilitas",
+        "description": "Sistem pembuatan voice room sementara otomatis saat member bergabung ke kanal trigger, lengkap dengan kontrol ruangan privat.",
+        "key_features": [
+          "Join-to-Create: Kanal otomatis dibuatkan saat masuk dan otomatis terhapus saat kosong",
+          "Kontrol suara: /vc lock (gembok), /vc unlock (buka), /vc name (ganti nama)",
+          "Pengaturan kapasitas (/vc limit), bitrate (/vc bitrate), sembunyikan (/vc hide)",
+          "Admin setup: /vcadmin settrigger (atur kanal pemicu), /vcadmin setcat (kategori)"
+        ]
+      },
+      "commands_count": 2,
+      "commands": [
+        {
+          "name": "vcadmin",
+          "aliases": [],
+          "type": "Command Group",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "vc",
+          "aliases": [],
+          "type": "Command Group",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        }
+      ]
+    },
+    "v2_layout.py": {
+      "metadata": {
+        "name": "Discord Component Type 17 Engine",
+        "category": "Arsitektur Komponen V2",
+        "description": "Modul pembangun struktur JSON kontainer kartu modern Type 17, Media Gallery Type 12, Text Display Type 10, dan HTTP sender aman flag 32768.",
+        "key_features": [
+          "build_v2_card: Container Card Type 17 borderless (color=None) dengan penempatan media & footer presisi",
+          "send_v2_message: Pengirim HTTP payload Component V2 tanpa root content untuk mencegah error 400",
+          "send_v2_interaction: Integrasi aman interaksi callback & persistent view"
+        ]
+      },
+      "commands_count": 0,
+      "commands": []
+    },
+    "webhook.py": {
+      "metadata": {
+        "name": "Webhook Dispatcher & Broadcast Engine",
+        "category": "Utilitas & Penyiaran",
+        "description": "Pengiriman pesan penyiaran, webhook Discord Layout V2, pengumuman berjadwal, dan manajemen pengumuman server.",
+        "key_features": [
+          "Kirim webhook kustom (!swh / send_webhook) dan edit siaran (!eb / edit_broadcast)",
+          "Pengumuman server resmi (!announcement)",
+          "Pengiriman media dan pesan terjadwal (!schedule)"
+        ]
+      },
+      "commands_count": 10,
+      "commands": [
+        {
+          "name": "send_webhook",
+          "aliases": [
+            "swh"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "manage_webhooks"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "edit_broadcast",
+          "aliases": [
+            "eb"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [
+            "msg_id",
+            "channel_id"
+          ],
+          "permissions": [
+            "manage_messages"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "announcement",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "channel_id"
+          ],
+          "permissions": [
+            "manage_messages"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "send_media",
+          "aliases": [
+            "sm"
+          ],
+          "type": "Prefix (!)",
+          "parameters": [
+            "channel_id"
+          ],
+          "permissions": [
+            "manage_messages"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "schedule",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "manage_messages"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "list_schedules",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "manage_messages"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "load_config",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "config_name",
+            "channel_id"
+          ],
+          "permissions": [
+            "manage_webhooks"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "backup_config",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "message_id"
+          ],
+          "permissions": [
+            "manage_webhooks"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "list_configs",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [],
+          "permissions": [
+            "manage_webhooks"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "set_single_role",
+          "aliases": [],
+          "type": "Prefix (!)",
+          "parameters": [
+            "message_id",
+            "channel_id"
+          ],
+          "permissions": [
+            "manage_roles"
+          ],
+          "description": "Tidak ada deskripsi"
+        }
+      ]
+    }
+  },
+  "workflow_guides": [
+    {
+      "topic": "Setup Server & Dashboard Utama",
+      "keywords": [
+        "setup",
+        "dashboard",
+        "konfigurasi",
+        "atur",
+        "pengaturan",
+        "panel"
+      ],
+      "summary": "Gunakan perintah `/setup` (khusus Administrator) untuk membuka Master Setup Dashboard. Di dashboard ini kamu bisa mengatur: Welcome Channel & Pesan, Booster Channel & Pesan, Ticket Channel & Kategori, Log Channel Audit, dan Trigger Channel Anti-Spam Trap."
+    },
+    {
+      "topic": "Setup Pesan Sambutan (Welcome Message & Banner)",
+      "keywords": [
+        "welcome",
+        "sambutan",
+        "member baru",
+        "banner welcome",
+        "kartu welcome",
+        "selamat datang"
+      ],
+      "summary": "1. Jalankan `/setup` -> Pilih 'Pengaturan Dasar' -> Klik tombol 'Welcome Channel'.\n2. Pilih kanal selamat datang pada menu dropdown.\n3. Klik tombol '✏️ Edit Teks & Banner Welcome' untuk mengatur Judul, Nama Pengirim, Isi Pesan (bisa gunakan variabel `{user}` dan `{guild_name}`), serta URL Banner (opsional).\n4. Jika URL banner dikosongkan, bot otomatis membuatkan Kartu Sertifikat Resmi Anggota 1050x660 PNG berisi foto profil member dan stempel emas secara otomatis!"
+    },
+    {
+      "topic": "Setup Sistem Tiket Dukungan",
+      "keywords": [
+        "tiket",
+        "ticket",
+        "buka tiket",
+        "tutup tiket",
+        "modmail",
+        "support"
+      ],
+      "summary": "1. Jalankan `/setup` -> Pilih 'Tiket Support'.\n2. Atur kanal pengiriman panel tiket dan kategori penyimpanan kanal tiket baru.\n3. Klik 'Edit Pesan Tiket' untuk menyesuaikan judul dan deskripsi.\n4. Tiket yang dibuka oleh member bersifat privat dan hanya bisa ditutup secara aman menggunakan tombol '[ 🔒 Tutup Tiket ]' dengan countdown 5 detik oleh pembuat tiket atau staf server."
+    },
+    {
+      "topic": "Setup Sistem Keamanan & Trap Anti-Spam",
+      "keywords": [
+        "trap",
+        "jebakan",
+        "anti spam",
+        "phishing",
+        "scam",
+        "timeout",
+        "keamanan",
+        "sentinel"
+      ],
+      "summary": "1. Jalankan `/setup` -> Pilih 'Sistem Keamanan' -> Tambahkan kanal jebakan (Trigger Channel).\n2. Buat kanal seperti `#verify-here` atau `#peraturan` yang disembunyikan bagi member resmi namun terlihat oleh bot raid/spammer.\n3. Setiap pesan di kanal trap langsung dihapus seketika, pelaku di-timeout otomatis, dan log dikirim ke kanal audit log.\n4. Kartu jebakan menampilkan hitungan pelanggar yang otomatis tersinkronisasi (self-healing), dan dapat diatur manual via `!addtrapcount <jumlah>` atau `!settrapcount <jumlah>`."
+    },
+    {
+      "topic": "Setup Panel Pemilihan Role (Self-Role)",
+      "keywords": [
+        "panel role",
+        "setuppanelrole",
+        "addpanelrole",
+        "ambil role",
+        "reaction role"
+      ],
+      "summary": "1. Jalankan `/setuppanelrole channel:<kanal> mode:<select/button> judul:<Judul Panel>`.\n2. Catat ID pesan panel yang terkirim.\n3. Tambahkan role satu per satu dengan `/addpanelrole message_id:<ID Pesan> role:<@Role> label_teks:<Nama Label> emoji:<Emoji>`.\n4. Member bisa mengambil dan melepas role dengan sekali klik dropdown atau tombol interaktif."
+    },
+    {
+      "topic": "Setup Voice Channel Sementara (Join-to-Create)",
+      "keywords": [
+        "temp voice",
+        "voice sementara",
+        "join to create",
+        "kamar suara",
+        "vc",
+        "vcadmin"
+      ],
+      "summary": "1. Admin menyiapkan kanal pemicu: `/vcadmin settrigger channel:<voice_channel>`.\n2. Admin menyiapkan kategori tujuan: `/vcadmin setcat category:<category>`.\n3. Saat member masuk ke kanal pemicu, bot otomatis membuatkan ruangan suara privat baru dan memindahkan member ke sana.\n4. Pemilik ruangan bisa mengelola via `/vc lock` (gembok), `/vc unlock` (buka), `/vc name <nama>` (ganti nama), `/vc limit <jumlah>` (batas member), atau panel tombol kontrol."
+    },
+    {
+      "topic": "Sistem Leveling & Kartu Anggota Resmi",
+      "keywords": [
+        "rank",
+        "level",
+        "leveling",
+        "leaderboard",
+        "kartu member",
+        "lisensi",
+        "exp"
+      ],
+      "summary": "1. Member mengumpulkan EXP dari mengetik pesan dan aktif di voice channel.\n2. Gunakan `/rank` atau `!rank` untuk menampilkan Kartu Sertifikat Resmi Anggota (1050x660 PNG) mewah berlisensi emas dengan nomor lisensi format ringkas 5 digit user ID + 4 digit server ID.\n3. Gunakan `/leaderboard` atau `!top` untuk melihat peringkat teratas di server.\n4. Admin dapat mengatur konfigurasi level via `/setlevelconfig` dan badge hadiah via `/setlevelbadge`."
+    },
+    {
+      "topic": "Ekonomi Server & Mata Uang RSWN",
+      "keywords": [
+        "rswn",
+        "uang",
+        "daily",
+        "work",
+        "balance",
+        "bank",
+        "transfer",
+        "ekonomi",
+        "invest"
+      ],
+      "summary": "1. Klaim gaji harian dengan `!daily` dan bekerja dengan `!work`.\n2. Cek saldo dompet dan tabungan bank dengan `!balance` (atau `!bal`) dan `!bank`.\n3. Transfer uang antar member dengan `!transfer <@user> <jumlah>` atau `!pay <@user> <jumlah>`.\n4. Simpan uang di bank vault untuk perlindungan atau ikuti mini-game investasi `!invest` dan kasino `!gamble`."
+    },
+    {
+      "topic": "Pembersihan Chat DM Pribadi dengan Bot",
+      "keywords": [
+        "clear dm",
+        "cleardm",
+        "hapus dm",
+        "reset dm",
+        "bersihkan dm"
+      ],
+      "summary": "Di ruang obrolan DM pribadi dengan bot, kirim pesan `!clear` atau `!cleardm`. Bot akan secara otomatis menghapus semua pesan miliknya sendiri di kanal DM tersebut (hingga 100 pesan) dan mereset riwayat memori percakapan AI untuk DM tersebut. (Catatan: Pesan yang dikirim oleh pengguna di DM hanya bisa dihapus oleh pengguna sendiri sesuai kebijakan Discord API)."
+    }
+  ]
+}
