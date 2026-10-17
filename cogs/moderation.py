@@ -2017,6 +2017,24 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             }
             save_data(self.settings_file, self.settings)
         return guild_settings["channel_rules"][channel_id_str]
+
+    async def _safe_delete_message(self, message: discord.Message, delay: int = 0):
+        try:
+            if delay > 0:
+                await asyncio.sleep(delay)
+            if not message.guild or not message.channel:
+                return
+            perms = message.channel.permissions_for(message.guild.me)
+            if not perms.manage_messages and message.author.id != self.bot.user.id:
+                log.warning(f"⚠️ [CHANNEL RULES] Tidak memiliki izin 'Manage Messages' di #{message.channel.name} ({message.channel.id}) untuk menghapus pesan.")
+                return
+            await message.delete()
+        except discord.NotFound:
+            pass
+        except discord.Forbidden:
+            log.warning(f"⚠️ [CHANNEL RULES] Izin ditolak (Forbidden) saat menghapus pesan di #{message.channel.name} ({message.channel.id})")
+        except Exception as e:
+            log.debug(f"[CHANNEL RULES] Gagal menghapus pesan {message.id}: {e}")
         
     def get_guild_filters(self, guild_id: int):
         guild_id_str = str(guild_id)
@@ -2954,64 +2972,69 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             if isinstance(message.author, discord.Member):
                 self.bot.loop.create_task(self.send_booster_announcement(message.guild, message.author))
             
+        # Ambil konfigurasi Channel Rules di kanal ini
+        channel_rules = self.get_channel_rules(message.guild.id, message.channel.id)
+        auto_delete_delay = channel_rules.get("auto_delete_seconds", 0)
+
+        # 1. Jika pesan dari bot ini sendiri (RTMBOT)
         if message.author.id == self.bot.user.id:
+            if auto_delete_delay > 0:
+                self.bot.loop.create_task(self._safe_delete_message(message, auto_delete_delay))
             return
 
         is_webhook = message.webhook_id is not None
-        if message.author.bot and not is_webhook:
-            rules = self.get_channel_rules(message.guild.id, message.channel.id)
-            if (delay := rules.get("auto_delete_seconds", 0)) > 0:
-                try:
-                    await message.delete(delay=delay)
-                except Exception:
-                    pass
-            if rules.get("disallow_bots"):
-                try:
-                    await message.delete()
-                except Exception:
-                    pass
-            return
 
-        guild_settings = self.get_guild_settings(message.guild.id)
-
-        # Proteksi Khusus Webhook Bocor / Compromised Webhook
-        if is_webhook:
-            trigger_channels = guild_settings.get("trigger_channels", [])
-            first_media = message.attachments[0].url if message.attachments else None
-            
-            # Cek 1: Webhook mengirim di Honeypot Channel
-            if message.channel.id in trigger_channels:
-                try: await message.delete()
-                except: pass
-                try:
-                    wh = await self.bot.fetch_webhook(message.webhook_id)
-                    await wh.delete(reason="Rogue Webhook: Mengirim pesan di Honeypot Channel")
-                except Exception: pass
-                await self.send_spam_log_v2(
-                    message.guild, message.author, message.channel.mention,
-                    "🚨 Rogue Webhook di Honeypot Channel",
-                    "Webhook terdeteksi mengirim pesan di channel jebakan honeypot. Pesan dan Webhook telah dicabut otomatis.",
-                    str(message.id), message_content=message.content, media_url=first_media, is_webhook=True
-                )
+        # 2. Aturan Anti-Bot (disallow_bots) & Auto-Delete untuk Bot Lain / Webhook
+        if message.author.bot or is_webhook:
+            # Jika anti-bot aktif: langsung hapus instan tanpa menunggu delay
+            if channel_rules.get("disallow_bots"):
+                self.bot.loop.create_task(self._safe_delete_message(message, 0))
                 return
+            
+            # Jika anti-bot nonaktif tapi auto-delete timer aktif: jadwalkan hapus otomatis
+            if auto_delete_delay > 0:
+                self.bot.loop.create_task(self._safe_delete_message(message, auto_delete_delay))
 
-            # Cek 2: Webhook mengirim tautan Phishing / Scam
-            wh_content_lower = message.content.lower()
-            scam_keywords = ['nitro', 'gift', 'airdrop', 'free steam', 'disocrd', 'dlscord', 'discrod', 't.me/']
-            urls = re.findall(r'(https?://[^\s]+)', wh_content_lower)
-            if urls and any(any(kw in u for kw in scam_keywords) for u in urls):
-                try: await message.delete()
-                except: pass
-                try:
-                    wh = await self.bot.fetch_webhook(message.webhook_id)
-                    await wh.delete(reason="Rogue Webhook: Terdeteksi mengirim link Phishing")
-                except Exception: pass
-                await self.send_spam_log_v2(
-                    message.guild, message.author, message.channel.mention,
-                    "🚨 Rogue Webhook Phishing Link",
-                    f"Webhook terdeteksi menyebarkan link scam/phising: `{', '.join(urls)[:150]}`. Pesan dan Webhook telah dicabut.",
-                    str(message.id), message_content=message.content, media_url=first_media, is_webhook=True
-                )
+            # Proteksi Khusus Webhook Bocor / Compromised Webhook
+            if is_webhook:
+                guild_settings = self.get_guild_settings(message.guild.id)
+                trigger_channels = guild_settings.get("trigger_channels", [])
+                first_media = message.attachments[0].url if message.attachments else None
+                
+                # Cek 1: Webhook mengirim di Honeypot Channel
+                if message.channel.id in trigger_channels:
+                    try: await message.delete()
+                    except: pass
+                    try:
+                        wh = await self.bot.fetch_webhook(message.webhook_id)
+                        await wh.delete(reason="Rogue Webhook: Mengirim pesan di Honeypot Channel")
+                    except Exception: pass
+                    await self.send_spam_log_v2(
+                        message.guild, message.author, message.channel.mention,
+                        "🚨 Rogue Webhook di Honeypot Channel",
+                        "Webhook terdeteksi mengirim pesan di channel jebakan honeypot. Pesan dan Webhook telah dicabut otomatis.",
+                        str(message.id), message_content=message.content, media_url=first_media, is_webhook=True
+                    )
+                    return
+
+                # Cek 2: Webhook mengirim tautan Phishing / Scam
+                wh_content_lower = message.content.lower()
+                scam_keywords = ['nitro', 'gift', 'airdrop', 'free steam', 'disocrd', 'dlscord', 'discrod', 't.me/']
+                urls = re.findall(r'(https?://[^\s]+)', wh_content_lower)
+                if urls and any(any(kw in u for kw in scam_keywords) for u in urls):
+                    try: await message.delete()
+                    except: pass
+                    try:
+                        wh = await self.bot.fetch_webhook(message.webhook_id)
+                        await wh.delete(reason="Rogue Webhook: Terdeteksi mengirim link Phishing")
+                    except Exception: pass
+                    await self.send_spam_log_v2(
+                        message.guild, message.author, message.channel.mention,
+                        "🚨 Rogue Webhook Phishing Link",
+                        f"Webhook terdeteksi menyebarkan link scam/phising: `{', '.join(urls)[:150]}`. Pesan dan Webhook telah dicabut.",
+                        str(message.id), message_content=message.content, media_url=first_media, is_webhook=True
+                    )
+                    return
                 return
             return
 
@@ -3020,6 +3043,10 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         is_whitelisted = any(r.id in whitelist_roles for r in message.author.roles)
         user_id_str = str(message.author.id)
         is_command = message.content.startswith(tuple(await self.bot.get_prefix(message)))
+        
+        # 3. Jadwalkan Hapus Otomatis (Auto Delete Timer) untuk pesan anggota jika aktif di kanal ini
+        if auto_delete_delay > 0:
+            self.bot.loop.create_task(self._safe_delete_message(message, auto_delete_delay))
         
         # Trigger Channel Trap (Honey-Pot)
         trigger_channels = guild_settings.get("trigger_channels", [])
@@ -3479,20 +3506,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         if is_command:
             return 
         
-        rules = self.get_channel_rules(message.guild.id, message.channel.id)
-
-        if (delay := rules.get("auto_delete_seconds", 0)) > 0:
-            try:
-                await message.delete(delay=delay)
-            except discord.NotFound:
-                pass
-
-        if rules.get("disallow_bots") and message.author.bot:
-            try:
-                await message.delete()
-            except discord.Forbidden:
-                pass
-            return
+        rules = channel_rules
 
         if rules.get("disallow_media") and message.attachments:
             try:
