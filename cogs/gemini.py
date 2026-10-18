@@ -14,6 +14,8 @@ import logging
 import re
 import aiohttp
 import io
+import urllib.parse
+from typing import Optional
 from PIL import Image
 import imagehash
 from collections import deque
@@ -95,6 +97,130 @@ def hamming_distance(h1, h2):
     except Exception as e:
         log.error(f"[HASH_COMPARE] Error: {e}")
         return 100
+
+IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp')
+KNOWN_IMAGE_DOMAINS = (
+    'cdn.discordapp.com',
+    'media.discordapp.net',
+    'images.tenor.com',
+    'i.imgur.com',
+    'i.redd.it',
+    'pbs.twimg.com'
+)
+MAX_IMAGE_DOWNLOAD_BYTES = 8 * 1024 * 1024  # 8 MB
+
+def extract_candidate_image_urls(text: str) -> list:
+    """
+    Ekstrak URL dari teks pesan yang berpotensi merupakan direct media/gambar.
+    Dukungan:
+    - URL dengan path berakhiran ekstensi gambar (.jpg, .png, dll) meski ada query string (?ex=...&hm=...)
+    - URL dari CDN media populer (Discord CDN, Imgur, Tenor, dll)
+    - URL dengan kata kunci path gambar (/attachments/, /images/, /photos/, /media/, dll)
+    - Format query parameter (?format=jpg, dll)
+    """
+    if not text:
+        return []
+    raw_urls = re.findall(r'https?://[^\s<>"]+', text)
+    candidates = []
+    seen = set()
+    for raw_url in raw_urls:
+        clean_url = raw_url.rstrip('.,);!?\'"')
+        if clean_url in seen:
+            continue
+        seen.add(clean_url)
+        try:
+            parsed = urllib.parse.urlparse(clean_url)
+            path = parsed.path.lower()
+            netloc = parsed.netloc.lower()
+
+            # Prioritas 1: Path berakhiran ekstensi gambar
+            if any(path.endswith(ext) for ext in IMAGE_EXTENSIONS):
+                candidates.append(clean_url)
+                continue
+
+            # Prioritas 2: Domain dikenal sebagai image CDN / media server
+            if any(domain in netloc for domain in KNOWN_IMAGE_DOMAINS):
+                candidates.append(clean_url)
+                continue
+
+            # Prioritas 3: Path mengandung indikasi media/gambar kuat
+            if any(hint in path for hint in ('/attachments/', '/images/', '/img/', '/photos/', '/media/')):
+                candidates.append(clean_url)
+                continue
+
+            # Prioritas 4: Query parameter memuat indikasi format gambar (misal format=jpg)
+            query = parsed.query.lower()
+            if any(f"format={ext[1:]}" in query for ext in IMAGE_EXTENSIONS):
+                candidates.append(clean_url)
+                continue
+        except Exception:
+            continue
+    return candidates[:3]
+
+async def fetch_image_from_url(url: str, session: aiohttp.ClientSession = None) -> Optional[Image.Image]:
+    """
+    Mengunduh gambar dari direct URL secara asinkron dan aman.
+    Mendukung MIME sniffing (Content-Type: image/*), batasan buffer max 8MB,
+    dan timeout 3.5 detik.
+    """
+    close_session = False
+    if session is None:
+        timeout = aiohttp.ClientTimeout(total=3.5, connect=2.0)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+        session = aiohttp.ClientSession(timeout=timeout, headers=headers)
+        close_session = True
+
+    try:
+        async with session.get(url) as resp:
+            if resp.status != 200:
+                log.info(f"[URL_IMG_READ] Status {resp.status} for {url}")
+                return None
+
+            content_type = resp.headers.get("Content-Type", "").lower()
+            parsed_path = urllib.parse.urlparse(url).path.lower()
+            has_img_ext = any(parsed_path.endswith(ext) for ext in IMAGE_EXTENSIONS)
+            is_image_mime = content_type.startswith("image/")
+
+            if not is_image_mime and not has_img_ext:
+                log.info(f"[URL_IMG_READ] Skipped non-image Content-Type: '{content_type}' for {url}")
+                return None
+
+            content_length = resp.headers.get("Content-Length")
+            if content_length and int(content_length) > MAX_IMAGE_DOWNLOAD_BYTES:
+                log.warning(f"[URL_IMG_READ] Image too large ({content_length} bytes) for {url}")
+                return None
+
+            buffer = bytearray()
+            async for chunk in resp.content.iter_chunked(64 * 1024):
+                buffer.extend(chunk)
+                if len(buffer) > MAX_IMAGE_DOWNLOAD_BYTES:
+                    log.warning(f"[URL_IMG_READ] Stream exceeded 8MB for {url}")
+                    return None
+
+            if not buffer:
+                return None
+
+            def _process_image_bytes(b_data):
+                img = Image.open(io.BytesIO(b_data))
+                if img.mode in ('RGBA', 'P'):
+                    img = img.convert('RGB')
+                img.thumbnail((800, 800))
+                return img
+
+            img = await asyncio.to_thread(_process_image_bytes, bytes(buffer))
+            log.info(f"[URL_IMG_READ] OK fetched image from {url} (size={len(buffer)} bytes, dims={img.size})")
+            return img
+    except asyncio.TimeoutError:
+        log.warning(f"[URL_IMG_READ] Timeout downloading {url}")
+        return None
+    except Exception as e:
+        log.error(f"[URL_IMG_READ] Error fetching {url}: {e}")
+        return None
+    finally:
+        if close_session:
+            await session.close()
         
 def get_learned_path(guild_id):
     return f'data/learned_{guild_id}.json'
@@ -612,19 +738,47 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
 
     async def get_images_from_message(self, message):
         images = []
+        # 1. Baca dari file attachment langsung
         for att in message.attachments:
             log.info(f"[IMG_READ] filename={att.filename} content_type={att.content_type}")
-            if any(att.filename.lower().endswith(ext) for ext in ['png', 'jpg', 'jpeg', 'webp', 'gif']):
+            if any(att.filename.lower().endswith(ext) for ext in IMAGE_EXTENSIONS):
                 try:
                     img_data = await att.read()
-                    img = Image.open(io.BytesIO(img_data))
-                    if img.mode in ('RGBA', 'P'):
-                        img = img.convert('RGB')
-                    img.thumbnail((800, 800))
+                    def _proc(data):
+                        im = Image.open(io.BytesIO(data))
+                        if im.mode in ('RGBA', 'P'):
+                            im = im.convert('RGB')
+                        im.thumbnail((800, 800))
+                        return im
+                    img = await asyncio.to_thread(_proc, img_data)
                     images.append(img)
-                    log.info(f"[IMG_READ] OK: {att.filename}")
+                    log.info(f"[IMG_READ] OK attachment: {att.filename}")
                 except Exception as e:
-                    log.error(f"[IMG_READ] FAIL {att.filename}: {e}")
+                    log.error(f"[IMG_READ] FAIL attachment {att.filename}: {e}")
+
+        # 2. Baca dari direct media URLs pada teks pesan & embeds (maksimal 3 gambar)
+        if len(images) < 3 and message.content:
+            candidate_urls = extract_candidate_image_urls(message.content)
+            if message.embeds:
+                for emb in message.embeds:
+                    if emb.image and emb.image.url and emb.image.url not in candidate_urls:
+                        candidate_urls.append(emb.image.url)
+                    if emb.thumbnail and emb.thumbnail.url and emb.thumbnail.url not in candidate_urls:
+                        candidate_urls.append(emb.thumbnail.url)
+
+            if candidate_urls:
+                timeout = aiohttp.ClientTimeout(total=3.5, connect=2.0)
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                }
+                async with aiohttp.ClientSession(timeout=timeout, headers=headers) as session:
+                    for url in candidate_urls[:3]:
+                        if len(images) >= 3:
+                            break
+                        url_img = await fetch_image_from_url(url, session=session)
+                        if url_img:
+                            images.append(url_img)
+                            log.info(f"[IMG_READ] OK direct URL: {url}")
         return images
 
     async def process_and_send_response(self, send_target, user, ctx_data, prompt_text, images=None, guild_id=None):
@@ -908,6 +1062,10 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                 first_media_filename = message.attachments[0].filename or "evidence.png"
             except Exception:
                 pass
+        elif not first_media and message.content:
+            cand = extract_candidate_image_urls(message.content)
+            if cand:
+                first_media = cand[0]
         is_wh = message.webhook_id is not None
 
         if mod_cog:
@@ -1063,8 +1221,9 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
         })
 
         block_channel_id = self.cyber_config.get("image_block_channel_id")
+        candidate_image_urls = extract_candidate_image_urls(message.content) if message.content else []
         
-        if block_channel_id and message.channel.id == block_channel_id and message.attachments:
+        if block_channel_id and message.channel.id == block_channel_id and (message.attachments or candidate_image_urls):
             valid_images = await self.get_images_from_message(message)
             if valid_images:
                 self.cyber_config.setdefault("blocked_image_hashes", [])
@@ -1078,7 +1237,7 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                 if (self.is_creator(message.author.id)
                         or message.author.guild_permissions.administrator):
                     await message.reply(
-                        f"✅ {new_hashes} hash baru tersimpan. "
+                        f"✅ {new_hashes} hash baru tersimpan (dari file attachment / direct URL). "
                         f"Total blacklist: {len(self.cyber_config['blocked_image_hashes'])} hash."
                     )
             return
@@ -1103,8 +1262,8 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
 
         is_ai_whitelisted_msg = any(w.lower() in message.content.lower() for w in self.cyber_config.get("ai_whitelist_words", []))
         
-        if message.guild and message.attachments:
-            log.info(f"[IMG_CHECK] Attachment from {message.author} (ID:{message.author.id})")
+        if message.guild and (message.attachments or candidate_image_urls):
+            log.info(f"[IMG_CHECK] Media/URL inspection from {message.author} (ID:{message.author.id})")
             target_images = await self.get_images_from_message(message)
             log.info(f"[IMG_CHECK] Valid images: {len(target_images)}")
 
