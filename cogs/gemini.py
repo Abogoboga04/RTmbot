@@ -701,7 +701,77 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
             override_lock=override_lock,
             creator_id=creator_id
         )
-        return f"{persona}\n\n{ctx_data}\n\nUser ({user.display_name} - ID: {user.id}): {prompt_text}"
+
+        # Realtime Dynamic User Data & Guild Status Injection
+        realtime_user_context = ""
+        try:
+            uid_key = str(user.id)
+            # 1. Economy & Leveling Data
+            bank_data = load_json_file('data/bank.json', {})
+            user_balance = bank_data.get(uid_key, {}).get('balance', 0)
+            
+            user_level = 0
+            user_exp = 0
+            rank_pos = "-"
+            
+            if guild_id:
+                level_file_data = load_json_file('data/level_data.json', {})
+                guild_lvl_data = level_file_data.get(str(guild_id), {})
+                u_lvl = guild_lvl_data.get(uid_key, {})
+                user_level = u_lvl.get('level', 0)
+                user_exp = u_lvl.get('exp', 0)
+                
+                if guild_lvl_data:
+                    sorted_members = sorted(guild_lvl_data.items(), key=lambda x: x[1].get('exp', 0), reverse=True)
+                    for idx, (m_id, _) in enumerate(sorted_members):
+                        if m_id == uid_key:
+                            rank_pos = idx + 1
+                            break
+
+            # 2. Member Serial ID
+            serial_id = "-"
+            if guild_id:
+                try:
+                    from cogs.card_generator import get_or_create_member_serial_id
+                    g_obj = self.bot.get_guild(int(guild_id))
+                    if g_obj and isinstance(user, discord.Member):
+                        serial_id = get_or_create_member_serial_id(g_obj, user)
+                except Exception:
+                    pass
+
+            # 3. Active Voice Channels
+            vc_info = []
+            if guild_id:
+                g_obj = self.bot.get_guild(int(guild_id))
+                if g_obj:
+                    for vc in g_obj.voice_channels:
+                        if len(vc.members) > 0:
+                            active_names = [m.display_name for m in vc.members[:5]]
+                            vc_info.append(f"Room '{vc.name}': {len(vc.members)} member aktif ({', '.join(active_names)})")
+
+            realtime_user_context = (
+                f"\n[DATA FAKTUAL PROFIL USER REALTIME]:\n"
+                f"- Nama Tampilan: {user.display_name}\n"
+                f"- Saldo Kas RSWN: {user_balance:,} RSWN\n"
+                f"- Level Komunitas: Level {user_level} (EXP: {user_exp:,})\n"
+                f"- Peringkat (Rank) Server: #{rank_pos}\n"
+                f"- Nomor Registrasi Member: #{serial_id}\n"
+            )
+            if vc_info:
+                realtime_user_context += f"- Voice Room Mabar Aktif Saat Ini: {'; '.join(vc_info)}\n"
+            else:
+                realtime_user_context += f"- Voice Room: Saat ini voice room sedang sepi/kosong.\n"
+
+            realtime_user_context += (
+                f"\nPEDOMAN INTEGRASI SISTEM:\n"
+                f"- Jika user bertanya tentang saldo RSWN, rank, exp, atau kartu mereka, gunakan angka asli di [DATA FAKTUAL PROFIL USER REALTIME]! Jawab secara natural, santai/sarkas khas Raka, dan akurat.\n"
+                f"- Jika user bertanya soal mabar / voice room, gunakan data voice room di atas.\n"
+                f"- Jika user minta rekomendasi game atau balapan, kamu boleh rekomendasikan game santai (Valorant, Roblox) atau minigame bot balapan kuda (`!balapan`), sambung kata (`!sambung`), atau kuis (`!games`).\n"
+            )
+        except Exception as e:
+            log.warning(f"[REALTIME_CTX_ERR] {e}")
+
+        return f"{persona}\n\n{ctx_data}\n\n{realtime_user_context}\n\nUser ({user.display_name} - ID: {user.id}): {prompt_text}"
         
     async def apply_db_correction(self, correction_instruction, guild_id=None):
         path = get_learned_path(guild_id) if guild_id else LEARNED_FILE_PATH

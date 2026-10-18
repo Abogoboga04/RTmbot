@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import ui, app_commands
 from PIL import Image, ImageDraw, ImageFont
 import aiohttp
@@ -456,6 +456,51 @@ class InsightHub(commands.Cog, name="Community Insights & Utility"):
 
     async def cog_load(self):
         self.bot.add_view(HelpView())
+        try:
+            if not self.sync_server_stats.is_running():
+                self.sync_server_stats.start()
+        except Exception:
+            pass
+
+    def cog_unload(self):
+        try:
+            self.sync_server_stats.cancel()
+        except Exception:
+            pass
+
+    @tasks.loop(minutes=2)
+    async def sync_server_stats(self):
+        try:
+            stats = {
+                "timestamp": int(time.time()),
+                "guilds": {}
+            }
+            target_ids = [765138959625486357, 722619465644113962]
+            for gid in target_ids:
+                g = self.bot.get_guild(gid)
+                if g:
+                    stats["guilds"][str(gid)] = {
+                        "id": str(gid),
+                        "name": g.name,
+                        "member_count": g.member_count,
+                        "approximate_presence_count": getattr(g, "approximate_presence_count", 0),
+                        "icon_url": g.icon.url if g.icon else None
+                    }
+            if stats["guilds"]:
+                os.makedirs("data", exist_ok=True)
+                with open("data/server_stats.json", "w", encoding="utf-8") as f:
+                    json.dump(stats, f, indent=2)
+
+                web_path = r"C:\Users\Administrator\Downloads\rtmbot html\html-main\costum\server_stats.json"
+                if os.path.exists(os.path.dirname(web_path)):
+                    with open(web_path, "w", encoding="utf-8") as f:
+                        json.dump(stats, f, indent=2)
+        except Exception:
+            pass
+
+    @sync_server_stats.before_loop
+    async def before_sync_server_stats(self):
+        await self.bot.wait_until_ready()
 
     async def buat_tulisan_tangan(self, teks, nama):
         session = getattr(self.bot, 'session', None)
