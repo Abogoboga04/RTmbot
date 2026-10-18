@@ -698,6 +698,42 @@ class InsightHub(commands.Cog, name="Community Insights & Utility"):
         else:
             print(f'Error: {error}')
 
+    @commands.hybrid_command(name="getserverasset", description="Mengambil nama resmi, foto icon HD, dan banner server Discord.")
+    @app_commands.describe(guild_id="ID Server target (opsional, default: server saat ini)")
+    async def get_server_asset(self, ctx: commands.Context, guild_id: str = None):
+        """Mengambil nama, icon HD, dan banner server untuk dokumentasi/web."""
+        target_guild = ctx.guild
+        if guild_id:
+            try:
+                gid = int(guild_id.strip())
+                found = self.bot.get_guild(gid)
+                if found:
+                    target_guild = found
+            except Exception:
+                pass
+
+        if not target_guild:
+            await ctx.send("Server tidak ditemukan atau bot belum bergabung ke server tersebut.", ephemeral=True)
+            return
+
+        icon_url = target_guild.icon.replace(size=1024, format="png").url if target_guild.icon else None
+        banner_url = target_guild.banner.replace(size=1024, format="png").url if target_guild.banner else None
+
+        embed = discord.Embed(
+            title=f"Aset Visual Resmi: {target_guild.name}",
+            description=f"**ID Server:** `{target_guild.id}`\n**Total Member:** {getattr(target_guild, 'member_count', 'N/A'):,} Anggota",
+            color=discord.Color.gold()
+        )
+        if icon_url:
+            embed.set_thumbnail(url=icon_url)
+            embed.add_field(name="Icon Resmi HD (1024px)", value=f"[Download Icon HD]({icon_url})", inline=True)
+        if banner_url:
+            embed.set_image(url=banner_url)
+            embed.add_field(name="Banner Resmi HD (1024px)", value=f"[Download Banner HD]({banner_url})", inline=True)
+
+        embed.set_footer(text=f"Diekstrak via RTMBOT System • {target_guild.name}")
+        await ctx.send(embed=embed)
+
     @commands.hybrid_command(name="help", aliases=["h", "bantuan"], description="Pusat panduan perintah dan fitur interaktif RTM-Bot")
     async def help_command(self, ctx: commands.Context):
         cat_data = HELP_CATEGORIES["overview"]
