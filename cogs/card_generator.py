@@ -1,5 +1,6 @@
 import os
 import io
+import json
 import math
 import re
 import unicodedata
@@ -8,6 +9,59 @@ from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 import aiohttp
 import discord
+
+REGISTRY_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "member_registry.json")
+
+def get_or_create_member_serial_id(guild: discord.Guild, member: discord.Member) -> int:
+    """
+    Mengambil atau menerbitkan Nomor Registrasi Anggota Permanen (Permanent Serial ID).
+    Nomor ini abadi dan tidak akan berkurang/berubah meskipun ada anggota lain yang keluar dari server.
+    """
+    if not guild or not member:
+        return 1
+        
+    guild_id = str(guild.id)
+    user_id = str(member.id)
+    
+    registry = {}
+    try:
+        if os.path.exists(REGISTRY_FILE):
+            with open(REGISTRY_FILE, "r", encoding="utf-8") as f:
+                registry = json.load(f)
+    except Exception:
+        registry = {}
+        
+    if guild_id not in registry or not isinstance(registry[guild_id], dict):
+        base_count = getattr(guild, "member_count", 1) or 1
+        registry[guild_id] = {
+            "counter": max(base_count, 1),
+            "members": {}
+        }
+        
+    guild_data = registry[guild_id]
+    if "members" not in guild_data or not isinstance(guild_data["members"], dict):
+        guild_data["members"] = {}
+    if "counter" not in guild_data:
+        guild_data["counter"] = max(getattr(guild, "member_count", 1) or 1, 1)
+        
+    # Jika member sudah terdaftar sebelumnya, kembalikan serial ID yang sudah ada (tidak pernah berubah)
+    if user_id in guild_data["members"]:
+        return guild_data["members"][user_id]
+        
+    # Jika member baru, naikkan counter dan simpan permanen
+    current_count = getattr(guild, "member_count", 1) or 1
+    new_serial = max(guild_data["counter"] + 1, current_count)
+    guild_data["counter"] = new_serial
+    guild_data["members"][user_id] = new_serial
+    
+    try:
+        os.makedirs(os.path.dirname(REGISTRY_FILE), exist_ok=True)
+        with open(REGISTRY_FILE, "w", encoding="utf-8") as f:
+            json.dump(registry, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass
+        
+    return new_serial
 
 def is_safe_printable_char(ch: str) -> bool:
     """Filter ketat untuk mencegah karakter box kosong (□)."""
@@ -165,6 +219,13 @@ async def generate_official_member_card(
     Menghasilkan file gambar Kartu Resmi Anggota (Sertifikat Eksklusif 1050x660 PNG)
     yang digunakan untuk command /rank dan banner pesan sambutan (welcome).
     """
+    # Resolusi Nomor Urut Permanen jika rank_pos tidak disertakan
+    if rank_pos is None and guild and target:
+        try:
+            rank_pos = get_or_create_member_serial_id(guild, target)
+        except Exception:
+            pass
+
     # Unduh Avatar Target
     avatar_bytes = None
     try:

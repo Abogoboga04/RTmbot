@@ -16,9 +16,10 @@ import io
 import unicodedata
 
 try:
-    from cogs.card_generator import generate_official_member_card
+    from cogs.card_generator import generate_official_member_card, get_or_create_member_serial_id
 except ImportError:
     generate_official_member_card = None
+    get_or_create_member_serial_id = None
 
 from cogs.v2_layout import build_v2_card, send_v2_message, send_v2_interaction, register_view
 
@@ -1729,6 +1730,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                 except Exception:
                     pass
 
+                serial_id = get_or_create_member_serial_id(member.guild, member) if get_or_create_member_serial_id else member.guild.member_count
                 card_buffer = await generate_official_member_card(
                     bot=self.bot,
                     target=member,
@@ -1736,7 +1738,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                     exp=exp,
                     level=level,
                     balance=balance,
-                    rank_pos=member.guild.member_count,
+                    rank_pos=serial_id,
                     custom_title=f"KARTU RESMI ANGGOTA • {member.guild.name.upper()}"
                 )
                 return card_buffer
