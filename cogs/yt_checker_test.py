@@ -486,10 +486,11 @@ Berikan 1 respon pengumuman kamu sekarang:"""
     # ==========================================
     # BACKGROUND POLLING LOOP (AUTO CHECKER)
     # ==========================================
-    @tasks.loop(minutes=2)
+    @tasks.loop(seconds=60)
     async def yt_check_loop(self):
         """
-        Loop otomatis mengecek channel YouTube yang terdaftar setiap 2 menit.
+        Loop otomatis mengecek channel YouTube yang terdaftar setiap 60 detik (1 menit).
+        Dilengkapi Timestamp Freshness Guard agar video lama tidak pernah terkirim sebagai notifikasi baru.
         """
         channels = self.config.get("channels", [])
         if not channels:
@@ -514,10 +515,31 @@ Berikan 1 respon pengumuman kamu sekarang:"""
 
             posted_ids = self.cache.get("posted_video_ids", [])
 
-            # Cek 3 video teratas dari RSS
-            for item in latest_items[:3]:
+            # Cek entri video teratas dari RSS
+            for item in latest_items[:5]:
                 vid = item["video_id"]
                 if vid in posted_ids:
+                    continue
+
+                # 🛡️ TIMESTAMP FRESHNESS GUARD:
+                # Jika video dipublikasikan lebih dari 4 jam lalu (misal video lama di channel yang baru didaftarkan),
+                # tandai ke cache diam-diam tanpa spamming pengumuman ke Discord!
+                is_fresh = True
+                pub_str = item.get("published")
+                if pub_str:
+                    try:
+                        pub_dt = datetime.fromisoformat(pub_str)
+                        now_utc = datetime.now(timezone.utc)
+                        age_seconds = (now_utc - pub_dt).total_seconds()
+                        if age_seconds > 14400: # Lebih dari 4 jam
+                            is_fresh = False
+                    except Exception:
+                        pass
+
+                if not is_fresh:
+                    posted_ids.append(vid)
+                    self.cache["posted_video_ids"] = posted_ids
+                    self._save_cache()
                     continue
 
                 # Konten baru ditemukan! Analisis status siaran
@@ -668,9 +690,20 @@ Berikan 1 respon pengumuman kamu sekarang:"""
         self.config["channels"] = channels
         self._save_config()
 
+        # 🛡️ Seed Baseline Cache: Tandai video yang sudah ada saat ini agar tidak dispam sebagai video baru
+        current_videos = await self.fetch_latest_videos_from_rss(channel_id)
+        posted_ids = self.cache.get("posted_video_ids", [])
+        seeded_count = 0
+        for cv in current_videos:
+            if cv["video_id"] not in posted_ids:
+                posted_ids.append(cv["video_id"])
+                seeded_count += 1
+        self.cache["posted_video_ids"] = posted_ids
+        self._save_cache()
+
         embed = discord.Embed(
             title="✅ Channel YouTube Berhasil Ditambahkan",
-            description=f"Bot sekarang memantau channel ini secara mandiri langsung dari YouTube!",
+            description=f"Bot sekarang memantau channel ini secara mandiri langsung dari YouTube!\n*(Sebanyak {seeded_count} video lama sudah dicatat agar tidak dispam)*",
             color=0x57f287
         )
         embed.add_field(name="Nama Channel", value=f"**{channel_name}**", inline=True)
