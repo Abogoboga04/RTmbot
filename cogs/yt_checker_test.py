@@ -390,18 +390,16 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
             print(f"[YT RSS ERROR] {e}")
         return videos
 
-    async def fetch_latest_videos(self, channel_id: str):
+    async def _fetch_from_uu_playlist(self, channel_id: str):
         """
-        Dual-Engine Video Detector:
-        1. Cek langsung tab /videos channel YouTube (real-time, zero CDN delay).
-        2. Cek public Atom RSS feed YouTube.
-        Menggabungkan keduanya agar tidak ada video yang tertinggal akibat delay cache Google.
+        Layer 1: Universal User-Uploads Playlist (UU...)
+        Setiap channel YouTube UC... memiliki playlist resmi internal UU... yang memuat
+        seluruh video reguler, Shorts, dan Live Stream secara real-time.
         """
-        videos = []
-        found_vids = set()
-
-        # Engine 1: Channel Videos Tab (Instant & Real-time, mendeteksi video detik itu juga)
-        channel_tab_url = f"https://www.youtube.com/channel/{channel_id}/videos"
+        if not channel_id or not channel_id.startswith("UC"):
+            return []
+        playlist_id = f"UU{channel_id[2:]}"
+        url = f"https://www.youtube.com/playlist?list={playlist_id}"
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
@@ -409,44 +407,126 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
         try:
             timeout = aiohttp.ClientTimeout(total=8)
             async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(channel_tab_url, headers=headers) as resp:
+                async with session.get(url, headers=headers) as resp:
                     if resp.status == 200:
                         html = await resp.text()
                         vids = re.findall(r'\"videoId\":\"([a-zA-Z0-9_-]{11})\"', html)
-                        for vid in vids[:6]:
-                            if vid not in found_vids:
-                                found_vids.add(vid)
-                                videos.append({
-                                    "video_id": vid,
-                                    "title": None,
-                                    "url": f"https://www.youtube.com/watch?v={vid}",
-                                    "channel_id": channel_id,
-                                    "channel_name": None,
-                                    "published": None,
-                                    "updated": None,
-                                    "thumbnail_url": f"https://img.youtube.com/vi/{vid}/maxresdefault.jpg",
-                                    "description": ""
-                                })
-        except Exception as e_tab:
-            print(f"[YT TAB SCRAPE ERROR] {e_tab}")
+                        seen = set()
+                        out = []
+                        for v in vids:
+                            if v not in seen:
+                                seen.add(v)
+                                out.append(v)
+                        return out[:12]
+        except Exception as e:
+            print(f"[YT UU PLAYLIST ERROR] {e}")
+        return []
 
-        # Engine 2: Atom RSS Feed (Pelengkap Metadata)
-        rss_videos = await self.fetch_latest_videos_from_rss(channel_id)
-        for rv in rss_videos:
-            rv_id = rv.get("video_id")
-            if rv_id in found_vids:
-                for v in videos:
-                    if v["video_id"] == rv_id:
-                        if rv.get("title"): v["title"] = rv["title"]
-                        if rv.get("channel_name"): v["channel_name"] = rv["channel_name"]
-                        if rv.get("published"): v["published"] = rv["published"]
-                        if rv.get("updated"): v["updated"] = rv["updated"]
-                        if rv.get("description"): v["description"] = rv["description"]
-                        break
+    async def _fetch_from_live_tab(self, channel_id: str):
+        """
+        Layer 2: Dedicated Live Stream Guard (/streams)
+        Mendeteksi siaran langsung yang baru dimulai seketika saat on-air.
+        """
+        url = f"https://www.youtube.com/channel/{channel_id}/streams"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
+        }
+        try:
+            timeout = aiohttp.ClientTimeout(total=8)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url, headers=headers) as resp:
+                    if resp.status == 200:
+                        html = await resp.text()
+                        vids = re.findall(r'\"videoId\":\"([a-zA-Z0-9_-]{11})\"', html)
+                        seen = set()
+                        out = []
+                        for v in vids:
+                            if v not in seen:
+                                seen.add(v)
+                                out.append(v)
+                        return out[:5]
+        except Exception as e:
+            print(f"[YT LIVE TAB ERROR] {e}")
+        return []
+
+    async def _fetch_from_shorts_tab(self, channel_id: str):
+        """
+        Layer 2b: Dedicated Shorts Guard (/shorts)
+        """
+        url = f"https://www.youtube.com/channel/{channel_id}/shorts"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
+        }
+        try:
+            timeout = aiohttp.ClientTimeout(total=8)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url, headers=headers) as resp:
+                    if resp.status == 200:
+                        html = await resp.text()
+                        vids = re.findall(r'\"videoId\":\"([a-zA-Z0-9_-]{11})\"', html)
+                        seen = set()
+                        out = []
+                        for v in vids:
+                            if v not in seen:
+                                seen.add(v)
+                                out.append(v)
+                        return out[:5]
+        except Exception as e:
+            print(f"[YT SHORTS TAB ERROR] {e}")
+        return []
+
+    async def fetch_latest_videos(self, channel_id: str):
+        """
+        Triple-Layer Universal Content Detector:
+        Layer 1: Universal User Uploads Playlist (UU...) -> Video reguler, Shorts, & Live sekaligus secara real-time.
+        Layer 2: Live Stream Guard (/streams) & Shorts Guard (/shorts) -> Deteksi on-air instan.
+        Layer 3: YouTube Atom RSS Feed (feeds/videos.xml) -> Backup & Metadata feed.
+        """
+        tasks = [
+            self._fetch_from_uu_playlist(channel_id),
+            self._fetch_from_live_tab(channel_id),
+            self._fetch_from_shorts_tab(channel_id),
+            self.fetch_latest_videos_from_rss(channel_id)
+        ]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        uu_vids = results[0] if isinstance(results[0], list) else []
+        live_vids = results[1] if isinstance(results[1], list) else []
+        shorts_vids = results[2] if isinstance(results[2], list) else []
+        rss_videos = results[3] if isinstance(results[3], list) else []
+        
+        rss_map = {item["video_id"]: item for item in rss_videos}
+        
+        # Urutan prioritas penggabungan ID:
+        # 1. Live tab (siaran on-air seketika)
+        # 2. UU Playlist (kronologis universal mencakup video, shorts, live)
+        # 3. Shorts tab
+        # 4. RSS feed
+        combined_ids = []
+        seen = set()
+        for vid in live_vids + uu_vids + shorts_vids + list(rss_map.keys()):
+            if vid and vid not in seen:
+                seen.add(vid)
+                combined_ids.append(vid)
+                
+        videos = []
+        for vid in combined_ids[:10]:
+            if vid in rss_map:
+                videos.append(rss_map[vid])
             else:
-                found_vids.add(rv_id)
-                videos.append(rv)
-
+                videos.append({
+                    "video_id": vid,
+                    "title": None,
+                    "url": f"https://www.youtube.com/watch?v={vid}",
+                    "channel_id": channel_id,
+                    "channel_name": None,
+                    "published": None,
+                    "updated": None,
+                    "thumbnail_url": f"https://img.youtube.com/vi/{vid}/maxresdefault.jpg",
+                    "description": ""
+                })
         return videos
 
     def is_video_fresh(self, published_str: str, updated_str: str = None, max_age_hours: int = 4) -> bool:
@@ -488,44 +568,59 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
 
         return pub_fresh or upd_fresh
 
-    async def classify_stream_status(self, video_id: str):
+    async def extract_rich_metadata(self, video_id: str, url: str = None):
         """
-        Mendeteksi secara akurat metadata video dan status penayangannya:
-        - Menggunakan YouTube Official oEmbed API untuk jaminan 100% judul dan nama channel
-        - Menggunakan inspeksi HTML watch untuk mendeteksi Live Stream, Premiere, atau Upload
+        Mengambil metadata video YouTube menggunakan pipeline oEmbed resmi Google
+        dengan jaminan 100% judul dan channel selalu didapat untuk Video, Shorts, dan Live.
         """
-        watch_url = f"https://www.youtube.com/watch?v={video_id}"
-        oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
+        clean_url = url or f"https://www.youtube.com/watch?v={video_id}"
+        oembed_url = f"https://www.youtube.com/oembed?url={clean_url}&format=json"
         
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
         }
         
-        info = {
-            "status": "upload",
+        meta = {
             "title": None,
             "channel_name": None,
-            "description": None,
             "thumbnail_url": f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
         }
-
-        # 1. Tier 1: YouTube Official oEmbed API (100% akurat untuk Video, Shorts, Live, Premiere)
+        
         try:
-            timeout_oembed = aiohttp.ClientTimeout(total=5)
-            async with aiohttp.ClientSession(timeout=timeout_oembed) as session:
+            timeout = aiohttp.ClientTimeout(total=5)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(oembed_url, headers=headers) as resp:
                     if resp.status == 200:
                         data = await resp.json()
                         raw_title = data.get("title", "")
                         if raw_title:
-                            info["title"] = " ".join(raw_title.split())
+                            meta["title"] = " ".join(raw_title.split())
                         if data.get("author_name"):
-                            info["channel_name"] = data.get("author_name")
+                            meta["channel_name"] = data.get("author_name")
                         if data.get("thumbnail_url"):
-                            info["thumbnail_url"] = data.get("thumbnail_url")
-        except Exception as e_oe:
-            print(f"[YT OEMBED ERROR] {e_oe}")
+                            meta["thumbnail_url"] = data.get("thumbnail_url")
+        except Exception as e:
+            print(f"[YT OEMBED ERROR] {e}")
+            
+        return meta
+
+    async def classify_stream_status(self, video_id: str):
+        """
+        Mendeteksi secara akurat metadata video dan status penayangannya:
+        - Menggunakan YouTube Official oEmbed API untuk jaminan 100% judul dan nama channel
+        - Menggunakan inspeksi HTML watch untuk mendeteksi Live Stream, Premiere, atau Upload
+        """
+        # 1. Tier 1: YouTube Official oEmbed API (100% akurat untuk Video, Shorts, Live, Premiere)
+        meta = await self.extract_rich_metadata(video_id)
+        
+        info = {
+            "status": "upload",
+            "title": meta.get("title"),
+            "channel_name": meta.get("channel_name"),
+            "description": None,
+            "thumbnail_url": meta.get("thumbnail_url") or f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+        }
 
         # 2. Tier 2: Inspeksi HTML Watch untuk status siaran (Live / Premiere / Upload) & Description
         try:
@@ -685,10 +780,10 @@ Berikan 1 respon pengumuman kamu sekarang:"""
             btn_label = "Tonton Video"
             accent_color = 0x5865f2 # Biru blurple
 
-        thumbnail_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+        thumbnail_url = video_data.get("thumbnail_url") or f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
 
         # Pesan mention + AI hype di atas kartu
-        mention_content = f"@everyone {ai_hype}"
+        mention_content = f"@everyone {ai_hype}" if ai_hype else "@everyone"
 
         # 1. Tombol Aksi Langsung
         buttons = [{
@@ -702,11 +797,8 @@ Berikan 1 respon pengumuman kamu sekarang:"""
         safe_title = title.replace("[", "(").replace("]", ")")
         card_title = f"[{safe_title}]({video_url})"
         
-        # Subtitle menampilkan URL tepat di bawah judul
-        if desc and desc.strip():
-            card_desc = f"{desc[:250].strip()}\n\n{video_url}"
-        else:
-            card_desc = f"{video_url}"
+        # Subtitle menampilkan URL tepat di bawah judul (identik Foto 3)
+        card_desc = f"{video_url}"
 
         try:
             card = build_v2_card(
@@ -1093,7 +1185,7 @@ Berikan 1 respon pengumuman kamu sekarang:"""
         if not channels:
             return await ctx.send("⚠️ Belum ada channel yang didaftarkan. Gunakan `!ytadd <url>` terlebih dahulu.")
 
-        msg = await ctx.send("🔄 *Sedang memeriksa update YouTube untuk semua channel (Dual-Engine: RSS + Web Tab)...*")
+        msg = await ctx.send("🔄 *Sedang memeriksa update YouTube untuk semua channel (Triple-Layer: UU Playlist + Live Guard + RSS)...*")
         
         report_lines = []
         new_count = 0
@@ -1131,8 +1223,11 @@ Berikan 1 respon pengumuman kamu sekarang:"""
 
             # Cek status video teratas
             if top_vid in posted_ids:
-                v_title = top_item.get("title") or "Video Teratas"
-                report_lines.append(f"• **{c_name}**: Video `{top_vid}` ({v_title}) sudah ada di cache *(tidak dikirim ulang)*.")
+                v_title = top_item.get("title")
+                if not v_title:
+                    m = await self.extract_rich_metadata(top_vid)
+                    v_title = m.get("title") or "Konten Teratas"
+                report_lines.append(f"• **{c_name}**: Konten `{top_vid}` ({v_title}) sudah ada di cache *(tidak dikirim ulang)*.")
             else:
                 # Video baru ditemukan!
                 if target_disc_channel:
