@@ -1020,7 +1020,8 @@ async def process_web_command_queue():
 async def load_cogs():
     initial_extensions = [
         "cogs.leveling", "cogs.moderation", "cogs.quotes", "cogs.minigames",
-        "cogs.webhook", "cogs.finance", "cogs.notif", "cogs.activity", "cogs.info", "cogs.gemini", "cogs.party_games", "cogs.temp_voice", "cogs.fun"
+        "cogs.webhook", "cogs.finance", "cogs.notif", "cogs.activity", "cogs.info", "cogs.gemini", "cogs.party_games", "cogs.temp_voice", "cogs.fun",
+        "cogs.yt_checker_test"
     ]
     for extension in initial_extensions:
         try:

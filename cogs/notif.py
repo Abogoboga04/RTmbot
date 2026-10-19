@@ -936,39 +936,57 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
         
         await ctx.send(embed=embed)
 
-    async def _generate_jarkasih_hype(self, link_type, channel_name=None):
+    async def _generate_jarkasih_hype(self, link_type, channel_name=None, video_title=None, video_desc=None):
         tipe_konten_map = {
-            "live": "Live Stream YouTube",
-            "upload": "Video YouTube",
+            "live": "Live Streaming YouTube",
+            "upload": "Video Baru YouTube",
             "premier": "Premiere YouTube",
             "tiktok": "Video TikTok",
-            "tiktok_live": "Live Stream TikTok",
+            "tiktok_live": "Live Streaming TikTok",
             "instagram": "Postingan/Reel Instagram",
-            "instagram_live": "Live Stream Instagram"
+            "instagram_live": "Live Streaming Instagram"
         }
         tipe_konten = tipe_konten_map.get(link_type, "Konten Terbaru")
         
-        prompt = f"""
-        Lu adalah Jarkasih, bot skena/kalcer ala anak Jaksel yang asik, edgy, dan ceplas-ceplos.
-        Tugas lu: Kasih tau warga server kalau ada {tipe_konten} baru yang masuk.
-        """
-        
+        info_lines = []
         if channel_name:
-            prompt += f"\n        SANGAT PENTING: Lu WAJIB nyebutin nama channelnya yaitu '{channel_name}' di dalam kalimat lu!\n"
+            info_lines.append(f"- Channel/Kreator: {channel_name}")
+        if video_title:
+            info_lines.append(f"- Judul: {video_title}")
+        if video_desc:
+            short_desc = video_desc.strip()[:300].replace("\n", " ")
+            info_lines.append(f"- Ringkasan/Deskripsi: {short_desc}")
             
-        prompt += """
+        context_str = "\n".join(info_lines) if info_lines else "Belum ada detail khusus."
 
-        ATURAN GAYA BAHASA MUTLAK:
-        1. WAJIB pakai gaya bahasa 'Kalcer' yang natural nyampur sama slang Western/Inggris.
-        2. SANGAT PENTING: Jangan melulu pakai kata FOMO, vibes, atau legit! Lu boleh pakai sesekali, tapi rotasi dengan kosakata western lain.
-        3. Campur dengan bahasa tongkrongan.
-        4. Ganti-ganti mood lu.
-        5. Cukup 1-2 kalimat pendek. JANGAN pakai hashtag dan JANGAN ngetik URL-nya.
+        prompt = f"""Kamu adalah bot Discord server RTMxBadut.
+Tugas kamu membuat 1 kalimat notifikasi/sapaan santai dan asik buat warga server tentang {tipe_konten} yang baru rilis/dimulai.
 
-        Berikan 1 respon acak lu sekarang:
-        """
+Informasi konten:
+{context_str}
+
+Panduan gaya:
+1. Hubungkan sapaan kamu secara alami dengan judul atau topik kontennya di atas. Jangan buat pujian kosong yang tidak nyambung dengan isi videonya.
+2. Gunakan bahasa obrolan Discord/tongkrongan Indonesia yang asik, santai, dan luwes.
+3. Sesuaikan dengan situasinya:
+   - Kalau video santai/keseharian/vlog, sapa warga server dengan santai dan ajak nonton.
+   - Kalau live streaming, ajak warga server langsung merapat ke live chat.
+   - Kalau premiere, ingatkan buat standby sebelum mulai.
+4. Singkat, padat (cukup 1-2 kalimat). Jangan pakai hashtag (#) dan jangan tulis URL link di dalam teks karena link sudah disediakan di tombol.
+
+Berikan teks pengumuman kamu sekarang:"""
         
-        fallback_text = f"Halo semua! Ada {tipe_konten} baru yang sudah tersedia. Yuk langsung cek dan tonton sekarang!"
+        if channel_name and video_title:
+            if link_type == "live":
+                fallback_text = f"Ada live streaming baru nih dari {channel_name} dengan judul '{video_title}'. Yuk langsung gabung ke live chat!"
+            elif link_type == "premier":
+                fallback_text = f"{channel_name} mau premiere video baru '{video_title}'. Jangan sampai kelewatan ya!"
+            else:
+                fallback_text = f"{channel_name} baru aja upload video baru: '{video_title}'. Yuk langsung tonton sekarang!"
+        elif channel_name:
+            fallback_text = f"Ada konten baru dari {channel_name}. Yuk langsung dicek dan tonton!"
+        else:
+            fallback_text = f"Ada {tipe_konten} baru nih. Yuk langsung cek dan tonton sekarang!"
         
         models_to_try = ['gemini-2.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash-lite']
         
@@ -1031,7 +1049,22 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
             import asyncio
             youtube_title, youtube_description, youtube_thumbnail, video_url, youtube_channel = await asyncio.to_thread(_extract_youtube_info, link_for_send)
 
-        ai_hype_text = await self._generate_jarkasih_hype(link_type, channel_name=youtube_channel)
+        clean_title = youtube_title if youtube_title else None
+        if youtube_title:
+            date_patterns = [
+                r'\d{4}-\d{2}-\d{2}',
+                r'\d{2}:\d{2}',
+                r'\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}'
+            ]
+            for pattern in date_patterns:
+                clean_title = re.sub(pattern, '', clean_title).strip()
+
+        ai_hype_text = await self._generate_jarkasih_hype(
+            link_type,
+            channel_name=youtube_channel,
+            video_title=clean_title,
+            video_desc=youtube_description
+        )
 
         for path_data in paths_to_send:
             target_channel_id = path_data["target_id"]
