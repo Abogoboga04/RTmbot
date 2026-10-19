@@ -233,34 +233,93 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
                     default_channel_name = channel_title_elem.text if channel_title_elem is not None else "YouTube Channel"
 
                     for entry in root.findall("atom:entry", ns):
+                        # Ambil video ID (yt:videoId atau fallback ke atom:id)
                         video_id_elem = entry.find("yt:videoId", ns)
+                        if video_id_elem is not None and video_id_elem.text:
+                            vid = video_id_elem.text.strip()
+                        else:
+                            id_elem = entry.find("atom:id", ns)
+                            if id_elem is not None and id_elem.text:
+                                id_match = re.search(r'yt:video:([a-zA-Z0-9_-]{11})', id_elem.text)
+                                vid = id_match.group(1) if id_match else None
+                            else:
+                                vid = None
+
                         title_elem = entry.find("atom:title", ns)
                         link_elem = entry.find("atom:link", ns)
                         published_elem = entry.find("atom:published", ns)
+                        updated_elem = entry.find("atom:updated", ns)
+                        channel_id_elem = entry.find("yt:channelId", ns)
                         
                         desc_elem = entry.find("media:group/media:description", ns)
                         description = desc_elem.text if desc_elem is not None else ""
 
+                        thumb_elem = entry.find("media:group/media:thumbnail", ns)
+                        thumbnail_url = thumb_elem.attrib.get("url") if thumb_elem is not None else f"https://img.youtube.com/vi/{vid}/maxresdefault.jpg"
+
                         author_elem = entry.find("atom:author/atom:name", ns)
                         channel_name = author_elem.text if author_elem is not None else default_channel_name
 
-                        if video_id_elem is not None and title_elem is not None:
-                            vid = video_id_elem.text
-                            title = title_elem.text
+                        if vid and title_elem is not None:
+                            title = title_elem.text.strip()
                             url = link_elem.attrib.get("href") if link_elem is not None else f"https://www.youtube.com/watch?v={vid}"
-                            pub = published_elem.text if published_elem is not None else ""
+                            pub = published_elem.text.strip() if published_elem is not None and published_elem.text else ""
+                            upd = updated_elem.text.strip() if updated_elem is not None and updated_elem.text else ""
+                            cid = channel_id_elem.text.strip() if channel_id_elem is not None and channel_id_elem.text else ""
                             
                             videos.append({
                                 "video_id": vid,
                                 "title": title,
                                 "url": url,
+                                "channel_id": cid,
                                 "channel_name": channel_name,
                                 "published": pub,
+                                "updated": upd,
+                                "thumbnail_url": thumbnail_url,
                                 "description": description
                             })
         except Exception as e:
             print(f"[YT RSS ERROR] {e}")
         return videos
+
+    def is_video_fresh(self, published_str: str, updated_str: str = None, max_age_hours: int = 4) -> bool:
+        """
+        Mengecek apakah video masih baru menggunakan kombinasi tag <published> dan <updated>.
+        - published: Kapan video diunggah/dijadwalkan.
+        - updated: Kapan status video terakhir diperbarui oleh YouTube (misal premiere mulai live).
+        Jika kedua waktu sudah lampau (> max_age_hours), dianggap video lama dari arsip feed.
+        """
+        now_utc = datetime.now(timezone.utc)
+        pub_dt, upd_dt = None, None
+
+        if published_str:
+            try:
+                pub_dt = datetime.fromisoformat(published_str)
+            except Exception:
+                pass
+
+        if updated_str:
+            try:
+                upd_dt = datetime.fromisoformat(updated_str)
+            except Exception:
+                pass
+
+        if not pub_dt and not upd_dt:
+            return True
+
+        pub_fresh = False
+        if pub_dt:
+            pub_age_sec = (now_utc - pub_dt).total_seconds()
+            if pub_age_sec <= (max_age_hours * 3600):
+                pub_fresh = True
+
+        upd_fresh = False
+        if upd_dt:
+            upd_age_sec = (now_utc - upd_dt).total_seconds()
+            if upd_age_sec <= (max_age_hours * 3600):
+                upd_fresh = True
+
+        return pub_fresh or upd_fresh
 
     async def classify_stream_status(self, video_id: str):
         """
@@ -521,22 +580,10 @@ Berikan 1 respon pengumuman kamu sekarang:"""
                 if vid in posted_ids:
                     continue
 
-                # 🛡️ TIMESTAMP FRESHNESS GUARD:
-                # Jika video dipublikasikan lebih dari 4 jam lalu (misal video lama di channel yang baru didaftarkan),
-                # tandai ke cache diam-diam tanpa spamming pengumuman ke Discord!
-                is_fresh = True
-                pub_str = item.get("published")
-                if pub_str:
-                    try:
-                        pub_dt = datetime.fromisoformat(pub_str)
-                        now_utc = datetime.now(timezone.utc)
-                        age_seconds = (now_utc - pub_dt).total_seconds()
-                        if age_seconds > 14400: # Lebih dari 4 jam
-                            is_fresh = False
-                    except Exception:
-                        pass
-
-                if not is_fresh:
+                # 🛡️ TIMESTAMP FRESHNESS GUARD (published & updated):
+                # Memeriksa string <published> dan <updated> dari XML:
+                # Jika video dan pembaruannya sudah lampau (> 4 jam), simpan ke cache diam-diam dan lewati!
+                if not self.is_video_fresh(item.get("published"), item.get("updated"), max_age_hours=4):
                     posted_ids.append(vid)
                     self.cache["posted_video_ids"] = posted_ids
                     self._save_cache()
