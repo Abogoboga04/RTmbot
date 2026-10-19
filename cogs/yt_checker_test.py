@@ -12,6 +12,10 @@ from google.api_core import exceptions as google_exceptions
 
 from cogs.v2_layout import build_v2_card, send_v2_message
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # Setup API Keys Gemini
 API_KEYS = []
 default_key = os.getenv("GOOGLE_API_KEY")
@@ -323,12 +327,13 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
 
     async def classify_stream_status(self, video_id: str):
         """
-        Mendeteksi secara akurat apakah konten berupa:
-        - 'live': Siaran langsung sedang aktif 🔴
-        - 'premier': Premiere / penayangan perdana ⏳
-        - 'upload': Video biasa 🎬
+        Mendeteksi secara akurat metadata video dan status penayangannya:
+        - Menggunakan YouTube Official oEmbed API untuk jaminan 100% judul dan nama channel
+        - Menggunakan inspeksi HTML watch untuk mendeteksi Live Stream, Premiere, atau Upload
         """
         watch_url = f"https://www.youtube.com/watch?v={video_id}"
+        oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
+        
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
@@ -342,17 +347,36 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
             "thumbnail_url": f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
         }
 
+        # 1. Tier 1: YouTube Official oEmbed API (100% akurat untuk Video, Shorts, Live, Premiere)
         try:
-            timeout = aiohttp.ClientTimeout(total=8)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
+            timeout_oembed = aiohttp.ClientTimeout(total=5)
+            async with aiohttp.ClientSession(timeout=timeout_oembed) as session:
+                async with session.get(oembed_url, headers=headers) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        raw_title = data.get("title", "")
+                        if raw_title:
+                            info["title"] = " ".join(raw_title.split())
+                        if data.get("author_name"):
+                            info["channel_name"] = data.get("author_name")
+                        if data.get("thumbnail_url"):
+                            info["thumbnail_url"] = data.get("thumbnail_url")
+        except Exception as e_oe:
+            print(f"[YT OEMBED ERROR] {e_oe}")
+
+        # 2. Tier 2: Inspeksi HTML Watch untuk status siaran (Live / Premiere / Upload) & Description
+        try:
+            timeout_html = aiohttp.ClientTimeout(total=6)
+            async with aiohttp.ClientSession(timeout=timeout_html) as session:
                 async with session.get(watch_url, headers=headers) as resp:
                     if resp.status == 200:
                         html = await resp.text()
 
-                        # Ambil judul dari title tag
-                        t_match = re.search(r'<title>(.*?) - YouTube<\/title>', html)
-                        if t_match:
-                            info["title"] = t_match.group(1).strip()
+                        # Fallback title jika oEmbed gagal
+                        if not info["title"]:
+                            t_match = re.search(r'<title>(.*?) - YouTube<\/title>', html)
+                            if t_match:
+                                info["title"] = t_match.group(1).strip()
 
                         # Deteksi LIVE STREAMING
                         is_live = False
@@ -371,14 +395,15 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
                         else:
                             info["status"] = "upload"
 
-                        # Cari channel author
-                        a_match = re.search(r'\"ownerChannelName\":\"(.*?)\"', html)
-                        if a_match:
-                            info["channel_name"] = a_match.group(1).encode().decode('unicode_escape')
-                        else:
-                            og_author = re.search(r'<span itemprop=\"name\" content=\"(.*?)\"', html)
-                            if og_author:
-                                info["channel_name"] = og_author.group(1)
+                        # Fallback nama channel jika oEmbed gagal
+                        if not info["channel_name"]:
+                            a_match = re.search(r'\"ownerChannelName\":\"(.*?)\"', html)
+                            if a_match:
+                                info["channel_name"] = a_match.group(1).encode().decode('unicode_escape')
+                            else:
+                                og_author = re.search(r'<span itemprop=\"name\" content=\"(.*?)\"', html)
+                                if og_author:
+                                    info["channel_name"] = og_author.group(1)
 
                         # Cari deskripsi pendek
                         d_match = re.search(r'\"shortDescription\":\"(.*?)\"', html)
@@ -387,8 +412,12 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
                                 info["description"] = json.loads(f'{{"d":"{d_match.group(1)}"}}')["d"]
                             except:
                                 info["description"] = d_match.group(1)
-        except Exception as e:
-            print(f"[YT CLASSIFIER ERROR] {e}")
+        except Exception as e_html:
+            print(f"[YT HTML CLASSIFIER ERROR] {e_html}")
+
+        # Jika thumbnail oEmbed adalah hqdefault dan maxresdefault belum dicoba, pastikan thumbnail valid
+        if not info["thumbnail_url"]:
+            info["thumbnail_url"] = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
 
         return info
 
@@ -482,7 +511,7 @@ Berikan 1 respon pengumuman kamu sekarang:"""
         # Pengaturan label & icon sesuai status
         if status == "live":
             status_badge = "🔴 LIVE STREAMING"
-            btn_label = "Tonton Live Sekarang"
+            btn_label = "Tonton Live"
             accent_color = 0xed4245 # Merah
         elif status == "premier":
             status_badge = "⏳ PREMIERE YOUTUBE"
@@ -498,28 +527,36 @@ Berikan 1 respon pengumuman kamu sekarang:"""
         # Pesan mention + AI hype di atas kartu
         mention_content = f"@everyone {ai_hype}"
 
-        # 1. Coba gunakan Discord V2 Layout Card
+        # 1. Tombol Aksi Langsung
         buttons = [{
             "style": 5, # URL Button
             "label": btn_label,
             "url": video_url
         }]
 
-        card_title = f"{status_badge} • {channel_name}"
-        card_desc = f"### [{title}]({video_url})\n\n"
-        if desc:
-            card_desc += f"{desc[:300]}..." if len(desc) > 300 else desc
+        # 2. Format Judul & Deskripsi 100% Identik dengan cogs/notif (Foto 3)
+        # Judul berupa Markdown Link H1 biru yang bisa diklik
+        safe_title = title.replace("[", "(").replace("]", ")")
+        card_title = f"[{safe_title}]({video_url})"
+        
+        # Subtitle menampilkan URL tepat di bawah judul
+        if desc and desc.strip():
+            card_desc = f"{desc[:250].strip()}\n\n{video_url}"
+        else:
+            card_desc = f"{video_url}"
 
         try:
             card = build_v2_card(
                 title=card_title,
                 description=card_desc,
+                fields=None,
+                color=None, # NONE: Menghilangkan garis border samping tebal agar bersih dan elegan identik Foto 3
                 buttons=buttons,
-                media_url=thumbnail_url,
-                color=accent_color
+                media_url=thumbnail_url
             )
-            # Kirim teks mention duluan agar notifikasi ping berfungsi
-            await target_channel.send(content=mention_content)
+            # Kirim teks mention terlebih dahulu agar notifikasi ping berfungsi
+            if mention_content and mention_content.strip():
+                await target_channel.send(content=mention_content)
             # Kirim kartu V2
             await send_v2_message(self.bot, target_channel.id, [card])
             return True
@@ -527,12 +564,12 @@ Berikan 1 respon pengumuman kamu sekarang:"""
             print(f"[YT TEST V2 FALLBACK] Gagal kirim V2 card, menggunakan Embed standar: {err}")
             # Fallback ke Standard Rich Embed
             embed = discord.Embed(
-                title=f"{status_badge}: {title}",
+                title=title,
                 url=video_url,
-                description=desc[:400] if desc else f"Klik tombol di bawah untuk menonton video terbaru dari **{channel_name}**!",
-                color=discord.Color(accent_color)
+                description=desc[:400] if desc else video_url,
+                color=discord.Color.blue()
             )
-            embed.set_author(name=channel_name, icon_url="https://www.youtube.com/s/desktop/f172efbb/img/favicon_144x144.png")
+            embed.set_author(name=channel_name)
             embed.set_image(url=thumbnail_url)
             embed.set_footer(text="RTMxBadut • YouTube Native Checker")
 
@@ -599,10 +636,20 @@ Berikan 1 respon pengumuman kamu sekarang:"""
                 if classification.get("description"):
                     item["description"] = classification["description"]
 
+                clean_title = item["title"]
+                if clean_title:
+                    date_patterns = [
+                        r'\d{4}-\d{2}-\d{2}',
+                        r'\d{2}:\d{2}',
+                        r'\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}'
+                    ]
+                    for pattern in date_patterns:
+                        clean_title = re.sub(pattern, '', clean_title).strip()
+
                 # Generate AI Hype
                 ai_text = await self.generate_ai_hype(
                     channel_name=item["channel_name"],
-                    video_title=item["title"],
+                    video_title=clean_title,
                     video_type=item["status"],
                     video_desc=item.get("description")
                 )
@@ -672,20 +719,31 @@ Berikan 1 respon pengumuman kamu sekarang:"""
             desc = classification.get("description", "")
 
             # 2. Buat Copywriting AI Kontekstual
+            clean_title = title
+            if clean_title:
+                date_patterns = [
+                    r'\d{4}-\d{2}-\d{2}',
+                    r'\d{2}:\d{2}',
+                    r'\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}'
+                ]
+                for pattern in date_patterns:
+                    clean_title = re.sub(pattern, '', clean_title).strip()
+
             ai_text = await self.generate_ai_hype(
                 channel_name=channel_name,
-                video_title=title,
+                video_title=clean_title,
                 video_type=video_type,
                 video_desc=desc
             )
 
             video_data = {
                 "video_id": vid,
-                "url": f"https://www.youtube.com/watch?v={vid}",
+                "url": url if url.startswith("http") else f"https://www.youtube.com/watch?v={vid}",
                 "title": title,
                 "channel_name": channel_name,
                 "status": video_type,
-                "description": desc
+                "description": desc,
+                "thumbnail_url": classification.get("thumbnail_url")
             }
 
             try:

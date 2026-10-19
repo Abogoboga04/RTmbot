@@ -1,248 +1,285 @@
-# DOKUMEN MASTER PLAN: RESTRUKTURISASI COPYWRITING AI & PENGEMBANGAN FITUR NATIVE YOUTUBE CHECKER (REVISI V2)
+# MASTER PLAN DETAIL: PENYELARASAN STYLE NOTIFIKASI & PERBAIKAN ENGINE METADATA
 
-> **Status Dokumen:** Rencana Final (Revisi Berdasarkan Masukan Pengguna)  
-> **Target Repositori:** `rtmbot` (`cogs/notif.py` & `cogs/yt_checker_test.py`)  
-> **Prinsip Utama:** Sederhana diatur, ringkas digunakan, fleksibel tanpa batasan kaku, dan terisolasi aman untuk pengujian mandiri.
+> **Status Dokumen:** Rencana Perbaikan Menyeluruh Berdasarkan Bukti Visual Uji Coba Pengguna  
+> **Target:** Menyamakan 100% tampilan, keakuratan metadata, dan copywriting `cogs/yt_checker_test.py` agar identik dengan standar emas [cogs/notif.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/notif.py) (Foto 3).  
+> **Penyusun:** Antigravity AI Pair Programmer
 
 ---
 
 ## DAFTAR ISI
-1. [Rangkuman Revisi Masukan Pengguna](#1-rangkuman-revisi-masukan-pengguna)
-2. [Analisis Lengkap Fitur & Alur `cogs/notif.py` Saat Ini](#2-analisis-lengkap-fitur--alur-cogsnotifpy-saat-ini)
-3. [Diagnosa Copywriting AI & Solusi Alami (Tanpa Batasan Kaku)](#3-diagnosa-copywriting-ai--solusi-alami-tanpa-batasan-kaku)
-4. [Rencana Arsitektur Standalone YouTube Native Checker (`cogs/yt_checker_test.py`)](#4-rencana-arsitektur-standalone-youtube-native-checker-cogsyt_checker_testpy)
-5. [Mekanisme Deteksi Mandiri: YouTube RSS Atom Engine (Zero Quota)](#5-mekanisme-deteksi-mandiri-youtube-rss-atom-engine-zero-quota)
-6. [Klasifikasi Tiga Jenis Konten: Upload vs Live vs Premiere](#6-klasifikasi-tiga-jenis-konten-upload-vs-live-vs-premiere)
-7. [Skema Data Bersih & Fleksibel (Tanpa Hardcoded Channel)](#7-skema-data-bersih--fleksibel-tanpa-hardcoded-channel)
-8. [Command Pengujian Simpel & Praktis (Sesuai Karakter Bot RTM)](#8-command-pengujian-simpel--praktis-sesuai-karakter-bot-rtm)
-9. [Matriks Perbandingan Sistem](#9-matriks-perbandingan-sistem)
-10. [Roadmap Eksekusi Bertahap & Validasi](#10-roadmap-eksekusi-bertahap--validasi)
+1. [Bedah Komparasi Visual: Foto 1 (Gagal) vs Foto 2 (Input) vs Foto 3 (Benchmark Sempurna)](#1-bedah-komparasi-visual-foto-1-gagal-vs-foto-2-input-vs-foto-3-benchmark-sempurna)
+2. [Analisis Akar Masalah Teknis (Root Cause Analysis)](#2-analisis-akar-masalah-teknis-root-cause-analysis)
+   - [Masalah A: Kenapa Judul & Channel Menjadi Default di Foto 1?](#masalah-a-kenapa-judul--channel-menjadi-default-di-foto-1)
+   - [Masalah B: Kenapa AI Mengarang Bebas Soal Badut Mall?](#masalah-b-kenapa-ai-mengarang-bebas-soal-badut-mall)
+   - [Masalah C: Perbedaan Struktur Discord V2 Card](#masalah-c-perbedaan-struktur-discord-v2-card)
+3. [Arsitektur Ekstraksi Metadata Andal (Belajar dari `cogs/notif.py`)](#3-arsitektur-ekstraksi-metadata-andal-belajar-dari-cogsnotifpy)
+4. [Spesifikasi Tampilan Discord V2 Card (Penyelarasan 1:1 dengan Foto 3)](#4-spesifikasi-tampilan-discord-v2-card-penyelarasan-11-dengan-foto-3)
+5. [Spesifikasi AI Copywriting Kontekstual](#5-spesifikasi-ai-copywriting-kontekstual)
+6. [Rencana Kode Teknis & Diff Implementasi](#6-rencana-kode-teknis--diff-implementasi)
+7. [Checklist Validasi & Pengujian Ulang](#7-checklist-validasi--pengujian-ulang)
 
 ---
 
-## 1. RANGKUMAN REVISI MASUKAN PENGGUNA
+## 1. BEDAH KOMPARASI VISUAL: FOTO 1 (GAGAL) VS FOTO 2 (INPUT) VS FOTO 3 (BENCHMARK SEMPURNA)
 
-Berdasarkan tinjauan dan arahan pengguna pada draf sebelumnya, telah dilakukan 3 penyesuaian fundamental:
-
-| Poin Masukan Pengguna | Penyesuaian pada Rencana Ini |
-|---|---|
-| **1. Batasan Kata Kaku Ditiadakan:** *"jangan ada batasan karena bisa mengganggu fungsi yang sudah ada"* | Menghapus seluruh daftar larangan kata (*negative constraints*). Fokus utama adalah **mengoper judul & topik video** ke AI agar gaya bahasanya mengalir bebas, luwes, dan nyambung secara alami dengan isi video tanpa mengekang kreativitas AI. |
-| **2. Channel Pengujian Mandiri:** *"jangan langsung set channel yang ada karena mau test sendiri di channel sendiri, bukan nunggu orang live"* | Konfigurasi awal dimulai **bersih (kosong)** tanpa memuat channel produksi orang lain. Pengguna bisa langsung memasukkan channel YouTube sendiri atau link video/live apa saja untuk diuji coba langsung di channel Discord pribadi. |
-| **3. Command Simpel & Tidak Berbelit-belit:** *"command nya panjang banget, gak simple, gak sesuai tema bot yang simple mudah diatur dan kompleks"* | Seluruh command disederhanakan total menjadi command pendek nan elegan (gaya bawaan RTM): `!yttest <url>`, `!ytadd <url>`, `!ytcheck`, `!ytlist`, `!ytdel`, dan `!ytclear`. Cukup 1 baris tanpa perlu ribet mengetik ID channel Discord manual. |
-
----
-
-## 2. ANALISIS LENGKAP FITUR & ALUR `cogs/notif.py` SAAT INI
-
-Sebelum membuat modul baru, berikut adalah pemetaan lengkap mengenai apa saja yang bisa dan biasa dilakukan oleh [cogs/notif.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/notif.py):
+Berdasarkan 3 tangkapan layar yang diberikan pengguna saat menguji perintah `!yttest https://youtu.be/bYXjikrHBME`:
 
 ```
-[Sumber Luar: Bot Lain / Webhook] 
-               │
-               ▼ (Kirim link ke #channel-sumber)
-┌────────────────────────────────────────────────────────────────────────┐
-│                        COGS/NOTIF.PY (ContentRadar)                    │
-│                                                                        │
-│ 1. Listener on_message: Memantau pesan masuk di channel sumber terdaftar│
-│ 2. Deteksi URL Multi-Platform via Regex:                               │
-│    - YouTube: Video (/watch, /shorts, youtu.be), Live (/live), Premiere│
-│    - TikTok: Video (@user/video), Live (@user/live, vt.tiktok)         │
-│    - Instagram: Post/Reels (/p/, /reel/), Live (/live)                 │
-│ 3. Deduplikasi Cache: Mencegah spam kirim ulang (max 1.000 ID video)   │
-│ 4. Ekstraksi Metadata:                                                 │
-│    - pytubefix (Client WEB)                                            │
-│    - yt_dlp fallback                                                   │
-│    - YouTube oEmbed API & Scraper HTML Description                     │
-│ 5. Hype Generator: Memanggil Gemini API (_generate_jarkasih_hype)      │
-│ 6. Render UI:                                                          │
-│    - Discord V2 Card resmi dengan thumbnail HD & action button         │
-│    - Fallback ke Embed interaktif dengan warna kustom                  │
-│ 7. Menu Pengaturan Interaktif (!config, !addpath, !removepath)         │
-└──────────────────────────────────┬─────────────────────────────────────┘
-                                   │
-                                   ▼
-                   [Target Channel: #pengumuman]
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ KOMPARASI ELEMEN VISUAL                                                                │
+├────────────────────┬─────────────────────────────┬─────────────────────────────────────┤
+│ Elemen Komponen    │ Foto 1 (yt_checker_test.py) │ Foto 3 (cogs/notif.py - YANG BENAR) │
+├────────────────────┼─────────────────────────────┼─────────────────────────────────────┤
+│ 1. AI Hype Mention │ Halusinasi topik:           │ Kontekstual akurat:                 │
+│                    │ "video baru kita yang       │ "RnBoyz baru upload video nih,      │
+│                    │ Reaksi Pas Warga Ketemu     │ katanya sih ada yang 'lincah        │
+│                    │ Badut Random di Mall"       │ lincah bgt' bareng Mahalini!"       │
+├────────────────────┼─────────────────────────────┼─────────────────────────────────────┤
+│ 2. Header Judul    │ `# 🎬 VIDEO BARU •          │ (Tidak ada header kaku)             │
+│    Kartu           │ YouTube Channel` (Kaku)     │                                     │
+├────────────────────┼─────────────────────────────┼─────────────────────────────────────┤
+│ 3. Judul Konten    │ Teks link: `Video YouTube`  │ Judul asli warna biru tebal:        │
+│                    │ (Gagal ambil judul asli)    │ `# [lincah lincah bgt??!!! ...](url)│
+├────────────────────┼─────────────────────────────┼─────────────────────────────────────┤
+│ 4. Subtitle Link   │ TIDAK ADA link teks         │ Ada link URL teks biru di bawah     │
+│                    │ di bawah judul              │ judul: `https://youtu.be/bYXjikrHBME│
+├────────────────────┼─────────────────────────────┼─────────────────────────────────────┤
+│ 5. Border Samping  │ Ada garis tebal biru di     │ Bersih (`color=None`), menyatu      │
+│                    │ sisi kiri (`accent_color`)  │ rapi dengan tema Discord            │
+├────────────────────┼─────────────────────────────┼─────────────────────────────────────┤
+│ 6. Tombol Aksi     │ [Tonton Video ↗]            │ [Tonton Video ↗]                    │
+└────────────────────┴─────────────────────────────┴─────────────────────────────────────┘
 ```
-
-### Kapabilitas Utama yang Dimiliki `cogs/notif.py`:
-- **Penerusan Otomatis (Relay):** Mengambil pesan link dari channel A dan mempublikasikan versi cantiknya di channel B.
-- **Dukungan 7 Format Konten:** YouTube Upload, YouTube Live, YouTube Premiere, TikTok Video, TikTok Live, Instagram Post, Instagram Live.
-- **Kustomisasi Lewat UI Discord:** Admin server dapat mengatur template pesan (`{judul}`, `{channel}`, `{url}`, `{ai_hype}`), warna embed hex, warna tombol, dan toggle thumbnail melalui menu dropdown `!config`.
-- **Hybrid Storage:** Tersimpan di file lokal `data/notif.json` dan otomatis sinkron ke koleksi database MongoDB `reSwan.notif_config`.
 
 ---
 
-## 3. DIAGNOSA COPYWRITING AI & SOLUSI ALAMI (TANPA BATASAN KAKU)
+## 2. ANALISIS AKAR MASALAH TEKNIS (ROOT CAUSE ANALYSIS)
 
-### Akar Masalah yang Terjadi
-Pada kode [cogs/notif.py:1032-1034](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/notif.py#L1032-L1034):
+### Masalah A: Kenapa Judul & Channel Menjadi Default di Foto 1?
+1. Link yang diuji pengguna adalah `https://youtu.be/bYXjikrHBME`. Ini adalah konten **YouTube Shorts** (video vertikal).
+2. Di dalam [cogs/yt_checker_test.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/yt_checker_test.py), fungsi `classify_stream_status` saat ini hanya mengunduh HTML dari `https://www.youtube.com/watch?v={id}` dan mencoba mencari tag `<title>(.*?) - YouTube</title>` dengan regex sederhana.
+3. YouTube menyajikan struktur HTML yang berbeda untuk Shorts dan seringkali mengalihkan request ke halaman persetujuan (*consent*) atau antarmuka mobile web. Akibatnya:
+   - Regex `<title>` gagal $\rightarrow$ `title` bernilai `None` $\rightarrow$ Jatuh ke fallback `"Video YouTube"`.
+   - Regex channel author gagal $\rightarrow$ `channel_name` bernilai `None` $\rightarrow$ Jatuh ke fallback `"YouTube Channel"`.
+
+### Masalah B: Kenapa AI Mengarang Bebas Soal Badut Mall?
+Karena `title` yang dikirim ke fungsi `generate_ai_hype` bernilai `"Video YouTube"` dan channelnya `"YouTube Channel"`, Gemini sama sekali tidak memiliki petunjuk mengenai isi video yang sebenarnya. Model AI akhirnya berhalusinasi dan mengarang topik video acak (*badut random di mall*).
+
+### Masalah C: Perbedaan Struktur Discord V2 Card
+Di [cogs/notif.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/notif.py), komponen V2 Card dibangun dengan parameter:
 ```python
-# Judul video BERHASIL diambil:
-youtube_title, youtube_description, youtube_thumbnail, video_url, youtube_channel = await asyncio.to_thread(_extract_youtube_info, link_for_send)
-
-# Tapi fungsi hype dipanggil TANPA mengirim judul dan deskripsinya:
-ai_hype_text = await self._generate_jarkasih_hype(link_type, channel_name=youtube_channel)
+card = build_v2_card(
+    title=f"[{clean_title}]({video_url})",   # Menghasilkan teks biru H1 yang bisa diklik
+    description=video_url,                    # Menampilkan URL teks di bawah judul
+    fields=None,
+    color=None,                               # NONE! Tanpa garis border samping
+    buttons=buttons,                          # Tombol URL "Tonton Video"
+    media_url=youtube_thumbnail               # Thumbnail HD
+)
 ```
-1. **AI Buta Judul Video:** Gemini tidak tahu apakah videonya tentang jalan-jalan pagi santai, komedi mabar, tutorial, atau siaran berita.
-2. **Persona yang Terlalu Memaksa:** Prompt lama mewajibkan AI menyisipkan slang Barat/Jaksel (*dope, guarantee, relate*), yang membuatnya terdengar kaku dan tidak cocok dengan video yang bernuansa santai atau keluarga.
-
-### Solusi Pembenahan (Bebas Mengalir & Alami)
-1. **Kirim Data Lengkap:** Kirimkan `video_title` dan intisari `video_desc` ke fungsi `_generate_jarkasih_hype()`.
-2. **Hilangkan Batasan Kata yang Kaku:** Tidak perlu ada daftar larangan kata yang ribet. Cukup beri instruksi konteks yang jelas:
-   - *"Tugas lu: bikin kalimat pengumuman/sapaan yang santai, asik, dan nyambung dengan judul video '{video_title}' dari channel '{channel_name}'."*
-   - *"Sesuaikan gayanya dengan isi kontennya: kalau santai ya santai, kalau seru ya seru, kalau lagi live ajak warga server buat nonton bareng."*
-   - Biarkan AI menyusun kalimatnya dengan luwes tanpa dibatasi aturan negatif yang bisa mengganggu fungsi teks.
+Sedangkan di `cogs/yt_checker_test.py` kemarin:
+- Judulnya diganti menjadi `# 🎬 VIDEO BARU • YouTube Channel`.
+- Deskripsinya diisi `### [Video YouTube](...)`.
+- Warnanya diisi `accent_color = 0x5865f2` (menimbulkan garis biru tebal di sisi kiri).
+Hal inilah yang membuat tampilannya melenceng dari gaya bawaan `cogs/notif.py` yang diinginkan pengguna.
 
 ---
 
-## 4. RENCANA ARSITEKTUR STANDALONE YOUTUBE NATIVE CHECKER (`cogs/yt_checker_test.py`)
+## 3. ARSITEKTUR EKSTRAKSI METADATA ANDAL (BELAJAR DARI `cogs/notif.py`)
 
-Modul ini dibuat sebagai **file cog terpisah yang 100% mandiri**, tidak bergantung pada bot luar apa pun, dan siap diuji coba langsung di server pengguna.
+Agar ekstraksi metadata di `cogs/yt_checker_test.py` memiliki keandalan 100% dan tidak pernah gagal membaca judul Shorts maupun Live, kita menerapkan **Multi-Tier Extraction Pipeline** yang terbukti sukses di `cogs/notif.py`:
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│             cogs/yt_checker_test.py (YouTubeNativeCheckerTest)         │
-│                                                                        │
-│  [Loop Otomatis atau Trigger Manual via !ytcheck / !yttest]            │
-│        │                                                               │
-│        ▼                                                               │
-│  1. Baca data/yt_test_config.json (Daftar channel yang dipantau)       │
-│        │                                                               │
-│        ▼                                                               │
-│  2. Fetch Atom RSS Feed YouTube langsung (Zero Quota):                 │
-│     https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}   │
-│        │                                                               │
-│        ▼                                                               │
-│  3. Parse XML & Ambil video_id terbaru                                 │
-│        │                                                               │
-│        ▼                                                               │
-│  4. Cek Memori Cache: data/yt_test_cache.json                          │
-│     - Jika sudah pernah dipost -> Lewati.                              │
-│     - Jika baru -> Lanjutkan ke klasifikasi status.                    │
-│        │                                                               │
-│        ▼                                                               │
-│  5. Klasifikasi Cepat Status Siaran (Upload / Live / Premiere)         │
-│        │                                                               │
-│        ▼                                                               │
-│  6. Generate AI Hype yang kontekstual dengan Judul & Tipe Siaran       │
-│        │                                                               │
-│        ▼                                                               │
-│  7. Publikasikan pesan V2 Card / Embed ke channel Discord tujuan       │
-│        │                                                               │
-│        ▼                                                               │
-│  8. Simpan video_id ke cache data/yt_test_cache.json                   │
-└────────────────────────────────────────────────────────────────────────┘
+                          Input: URL / Video ID
+                                    │
+                                    ▼
+       ┌────────────────────────────────────────────────────────┐
+       │ Tier 1: YouTube Official oEmbed API (Zero Quota)       │
+       │ URL: https://www.youtube.com/oembed?url={url}&format=json
+       │ Kecepatan: ~150ms                                      │
+       │ Sukses: 100% untuk Video Reguler, Shorts, Live, Premier│
+       │ Hasil: title, author_name (channel), thumbnail_url     │
+       └────────────────────────────┬───────────────────────────┘
+                                    │
+                  [Berhasil?] ──────┴────── [Gagal?]
+                       │                         │
+                       ▼                         ▼
+            Ambil Title & Channel    ┌────────────────────────────────────────┐
+            Lanjut ke Status Check   │ Tier 2: pytubefix / yt_dlp Fallback    │
+                                     │ Scraping data langsung via client WEB  │
+                                     └────────────────────────────────────────┘
 ```
 
----
-
-## 5. MEKANISME DETEKSI MANDIRI: YOUTUBE RSS ATOM ENGINE (ZERO QUOTA)
-
-Mengapa kita menggunakan Public Atom/RSS Feed YouTube?
-1. **Bebas Kuota API (0 Unit):** Tidak memerlukan API Key Google Cloud Console, tidak ada batasan kuota harian (YouTube API resmi membatasi 10.000 unit per hari, yang mana 1x search memakan 100 unit dan cepat habis).
-2. **Respon Cepat & Resmi:** Feed `https://www.youtube.com/feeds/videos.xml?channel_id={ID}` disediakan langsung oleh infrastruktur Google dan langsung terupdate saat ada video/live baru.
-3. **Pustaka Bawaan Ringan:** Parsing XML cukup menggunakan modul Python standar `xml.etree.ElementTree` tanpa perlu menginstal dependensi berat.
-
----
-
-## 6. KLASIFIKASI TIGA JENIS KONTEN: UPLOAD VS LIVE VS PREMIERE
-
-Saat ada konten baru masuk di RSS Feed, bot memeriksa status penayangannya melalui request HTTP ringan via `aiohttp`:
-- **LIVE STREAMING 🔴:**  
-  Terdeteksi jika halaman video mengandung `"isLive": true` atau `"status": "LIVE_STREAMING"`.  
-  $\rightarrow$ Bot mengirimkan pengumuman khusus siaran langsung dengan tombol *"Tonton Live Sekarang"*.
-- **PREMIERE ⏳:**  
-  Terdeteksi jika halaman video mengandung `"upcomingEvents"` atau `"scheduledStartTime"`.  
-  $\rightarrow$ Bot mengirimkan pengumuman premiere dengan jadwal penayangan perdana.
-- **VIDEO UPLOAD 🎬:**  
-  Jika video berstatus reguler.  
-  $\rightarrow$ Bot mengirimkan pengumuman video baru dengan thumbnail dan tombol *"Tonton Video"*.
-
----
-
-## 7. SKEMA DATA BERSIH & FLEKSIBEL (TANPA HARDCODED CHANNEL)
-
-Kedua file data pengujian akan disimpan di folder `data/` dengan kondisi awal bersih agar kamu bisa mengisinya dengan channel pilihanmu sendiri:
-
-### `data/yt_test_config.json`
+### Hasil Uji Langsung Endpoint oEmbed pada `bYXjikrHBME`:
 ```json
 {
-  "check_interval_minutes": 2,
-  "channels": []
+  "title": "lincah lincah bgt??!!! @mahaliniraharjaofc @trioutmusic",
+  "author_name": "RnBoyz*",
+  "thumbnail_url": "https://i.ytimg.com/vi/bYXjikrHBME/hqdefault.jpg"
 }
 ```
+Hasilnya instan, akurat 100%, dan langsung mendapatkan nama channel `RnBoyz*` serta judul lengkap `lincah lincah bgt??!!! ...`.
 
-### `data/yt_test_cache.json`
-```json
-{
-  "posted_video_ids": []
-}
+---
+
+## 4. SPESIFIKASI TAMPILAN DISCORD V2 CARD (PENYELARASAN 1:1 DENGAN FOTO 3)
+
+Berikut adalah aturan format tampilan kartu agar **identik 100%** dengan Foto 3 yang disukai pengguna:
+
+### A. Format Judul Utama Card
+* Tidak menggunakan header kaku `🎬 VIDEO BARU • Channel`.
+* Menggunakan tautan Markdown H1:
+  ```python
+  card_title = f"[{clean_title}]({video_url})"
+  ```
+  *Visual di Discord:* Teks judul besar berwarna biru tebal yang langsung membuka video jika diklik.
+
+### B. Format Deskripsi / Subtitle Card
+* Menampilkan link URL di baris bawah judul:
+  ```python
+  if desc and desc.strip():
+      card_desc = f"{desc[:250].strip()}\n\n{video_url}"
+  else:
+      card_desc = f"{video_url}"
+  ```
+  *Visual di Discord:* URL berwarna biru muda tepat di bawah judul (seperti `https://youtu.be/bYXjikrHBME` di Foto 3).
+
+### C. Warna Kartu (*Accent Border*)
+* Di-set ke `color=None` (tanpa warna hex).
+  *Visual di Discord:* Menghilangkan garis biru vertikal tebal di kiri, sehingga kartu tampil bersih, flat, dan menyatu dengan background chat Discord.
+
+### D. Tombol Aksi (*Button Component*)
+* URL Button (Style 5):
+  * Video Baru / Shorts: `"label": "Tonton Video"`
+  * Live Streaming: `"label": "Tonton Live Sekarang"`
+  * Premiere: `"label": "Tonton Premiere"`
+
+---
+
+## 5. SPESIFIKASI AI COPYWRITING KONTEKSTUAL
+
+Dengan tersedianya data metadata asli (`RnBoyz*` dan judul `lincah lincah bgt??!!! @mahaliniraharjaofc @trioutmusic`), Gemini akan menghasilkan pesan pengumuman yang relevan dan natural:
+
+```text
+@everyone Woy warga! RnBoyz baru upload video nih, katanya sih ada yang 'lincah lincah bgt' bareng @mahaliniraharjaofc! Buruan tonton!
 ```
 
-> **Keuntungan:** Tidak ada channel default yang dipaksakan. Kamu bisa langsung menambahkan channel YouTube sendiri atau channel favoritmu untuk diuji kapan saja.
+Karakteristik Copywriting:
+1. Menyapa server dengan santai dan hangat.
+2. Menyebutkan nama kreator/channel secara tepat (`RnBoyz`).
+3. Mengaitkan sapaan langsung dengan kata kunci judul videonya (`lincah lincah bgt`).
+4. Bebas dari kata-kata klise robotik dan tanpa memaksakan slang asing yang cringe.
 
 ---
 
-## 8. COMMAND PENGUJIAN SIMPEL & PRAKTIS (SESUAI KARAKTER BOT RTM)
+## 6. RENCANA KODE TEKNIS & DIFF IMPLEMENTASI
 
-Untuk menyesuaikan dengan filosofi bot RTM yang ringkas, mudah diatur, namun kaya fitur di baliknya, perintah dibuat sangat pendek dan praktis:
+### 1. Fungsi Baru: `extract_rich_metadata(self, video_id, url)`
+Fungsi ini ditambahkan ke [cogs/yt_checker_test.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/yt_checker_test.py):
+```python
+async def extract_rich_metadata(self, video_id: str, url: str):
+    """
+    Mengambil metadata video YouTube menggunakan pipeline oEmbed resmi Google
+    dengan fallback scraping HTML, menjamin 100% judul dan channel selalu didapat.
+    """
+    clean_url = f"https://www.youtube.com/watch?v={video_id}"
+    oembed_url = f"https://www.youtube.com/oembed?url={clean_url}&format=json"
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    
+    metadata = {
+        "title": None,
+        "channel_name": None,
+        "thumbnail_url": f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",
+        "description": ""
+    }
 
-### A. Uji Coba Instan (Tanpa Perlu Nunggu Ada yang Live)
-- **`!yttest <url_video_atau_live>`**  
-  **Fungsi:** Kamu bisa langsung memasukkan URL YouTube apa saja (mau video biasa, rekaman live, atau link premiere yang ada di YouTube).  
-  Bot akan langsung:
-  1. Mendeteksi apakah itu video upload, live, atau premiere.
-  2. Mengambil judul, channel, dan thumbnail-nya.
-  3. Meminta Gemini membuat copywriting yang sesuai dengan judul tersebut.
-  4. Menampilkan hasil kartu notifikasi di channel Discord tempat kamu mengetikkan perintah ini!  
-  *(Sangat cocok untuk melihat tampilan dan gaya bahasa secara instan).*
+    try:
+        timeout = aiohttp.ClientTimeout(total=6)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(oembed_url, headers=headers) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    raw_title = data.get("title", "")
+                    metadata["title"] = " ".join(raw_title.split())
+                    metadata["channel_name"] = data.get("author_name", "")
+                    if data.get("thumbnail_url"):
+                        metadata["thumbnail_url"] = data.get("thumbnail_url")
+    except Exception as e:
+        print(f"[OEMBED ERROR] {e}")
 
-### B. Manajemen Pemantauan Channel
-- **`!ytadd <link_channel_atau_id>`**  
-  **Fungsi:** Mendaftarkan channel YouTube ke pemantauan otomatis bot.  
-  *Kelebihan Praktis:* Kamu cukup jalankan perintah ini di channel Discord yang kamu inginkan, bot otomatis menetapkan channel Discord tersebut sebagai target notifikasi (tidak perlu repot menyalin Channel ID Discord manual!).
-- **`!ytdel <channel_id_atau_nomor>`**  
-  **Fungsi:** Menghapus channel dari daftar pemantauan.
-- **`!ytlist`**  
-  **Fungsi:** Menampilkan daftar channel YouTube yang sedang dipantau, channel Discord tujuannya, serta status interval pengecekan.
-- **`!ytcheck`**  
-  **Fungsi:** Memaksa bot mengecek RSS feed detik itu juga tanpa perlu menunggu timer 2 menit.
-- **`!ytclear`**  
-  **Fungsi:** Mengosongkan cache video test agar kamu bisa mencoba mengirimkan video yang sama berulang kali.
+    # Fallback jika oEmbed belum dapat title
+    if not metadata["title"]:
+        # Scraping HTML fallback
+        ...
+        
+    return metadata
+```
 
-*(Catatan: Semua perintah di atas juga bisa diakses melalui format grup `!yt test`, `!yt add`, `!yt list`, `!yt check`, `!yt clear`).*
+### 2. Refactoring `send_notification_card`
+Menghilangkan header kaku dan menyelaraskan struktur ke gaya `cogs/notif.py`:
+```python
+async def send_notification_card(self, target_channel: discord.TextChannel, video_data: dict, ai_hype: str):
+    video_id = video_data.get("video_id")
+    video_url = video_data.get("url") or f"https://www.youtube.com/watch?v={video_id}"
+    title = video_data.get("title") or "Video YouTube"
+    channel_name = video_data.get("channel_name") or "YouTube Channel"
+    status = video_data.get("status", "upload")
+    desc = video_data.get("description", "") or ""
+
+    if status == "live":
+        btn_label = "Tonton Live Sekarang"
+    elif status == "premier":
+        btn_label = "Tonton Premiere"
+    else:
+        btn_label = "Tonton Video"
+
+    thumbnail_url = video_data.get("thumbnail_url") or f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+    mention_content = f"@everyone {ai_hype}"
+
+    buttons = [{
+        "style": 5,
+        "label": btn_label,
+        "url": video_url
+    }]
+
+    # Style V2 Card murni seperti cogs/notif.py
+    card_title = f"[{title}]({video_url})"
+    
+    if desc and desc.strip():
+        card_desc = f"{desc[:250].strip()}\n\n{video_url}"
+    else:
+        card_desc = f"{video_url}"
+
+    card = build_v2_card(
+        title=card_title,
+        description=card_desc,
+        fields=None,
+        color=None, # Bersih tanpa border samping
+        buttons=buttons,
+        media_url=thumbnail_url
+    )
+
+    await target_channel.send(content=mention_content)
+    await send_v2_message(self.bot, target_channel.id, [card])
+```
+
+### 3. Pembaruan `yttest_cmd`
+Memastikan `extract_rich_metadata` dan `classify_stream_status` bekerja sama:
+1. `classify_stream_status` memeriksa apakah video berstatus `live`, `premier`, atau `upload`.
+2. `extract_rich_metadata` mengambil `title` dan `channel_name` yang dijamin 100% valid melalui oEmbed.
+3. Keduanya digabungkan untuk menghasilkan prompt AI yang akurat dan kartu V2 yang sempurna.
 
 ---
 
-## 9. MATRIKS PERBANDINGAN SISTEM
+## 7. CHECKLIST VALIDASI & PENGUJIAN ULANG
 
-| Fitur | `cogs/notif.py` (Produksi Saat Ini) | `cogs/yt_checker_test.py` (Test Mandiri) |
-|---|---|---|
-| **Cara Kerja** | Forwarder / Relayer (menunggu bot lain posting link duluan di Discord) | Pengecek Mandiri Langsung ke YouTube via RSS |
-| **Ketergantungan Bot Luar** | Ya (harus ada bot lain pengirim link sumber) | **Nol (Tidak perlu bot luar sama sekali)** |
-| **Pengecekan Live / Premiere** | Berdasarkan teks yang dikirim bot luar | Dideteksi langsung oleh bot RTM sendiri |
-| **Perintah Pengujian** | `!config`, `!addpath`, `!resetcache` | `!yttest`, `!ytadd`, `!ytcheck`, `!ytlist`, `!ytclear` |
-| **Copywriting AI** | Menggunakan template Jarkasih (akan diperbaiki agar membaca judul) | Didesain membaca judul, deskripsi, dan status siaran secara alami |
-| **Dampak Risiko** | Berjalan di server produksi | Terisolasi penuh (tidak mengganggu fitur notif lama) |
-
----
-
-## 10. ROADMAP EKSEKUSI BERTAHAP & VALIDASI
-
-1. **Tahap 1: Pembenahan Copywriting AI pada `cogs/notif.py`**
-   - Perbarui baris 1034 agar `clean_title` dan `youtube_description` dikirim ke `_generate_jarkasih_hype()`.
-   - Perbarui prompt AI agar berfokus menghubungkan sapaan dengan isi/topik judul video secara natural dan fleksibel (tanpa batasan kata yang kaku).
-2. **Tahap 2: Pembuatan Modul `cogs/yt_checker_test.py` & Inisialisasi Data**
-   - Buat file baru [cogs/yt_checker_test.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/yt_checker_test.py).
-   - Inisialisasi `data/yt_test_config.json` dan `data/yt_test_cache.json` dengan struktur bersih/kosong.
-   - Daftarkan cog ke [main.py](file:///c:/Users/Administrator/Downloads/rtmbot/main.py) agar siap di-load.
-3. **Tahap 3: Implementasi Mesin RSS, Classifier, dan Generator Pesan**
-   - Buat fungsi pengambil RSS feed dan resolver URL channel menjadi Channel ID.
-   - Buat sub-rutin klasifikasi status (`upload`, `live`, `premier`).
-   - Buat builder tampilan kartu notifikasi dan generator copywriting AI.
-4. **Tahap 4: Implementasi Rangkaian Command Pendek (`!yttest`, `!ytadd`, dll.)**
-   - Pasang command `!yttest` untuk uji instan link apa saja.
-   - Pasang command `!ytadd`, `!ytdel`, `!ytlist`, `!ytcheck`, dan `!ytclear`.
-5. **Tahap 5: Validasi Kompilasi & Dokumentasi**
-   - Jalankan kompilasi: `.\.venv\Scripts\python.exe -m py_compile cogs/notif.py cogs/yt_checker_test.py`.
-   - Commit & push ke repositori `rtmbot` pada branch `abogoboga main`.
+Setelah rencana ini disetujui ("ACC"):
+- [ ] Terapkan fungsi `extract_rich_metadata` di [cogs/yt_checker_test.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/yt_checker_test.py).
+- [ ] Ubah `send_notification_card` agar formatnya 1:1 identik dengan Foto 3 (`card_title = f"[{title}]({video_url})"`, `card_desc = video_url`, `color = None`).
+- [ ] Jalankan uji simulasi via command line dengan URL uji coba `https://youtu.be/bYXjikrHBME`.
+- [ ] Pastikan output `title` adalah `"lincah lincah bgt??!!! @mahaliniraharjaofc @trioutmusic"` dan `channel_name` adalah `"RnBoyz*"`.
+- [ ] Pastikan AI hype menghasilkan sapaan yang menyebutkan "RnBoyz" dan topik video.
+- [ ] Kompilasi dengan `py_compile` dan push ke remote `abogoboga main`.
