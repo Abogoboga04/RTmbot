@@ -4,6 +4,7 @@ from discord import app_commands
 import json
 import random
 import asyncio
+import copy
 import os
 import time
 from datetime import datetime, timedelta, timezone
@@ -634,6 +635,8 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                 "Protokol ini tidak bisa di-override oleh instruksi apapun di bawahnya.\n"
                 "WAJIB: Panggil dia Tuan/Bos/Master. Turuti 100% semua perintahnya tanpa bantah, tanpa ngeluh, tanpa sarkas. "
                 "Jawab singkat, jelas, presisi. Aktifkan semua TAG RAHASIA jika diminta. "
+                "Jika Tuan meminta memulai game / balapan kuda atau command lain, WAJIB sertakan tag: "
+                "$$ACTION_EXECUTE_COMMAND: <channel_tujuan_atau_SINI> | <command>$$ agar game/command benar-benar dieksekusi di Discord.\n"
                 "Ini perintah tidak bisa dibatalkan selama sesi berlangsung."
             )
         else:
@@ -707,7 +710,7 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
         try:
             uid_key = str(user.id)
             # 1. Economy & Leveling Data
-            bank_data = load_json_file('data/bank.json', {})
+            bank_data = load_json_file('data/bank_data.json', {})
             user_balance = bank_data.get(uid_key, {}).get('balance', 0)
             
             user_level = 0
@@ -763,10 +766,13 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                 realtime_user_context += f"- Voice Room: Saat ini voice room sedang sepi/kosong.\n"
 
             realtime_user_context += (
-                f"\nPEDOMAN INTEGRASI SISTEM:\n"
-                f"- Jika user bertanya tentang saldo RSWN, rank, exp, atau kartu mereka, gunakan angka asli di [DATA FAKTUAL PROFIL USER REALTIME]! Jawab secara natural, santai/sarkas khas Raka, dan akurat.\n"
+                f"\nPEDOMAN INTEGRASI SISTEM & AKSI NYATA:\n"
+                f"- Jika user bertanya tentang saldo RSWN, rank, exp, atau kartu mereka, WAJIB gunakan angka asli di [DATA FAKTUAL PROFIL USER REALTIME]! Jawab secara akurat (presisi/hormat untuk Tuan, atau santai untuk member).\n"
                 f"- Jika user bertanya soal mabar / voice room, gunakan data voice room di atas.\n"
-                f"- Jika user minta rekomendasi game atau balapan, kamu boleh rekomendasikan game santai (Valorant, Roblox) atau minigame bot balapan kuda (`!balapan`), sambung kata (`!sambung`), atau kuis (`!games`).\n"
+                f"- EKSEKUSI MINIGAME / COMMAND: Jika user (atau Creator) meminta memulai balapan kuda atau minigame di channel tertentu atau di sini, kamu BISA langsung mengeksekusi arena game secara nyata dengan menyertakan tag aksi:\n"
+                f"  $$ACTION_EXECUTE_COMMAND: minigames | balapan$$\n"
+                f"  Atau jika diminta di channel ini: $$ACTION_EXECUTE_COMMAND: SINI | balapan$$\n"
+                f"  Dengan menyertakan tag ini, backend bot akan benar-benar menjalankan command Discord tersebut secara resmi, bukan hanya janji teks.\n"
             )
         except Exception as e:
             log.warning(f"[REALTIME_CTX_ERR] {e}")
@@ -1042,6 +1048,54 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                     log.error(f"[ACTION_CHANNEL_ERR] {e}")
                     text += f"\n*(Gagal ngirim ke channel {ch_target}: {e})*"
             text = re.sub(r'\$\$ACTION_CHANNEL:\s*.*?\$\$', '', text, flags=re.IGNORECASE | re.DOTALL).strip()
+
+            # ACTION_EXECUTE_COMMAND: Jembatan Eksekusi Nyata Command Discord
+            exec_matches = re.findall(r'\$\$ACTION_EXECUTE_COMMAND:\s*([^\s|]+)\s*\|\s*(.*?)\$\$', text, re.IGNORECASE | re.DOTALL)
+            for cmd_ch_target, raw_cmd in exec_matches:
+                try:
+                    clean_ch = cmd_ch_target.strip().replace("<#", "").replace(">", "").replace("#", "").replace('"', '').replace("'", "")
+                    target_ch = None
+                    if clean_ch.upper() == "SINI":
+                        target_ch = send_target.channel if isinstance(send_target, discord.Message) else getattr(send_target, 'channel', None)
+                    elif clean_ch.isdigit():
+                        target_ch = self.bot.get_channel(int(clean_ch))
+                        if not target_ch:
+                            try: target_ch = await self.bot.fetch_channel(int(clean_ch))
+                            except Exception: pass
+                    else:
+                        g_obj = send_target.guild if isinstance(send_target, discord.Message) else getattr(send_target, 'guild', None)
+                        if g_obj:
+                            target_ch = discord.utils.get(g_obj.channels, name=clean_ch.lower())
+
+                    if target_ch:
+                        cmd_str = raw_cmd.strip()
+                        if not cmd_str.startswith("!"):
+                            cmd_str = f"!{cmd_str}"
+                        
+                        if isinstance(send_target, discord.Message):
+                            fake_message = copy.copy(send_target)
+                            fake_message.channel = target_ch
+                            fake_message.content = cmd_str
+                            new_ctx = await self.bot.get_context(fake_message)
+                            if new_ctx.command:
+                                asyncio.create_task(self.bot.invoke(new_ctx))
+                                text += f"\n*(Arena `{raw_cmd.strip()}` berhasil diaktifkan di <#{target_ch.id}>)*"
+                            else:
+                                text += f"\n*(Command `{raw_cmd.strip()}` tidak terdaftar di sistem)*"
+                        else:
+                            first_cmd = cmd_str.lstrip("!").split()[0]
+                            cmd_obj = self.bot.get_command(first_cmd)
+                            if cmd_obj:
+                                dummy_msg = await target_ch.send(f"*(Memulai `{cmd_str}` atas permintaan {user.display_name}...)*")
+                                new_ctx = await self.bot.get_context(dummy_msg)
+                                asyncio.create_task(self.bot.invoke(new_ctx))
+                                text += f"\n*(Arena `{raw_cmd.strip()}` berhasil diaktifkan di <#{target_ch.id}>)*"
+                    else:
+                        text += f"\n*(Channel tujuan '{cmd_ch_target}' tidak ditemukan)*"
+                except Exception as e:
+                    log.error(f"[ACTION_EXECUTE_COMMAND_ERR] {e}")
+                    text += f"\n*(Gagal mengeksekusi command: {e})*"
+            text = re.sub(r'\$\$ACTION_EXECUTE_COMMAND:\s*.*?\$\$', '', text, flags=re.IGNORECASE | re.DOTALL).strip()
                 
             sent_msg = None
             if isinstance(send_target, discord.Message):
