@@ -1,4 +1,4 @@
 {
-  "check_interval_minutes": 2,
+  "check_interval_seconds": 60,
   "channels": []
 }

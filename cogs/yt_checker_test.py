@@ -60,6 +60,13 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
         self.config = self._load_config()
         self.cache = self._load_cache()
         
+        # Terapkan interval dari konfigurasi (default: 60 detik / 1 menit)
+        interval_sec = self.config.get("check_interval_seconds", 60)
+        try:
+            self.yt_check_loop.change_interval(seconds=interval_sec)
+        except Exception:
+            pass
+
         # Mulai background task pengecekan berkala jika event loop sudah siap
         try:
             self.yt_check_loop.start()
@@ -69,18 +76,31 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
     def cog_unload(self):
         self.yt_check_loop.cancel()
 
+    def _get_interval_text(self):
+        sec = self.config.get("check_interval_seconds", 60)
+        if sec >= 60:
+            mnt = sec // 60
+            sisa_sec = sec % 60
+            if sisa_sec == 0:
+                return f"{sec} detik ({mnt} menit)"
+            return f"{sec} detik ({mnt} menit {sisa_sec} detik)"
+        return f"{sec} detik"
+
     # ==========================================
     # PENGELOLAAN KONFIGURASI & CACHE TERISOLASI
     # ==========================================
     def _load_config(self):
         default_config = {
-            "check_interval_minutes": 2,
+            "check_interval_seconds": 60,
             "channels": []
         }
         if os.path.exists(self.config_file):
             try:
                 with open(self.config_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
+                    # Migrasi dari check_interval_minutes jika ada
+                    if "check_interval_minutes" in data and "check_interval_seconds" not in data:
+                        data["check_interval_seconds"] = data["check_interval_minutes"] * 60
                     return {**default_config, **data}
             except Exception as e:
                 print(f"[YT TEST] Gagal membaca config: {e}")
@@ -688,6 +708,7 @@ Berikan 1 respon pengumuman kamu sekarang:"""
         embed.add_field(name="➕ Tambah Channel", value="`!ytadd <url/handle>` atau `!yt add <url>`\nPantau channel YouTube baru langsung ke channel Discord ini.", inline=False)
         embed.add_field(name="📋 Lihat Daftar", value="`!ytlist` atau `!yt list`\nLihat semua channel yang sedang dipantau.", inline=False)
         embed.add_field(name="🔄 Cek Sekarang", value="`!ytcheck` atau `!yt check`\nPaksa bot mengecek feed sekarang juga.", inline=False)
+        embed.add_field(name="⏱️ Atur Interval", value="`!ytinterval <detik>` atau `!yt interval <detik>`\nAtur interval loop pengecekan (default: 60 detik / 1 menit).", inline=False)
         embed.add_field(name="🗑️ Hapus Channel", value="`!ytdel <channel_id>` atau `!yt del <id>`\nHapus channel dari pemantauan.", inline=False)
         embed.add_field(name="🧹 Bersihkan Cache", value="`!ytclear` atau `!yt clear`\nKosongkan cache test agar bisa kirim ulang.", inline=False)
         await ctx.send(embed=embed)
@@ -814,7 +835,7 @@ Berikan 1 respon pengumuman kamu sekarang:"""
         embed.add_field(name="Nama Channel", value=f"**{channel_name}**", inline=True)
         embed.add_field(name="Channel ID", value=f"`{channel_id}`", inline=True)
         embed.add_field(name="Target Notifikasi", value=ctx.channel.mention, inline=True)
-        embed.add_field(name="Interval Pengecekan", value=f"Setiap {self.config.get('check_interval_minutes', 2)} menit", inline=False)
+        embed.add_field(name="Interval Pengecekan", value=f"Setiap {self._get_interval_text()}", inline=False)
         embed.set_footer(text="Gunakan !ytcheck untuk memicu pengecekan sekarang juga.")
 
         await status_msg.edit(content=None, embed=embed)
@@ -879,13 +900,34 @@ Berikan 1 respon pengumuman kamu sekarang:"""
             )
 
         cached_count = len(self.cache.get("posted_video_ids", []))
-        embed.set_footer(text=f"Total video dalam cache: {cached_count} | Interval: {self.config.get('check_interval_minutes', 2)} menit")
+        embed.set_footer(text=f"Total video dalam cache: {cached_count} | Interval loop: {self._get_interval_text()}")
         await ctx.send(embed=embed)
 
     @yt_group.command(name="list")
     @commands.has_permissions(administrator=True)
     async def yt_list_sub(self, ctx):
         await self.ytlist_cmd(ctx)
+
+    @commands.command(name="ytinterval")
+    @commands.has_permissions(administrator=True)
+    async def ytinterval_cmd(self, ctx, seconds: int = None):
+        """Atur seberapa cepat bot mengecek YouTube (dalam detik). Contoh: !ytinterval 60"""
+        if not seconds or seconds < 10:
+            return await ctx.send(f"❌ Masukkan durasi interval minimal 10 detik! Contoh: `!ytinterval 60` (saat ini: **{self._get_interval_text()}**)")
+            
+        self.config["check_interval_seconds"] = seconds
+        self._save_config()
+        try:
+            self.yt_check_loop.change_interval(seconds=seconds)
+        except Exception as e:
+            print(f"[YT INTERVAL CHANGE ERROR] {e}")
+        
+        await ctx.send(f"✅ Interval pemeriksaan YouTube berhasil diubah menjadi **{self._get_interval_text()}**!")
+
+    @yt_group.command(name="interval")
+    @commands.has_permissions(administrator=True)
+    async def yt_interval_sub(self, ctx, seconds: int):
+        await self.ytinterval_cmd(ctx, seconds)
 
     @commands.command(name="ytcheck")
     @commands.has_permissions(administrator=True)
