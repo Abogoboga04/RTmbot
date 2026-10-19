@@ -57,6 +57,12 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
         self.config_file = "data/yt_test_config.json"
         self.cache_file = "data/yt_test_cache.json"
         
+        self.mongo_client = getattr(bot, 'mongo_client', None)
+        self.db = None
+        self.config_col = None
+        self.cache_col = None
+        self._ensure_mongo()
+
         self.config = self._load_config()
         self.cache = self._load_cache()
         
@@ -73,6 +79,17 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
         except RuntimeError:
             pass
 
+    def _ensure_mongo(self):
+        if not self.mongo_client:
+            self.mongo_client = getattr(self.bot, 'mongo_client', None)
+        if self.mongo_client and (not self.config_col or not self.cache_col):
+            try:
+                self.db = self.mongo_client["reSwan"]
+                self.config_col = self.db["yt_test_config"]
+                self.cache_col = self.db["yt_test_cache"]
+            except Exception as e:
+                print(f"[YT MONGO INIT ERROR] {e}")
+
     def cog_unload(self):
         self.yt_check_loop.cancel()
 
@@ -87,18 +104,40 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
         return f"{sec} detik"
 
     # ==========================================
-    # PENGELOLAAN KONFIGURASI & CACHE TERISOLASI
+    # PENGELOLAAN KONFIGURASI & CACHE TERISOLASI (MONGO + LOKAL)
     # ==========================================
     def _load_config(self):
         default_config = {
             "check_interval_seconds": 60,
             "channels": []
         }
+        self._ensure_mongo()
+
+        # 1. Prioritaskan load dari MongoDB (Aman dari restart / deploy)
+        if self.config_col is not None:
+            try:
+                doc = self.config_col.find_one({"_id": "yt_test_config"})
+                if doc and "data" in doc:
+                    mongo_data = doc["data"]
+                    if "check_interval_minutes" in mongo_data and "check_interval_seconds" not in mongo_data:
+                        mongo_data["check_interval_seconds"] = mongo_data["check_interval_minutes"] * 60
+                    merged = {**default_config, **mongo_data}
+                    # Sinkronkan ke file lokal
+                    try:
+                        os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
+                        with open(self.config_file, "w", encoding="utf-8") as f:
+                            json.dump(merged, f, indent=4)
+                    except:
+                        pass
+                    return merged
+            except Exception as e:
+                print(f"[YT MONGO LOAD CONFIG ERROR] {e}")
+
+        # 2. Fallback ke file lokal jika mongo belum siap
         if os.path.exists(self.config_file):
             try:
                 with open(self.config_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    # Migrasi dari check_interval_minutes jika ada
                     if "check_interval_minutes" in data and "check_interval_seconds" not in data:
                         data["check_interval_seconds"] = data["check_interval_minutes"] * 60
                     return {**default_config, **data}
@@ -111,17 +150,49 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
         return default_config
 
     def _save_config(self):
+        # 1. Simpan ke file lokal
         try:
             os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
             with open(self.config_file, "w", encoding="utf-8") as f:
                 json.dump(self.config, f, indent=4)
         except Exception as e:
-            print(f"[YT TEST ERROR] Gagal menyimpan config: {e}")
+            print(f"[YT TEST ERROR] Gagal menyimpan config lokal: {e}")
+
+        # 2. Simpan permanen ke MongoDB
+        self._ensure_mongo()
+        if self.config_col is not None:
+            try:
+                self.config_col.replace_one(
+                    {"_id": "yt_test_config"},
+                    {"_id": "yt_test_config", "data": self.config},
+                    upsert=True
+                )
+            except Exception as e:
+                print(f"[YT MONGO SAVE CONFIG ERROR] {e}")
 
     def _load_cache(self):
         default_cache = {
             "posted_video_ids": []
         }
+        self._ensure_mongo()
+
+        # 1. Prioritaskan load dari MongoDB
+        if self.cache_col is not None:
+            try:
+                doc = self.cache_col.find_one({"_id": "yt_test_cache"})
+                if doc and "data" in doc:
+                    merged_cache = {**default_cache, **doc["data"]}
+                    try:
+                        os.makedirs(os.path.dirname(self.cache_file), exist_ok=True)
+                        with open(self.cache_file, "w", encoding="utf-8") as f:
+                            json.dump(merged_cache, f, indent=4)
+                    except:
+                        pass
+                    return merged_cache
+            except Exception as e:
+                print(f"[YT MONGO LOAD CACHE ERROR] {e}")
+
+        # 2. Fallback ke file lokal
         if os.path.exists(self.cache_file):
             try:
                 with open(self.cache_file, "r", encoding="utf-8") as f:
@@ -136,12 +207,25 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
         return default_cache
 
     def _save_cache(self):
+        # 1. Simpan ke file lokal
         try:
             os.makedirs(os.path.dirname(self.cache_file), exist_ok=True)
             with open(self.cache_file, "w", encoding="utf-8") as f:
                 json.dump(self.cache, f, indent=4)
         except Exception as e:
-            print(f"[YT TEST ERROR] Gagal menyimpan cache: {e}")
+            print(f"[YT TEST ERROR] Gagal menyimpan cache lokal: {e}")
+
+        # 2. Simpan permanen ke MongoDB
+        self._ensure_mongo()
+        if self.cache_col is not None:
+            try:
+                self.cache_col.replace_one(
+                    {"_id": "yt_test_cache"},
+                    {"_id": "yt_test_cache", "data": self.cache},
+                    upsert=True
+                )
+            except Exception as e:
+                print(f"[YT MONGO SAVE CACHE ERROR] {e}")
 
     # ==========================================
     # HELPER PARSER & YOUTUBE RESOLVER
@@ -829,7 +913,7 @@ Berikan 1 respon pengumuman kamu sekarang:"""
 
         embed = discord.Embed(
             title="✅ Channel YouTube Berhasil Ditambahkan",
-            description=f"Bot sekarang memantau channel ini secara mandiri langsung dari YouTube!\n*(Sebanyak {seeded_count} video lama sudah dicatat agar tidak dispam)*",
+            description=f"Bot sekarang memantau channel ini secara mandiri langsung dari YouTube!\n*(Tersimpan permanen di MongoDB | {seeded_count} video lama sudah dicatat agar tidak dispam)*",
             color=0x57f287
         )
         embed.add_field(name="Nama Channel", value=f"**{channel_name}**", inline=True)
