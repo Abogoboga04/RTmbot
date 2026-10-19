@@ -390,6 +390,65 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
             print(f"[YT RSS ERROR] {e}")
         return videos
 
+    async def fetch_latest_videos(self, channel_id: str):
+        """
+        Dual-Engine Video Detector:
+        1. Cek langsung tab /videos channel YouTube (real-time, zero CDN delay).
+        2. Cek public Atom RSS feed YouTube.
+        Menggabungkan keduanya agar tidak ada video yang tertinggal akibat delay cache Google.
+        """
+        videos = []
+        found_vids = set()
+
+        # Engine 1: Channel Videos Tab (Instant & Real-time, mendeteksi video detik itu juga)
+        channel_tab_url = f"https://www.youtube.com/channel/{channel_id}/videos"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
+        }
+        try:
+            timeout = aiohttp.ClientTimeout(total=8)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(channel_tab_url, headers=headers) as resp:
+                    if resp.status == 200:
+                        html = await resp.text()
+                        vids = re.findall(r'\"videoId\":\"([a-zA-Z0-9_-]{11})\"', html)
+                        for vid in vids[:6]:
+                            if vid not in found_vids:
+                                found_vids.add(vid)
+                                videos.append({
+                                    "video_id": vid,
+                                    "title": None,
+                                    "url": f"https://www.youtube.com/watch?v={vid}",
+                                    "channel_id": channel_id,
+                                    "channel_name": None,
+                                    "published": None,
+                                    "updated": None,
+                                    "thumbnail_url": f"https://img.youtube.com/vi/{vid}/maxresdefault.jpg",
+                                    "description": ""
+                                })
+        except Exception as e_tab:
+            print(f"[YT TAB SCRAPE ERROR] {e_tab}")
+
+        # Engine 2: Atom RSS Feed (Pelengkap Metadata)
+        rss_videos = await self.fetch_latest_videos_from_rss(channel_id)
+        for rv in rss_videos:
+            rv_id = rv.get("video_id")
+            if rv_id in found_vids:
+                for v in videos:
+                    if v["video_id"] == rv_id:
+                        if rv.get("title"): v["title"] = rv["title"]
+                        if rv.get("channel_name"): v["channel_name"] = rv["channel_name"]
+                        if rv.get("published"): v["published"] = rv["published"]
+                        if rv.get("updated"): v["updated"] = rv["updated"]
+                        if rv.get("description"): v["description"] = rv["description"]
+                        break
+            else:
+                found_vids.add(rv_id)
+                videos.append(rv)
+
+        return videos
+
     def is_video_fresh(self, published_str: str, updated_str: str = None, max_age_hours: int = 4) -> bool:
         """
         Mengecek apakah video masih baru menggunakan kombinasi tag <published> dan <updated>.
@@ -705,11 +764,20 @@ Berikan 1 respon pengumuman kamu sekarang:"""
             if not channel_id or not target_disc_id:
                 continue
 
-            target_disc_channel = self.bot.get_channel(target_disc_id)
-            if not target_disc_channel:
+            try:
+                target_id_int = int(target_disc_id)
+            except (ValueError, TypeError):
                 continue
 
-            latest_items = await self.fetch_latest_videos_from_rss(channel_id)
+            target_disc_channel = self.bot.get_channel(target_id_int)
+            if not target_disc_channel:
+                try:
+                    target_disc_channel = await self.bot.fetch_channel(target_id_int)
+                except Exception as e_fetch:
+                    print(f"[YT CHECK] Gagal fetch channel Discord {target_id_int}: {e_fetch}")
+                    continue
+
+            latest_items = await self.fetch_latest_videos(channel_id)
             if not latest_items:
                 continue
 
@@ -901,7 +969,7 @@ Berikan 1 respon pengumuman kamu sekarang:"""
         self._save_config()
 
         # 🛡️ Seed Baseline Cache: Tandai video yang sudah ada saat ini agar tidak dispam sebagai video baru
-        current_videos = await self.fetch_latest_videos_from_rss(channel_id)
+        current_videos = await self.fetch_latest_videos(channel_id)
         posted_ids = self.cache.get("posted_video_ids", [])
         seeded_count = 0
         for cv in current_videos:
@@ -974,8 +1042,12 @@ Berikan 1 respon pengumuman kamu sekarang:"""
             c_name = ch.get("channel_name", "Unknown")
             c_id = ch.get("channel_id", "-")
             target_id = ch.get("target_discord_channel_id")
-            target_ch = self.bot.get_channel(target_id)
-            target_str = target_ch.mention if target_ch else f"ID: {target_id}"
+            try:
+                t_int = int(target_id)
+                target_ch = self.bot.get_channel(t_int)
+                target_str = target_ch.mention if target_ch else f"<#{t_int}>"
+            except:
+                target_str = f"ID: {target_id}"
 
             embed.add_field(
                 name=f"{i}. {c_name}",
@@ -1016,17 +1088,91 @@ Berikan 1 respon pengumuman kamu sekarang:"""
     @commands.command(name="ytcheck")
     @commands.has_permissions(administrator=True)
     async def ytcheck_cmd(self, ctx):
-        """Paksa bot mengecek feed YouTube detik ini juga."""
+        """Paksa bot mengecek feed & tab video YouTube detik ini juga dengan laporan detail transparan."""
         channels = self.config.get("channels", [])
         if not channels:
             return await ctx.send("⚠️ Belum ada channel yang didaftarkan. Gunakan `!ytadd <url>` terlebih dahulu.")
 
-        msg = await ctx.send("🔄 *Sedang memeriksa feed YouTube untuk semua channel terdaftar...*")
-        try:
-            await self.yt_check_loop()
-            await msg.edit(content="✅ Pengecekan selesai! Jika ada konten baru yang belum masuk cache, notifikasi sudah dikirim ke channel tujuan.")
-        except Exception as e:
-            await msg.edit(content=f"❌ Terjadi kesalahan saat memeriksa feed: {e}")
+        msg = await ctx.send("🔄 *Sedang memeriksa update YouTube untuk semua channel (Dual-Engine: RSS + Web Tab)...*")
+        
+        report_lines = []
+        new_count = 0
+        posted_ids = self.cache.get("posted_video_ids", [])
+
+        for ch in channels:
+            if not ch.get("enabled", True):
+                continue
+
+            channel_id = ch.get("channel_id")
+            c_name = ch.get("channel_name", "Unknown")
+            target_disc_id = ch.get("target_discord_channel_id")
+            if not channel_id or not target_disc_id:
+                continue
+
+            try:
+                target_id_int = int(target_disc_id)
+            except (ValueError, TypeError):
+                continue
+
+            target_disc_channel = self.bot.get_channel(target_id_int)
+            if not target_disc_channel:
+                try:
+                    target_disc_channel = await self.bot.fetch_channel(target_id_int)
+                except Exception:
+                    pass
+
+            latest_items = await self.fetch_latest_videos(channel_id)
+            if not latest_items:
+                report_lines.append(f"• **{c_name}**: Gagal terhubung ke feed/tab YouTube.")
+                continue
+
+            top_item = latest_items[0]
+            top_vid = top_item["video_id"]
+
+            # Cek status video teratas
+            if top_vid in posted_ids:
+                v_title = top_item.get("title") or "Video Teratas"
+                report_lines.append(f"• **{c_name}**: Video `{top_vid}` ({v_title}) sudah ada di cache *(tidak dikirim ulang)*.")
+            else:
+                # Video baru ditemukan!
+                if target_disc_channel:
+                    classification = await self.classify_stream_status(top_vid)
+                    top_item["status"] = classification["status"]
+                    top_item["title"] = classification.get("title") or top_item.get("title") or "Video YouTube"
+                    top_item["channel_name"] = classification.get("channel_name") or c_name
+                    top_item["description"] = classification.get("description") or ""
+
+                    clean_title = top_item["title"]
+                    if clean_title:
+                        for pattern in [r'\d{4}-\d{2}-\d{2}', r'\d{2}:\d{2}', r'\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}']:
+                            clean_title = re.sub(pattern, '', clean_title).strip()
+
+                    ai_text = await self.generate_ai_hype(
+                        channel_name=top_item["channel_name"],
+                        video_title=clean_title,
+                        video_type=top_item["status"],
+                        video_desc=top_item.get("description")
+                    )
+
+                    await self.send_notification_card(target_disc_channel, top_item, ai_text)
+
+                    posted_ids.append(top_vid)
+                    if len(posted_ids) > 500: posted_ids.pop(0)
+                    self.cache["posted_video_ids"] = posted_ids
+                    self._save_cache()
+
+                    report_lines.append(f"• **{c_name}**: 🎉 Video baru **'{top_item['title']}'** (`{top_vid}`) berhasil dikirim ke {target_disc_channel.mention}!")
+                    new_count += 1
+                else:
+                    report_lines.append(f"• **{c_name}**: Video baru terdeteksi tapi target channel Discord tidak ditemukan.")
+
+        embed = discord.Embed(
+            title="🔍 Laporan Pemeriksaan YouTube",
+            description="\n".join(report_lines) if report_lines else "Tidak ada channel yang aktif diperiksa.",
+            color=0x57f287 if new_count > 0 else 0x3498db
+        )
+        embed.set_footer(text="Tip: Gunakan !ytclear jika kamu ingin mengirimkan ulang video yang sudah tercatat di cache.")
+        await msg.edit(content=None, embed=embed)
 
     @yt_group.command(name="check")
     @commands.has_permissions(administrator=True)
