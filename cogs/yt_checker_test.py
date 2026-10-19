@@ -80,9 +80,9 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
             pass
 
     def _ensure_mongo(self):
-        if not self.mongo_client:
+        if self.mongo_client is None:
             self.mongo_client = getattr(self.bot, 'mongo_client', None)
-        if self.mongo_client and (not self.config_col or not self.cache_col):
+        if self.mongo_client is not None and (self.config_col is None or self.cache_col is None):
             try:
                 self.db = self.mongo_client["reSwan"]
                 self.config_col = self.db["yt_test_config"]
