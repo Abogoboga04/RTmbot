@@ -12,17 +12,14 @@ import discord
 
 REGISTRY_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "member_registry.json")
 
+
 def get_or_create_member_serial_id(guild: discord.Guild, member: discord.Member) -> int:
-    """
-    Mengambil atau menerbitkan Nomor Registrasi Anggota Permanen (Permanent Serial ID).
-    Nomor ini abadi dan tidak akan berkurang/berubah meskipun ada anggota lain yang keluar dari server.
-    """
     if not guild or not member:
         return 1
-        
+
     guild_id = str(guild.id)
     user_id = str(member.id)
-    
+
     registry = {}
     try:
         if os.path.exists(REGISTRY_FILE):
@@ -30,55 +27,50 @@ def get_or_create_member_serial_id(guild: discord.Guild, member: discord.Member)
                 registry = json.load(f)
     except Exception:
         registry = {}
-        
+
     if guild_id not in registry or not isinstance(registry[guild_id], dict):
         base_count = getattr(guild, "member_count", 1) or 1
         registry[guild_id] = {
             "counter": max(base_count, 1),
             "members": {}
         }
-        
+
     guild_data = registry[guild_id]
     if "members" not in guild_data or not isinstance(guild_data["members"], dict):
         guild_data["members"] = {}
     if "counter" not in guild_data:
         guild_data["counter"] = max(getattr(guild, "member_count", 1) or 1, 1)
-        
-    # Jika member sudah terdaftar sebelumnya, kembalikan serial ID yang sudah ada (tidak pernah berubah)
+
     if user_id in guild_data["members"]:
         return guild_data["members"][user_id]
-        
-    # Jika member baru, naikkan counter dan simpan permanen
+
     current_count = getattr(guild, "member_count", 1) or 1
     new_serial = max(guild_data["counter"] + 1, current_count)
     guild_data["counter"] = new_serial
     guild_data["members"][user_id] = new_serial
-    
+
     try:
         os.makedirs(os.path.dirname(REGISTRY_FILE), exist_ok=True)
         with open(REGISTRY_FILE, "w", encoding="utf-8") as f:
             json.dump(registry, f, indent=2, ensure_ascii=False)
     except Exception:
         pass
-        
+
     return new_serial
 
+
 def is_safe_printable_char(ch: str) -> bool:
-    """Filter ketat untuk mencegah karakter box kosong (□)."""
     code = ord(ch)
-    # ASCII standar yang dapat dicetak (huruf, angka, tanda baca dasar)
     if 32 <= code <= 126:
         return True
-    # Latin-1 Suplemen & Latin Extended A/B (aksen & huruf Eropa umum)
     if 160 <= code <= 591:
         return True
-    # Simbol tipografi aman (kutip melengkung, bullet, dash)
     if code in (0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014):
         return True
     return False
 
+
 def clean_display_text(text: str) -> str:
-    """Bersihkan teks dari unicode tak kasat mata, plane 14 selectors, dan kontrol."""
     if not text:
         return "MEMBER"
     text = unicodedata.normalize('NFKC', str(text))
@@ -86,11 +78,11 @@ def clean_display_text(text: str) -> str:
     cleaned = re.sub(r'\s+', ' ', cleaned).strip()
     return cleaned if cleaned else "MEMBER"
 
+
 def get_card_fonts():
-    """Load font tipografi elegan lintas platform (Windows & Linux Railway)."""
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     asset_fonts = os.path.join(base_dir, "assets", "fonts")
-    
+
     search_dirs = [
         asset_fonts,
         os.path.join(base_dir, "data", "fonts"),
@@ -100,7 +92,7 @@ def get_card_fonts():
         "/usr/share/fonts",
         "/usr/local/share/fonts"
     ]
-    
+
     def find_font(filenames):
         for d in search_dirs:
             if not os.path.exists(d):
@@ -141,6 +133,7 @@ def get_card_fonts():
         "auth_id": load_font(f_sans_reg, 12),
     }
 
+
 def draw_star(draw, cx, cy, r_outer=15, r_inner=7, fill=(245, 195, 60, 255), outline=(180, 135, 30, 255)):
     points = []
     for i in range(10):
@@ -151,6 +144,7 @@ def draw_star(draw, cx, cy, r_outer=15, r_inner=7, fill=(245, 195, 60, 255), out
         points.append((x, y))
     draw.polygon(points, fill=fill, outline=outline)
 
+
 def draw_sakura(draw, cx, cy, r_petal=9, fill=(255, 170, 195, 255), outline=(215, 95, 130, 255)):
     for i in range(5):
         angle = i * 2 * math.pi / 5 - math.pi / 2
@@ -159,8 +153,8 @@ def draw_sakura(draw, cx, cy, r_petal=9, fill=(255, 170, 195, 255), outline=(215
         draw.ellipse([(px - r_petal, py - r_petal), (px + r_petal, py + r_petal)], fill=fill, outline=outline)
     draw.ellipse([(cx - 5, cy - 5), (cx + 5, cy + 5)], fill=(255, 235, 120, 255))
 
+
 def draw_luxury_wax_seal(draw, cx, cy, radius=78, stamp_title="• RESMI •", stamp_date="19 JUL", stamp_year="THN 2024", fonts=None):
-    """Render stempel lilin mewah bergaya kekaisaran dengan 36 gerigi bintang & cincin manik emas."""
     teeth = 36
     outer_r = radius
     inner_r = radius - 5
@@ -171,39 +165,35 @@ def draw_luxury_wax_seal(draw, cx, cy, radius=78, stamp_title="• RESMI •", s
         x = cx + r * math.cos(angle)
         y = cy + r * math.sin(angle)
         scallop_pts.append((x, y))
-    
+
     draw.polygon(scallop_pts, fill=(140, 25, 25, 255), outline=(90, 15, 15, 255))
-    draw.ellipse([(cx - radius + 4, cy - radius + 4), (cx + radius - 4, cy + radius - 4)], 
+    draw.ellipse([(cx - radius + 4, cy - radius + 4), (cx + radius - 4, cy + radius - 4)],
                  fill=(185, 38, 38, 255), outline=(218, 165, 32, 255), width=2)
-    
-    # Cincin manik-manik emas (30 dots)
+
     dot_r = radius - 11
     for i in range(30):
         angle = i * 2 * math.pi / 30
         dx = cx + dot_r * math.cos(angle)
         dy = cy + dot_r * math.sin(angle)
         draw.ellipse([(dx - 1.5, dy - 1.5), (dx + 1.5, dy + 1.5)], fill=(255, 223, 128, 255))
-        
-    draw.ellipse([(cx - radius + 16, cy - radius + 16), (cx + radius - 16, cy + radius - 16)], 
+
+    draw.ellipse([(cx - radius + 16, cy - radius + 16), (cx + radius - 16, cy + radius - 16)],
                  outline=(218, 165, 32, 200), width=1)
-    
-    # Lambang sakura di bagian atas seal
+
     draw_sakura(draw, cx, cy - 35, r_petal=5, fill=(255, 190, 210, 255), outline=(200, 70, 90, 255))
-    
-    # Teks label RESMI
+
     b1 = fonts["stamp_title"].getbbox(stamp_title)
     w1 = b1[2] - b1[0]
     draw.text((cx - w1 // 2, cy - 18), stamp_title, font=fonts["stamp_title"], fill=(255, 245, 220, 255))
-    
-    # Teks tanggal
+
     b2 = fonts["stamp_date"].getbbox(stamp_date)
     w2 = b2[2] - b2[0]
     draw.text((cx - w2 // 2, cy + 2), stamp_date, font=fonts["stamp_date"], fill=(255, 255, 255, 255))
-    
-    # Teks tahun
+
     b3 = fonts["stamp_sub"].getbbox(stamp_year)
     w3 = b3[2] - b3[0]
     draw.text((cx - w3 // 2, cy + 25), stamp_year, font=fonts["stamp_sub"], fill=(255, 230, 230, 255))
+
 
 async def generate_official_member_card(
     bot: discord.Client,
@@ -215,38 +205,28 @@ async def generate_official_member_card(
     rank_pos: int = None,
     custom_title: str = None
 ) -> io.BytesIO:
-    """
-    Menghasilkan file gambar Kartu Resmi Anggota (Sertifikat Eksklusif 1050x660 PNG)
-    yang digunakan untuk command /rank dan banner pesan sambutan (welcome).
-    """
-    # Resolusi Nomor Urut Permanen jika rank_pos tidak disertakan
     if rank_pos is None and guild and target:
         try:
             rank_pos = get_or_create_member_serial_id(guild, target)
         except Exception:
             pass
 
-    # Unduh Avatar Target
     avatar_bytes = None
     try:
         avatar_bytes = await target.display_avatar.replace(size=256, format="png").read()
     except Exception:
         pass
 
-    # Sanitasi Teks
     safe_user_name = clean_display_text(target.display_name)
     safe_guild_name = clean_display_text(guild.name)
 
-    # Role Tertinggi
     user_roles = [r for r in target.roles if r.name != "@everyone"]
     highest_role_name = clean_display_text(user_roles[-1].name.upper() if user_roles else "ANGGOTA RESMI")
 
-    # Nama Owner Server
     server_owner = guild.owner
     server_owner_name = clean_display_text(server_owner.display_name if server_owner else "Owner Server")
     server_owner_role = f"Owner & Pendiri {safe_guild_name[:18]}"
 
-    # Nama Owner Bot & Nama Bot Dinamis
     try:
         app_info = await bot.application_info()
         bot_owner = app_info.owner
@@ -257,7 +237,6 @@ async def generate_official_member_card(
     bot_display_name = clean_display_text(bot.user.name if bot.user else "RTMBOT")
     bot_owner_role = f"Pengembang & Owner Bot {bot_display_name}"
 
-    # Format Tanggal Bergabung
     months_id = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"]
     months_full_id = [
         "JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI",
@@ -293,39 +272,31 @@ async def generate_official_member_card(
         text_dark = (44, 34, 30, 255)
         text_gold = (140, 115, 85, 255)
 
-        # 1. Outer Border & Inner Border
         draw.rectangle([(20, 20), (W - 20, H - 22)], outline=gold_dark, width=4)
         draw.rectangle([(32, 32), (W - 32, H - 33)], outline=gold_light, width=1)
 
-        # 2. Ornamen Sudut Siku (L-shaped Ornamental Brackets) + Titik Aksen
         bracket_len = 22
         dot_dist = 7
-        # Top-Left
         draw.line([(42, 42), (42 + bracket_len, 42)], fill=gold_dark, width=2)
         draw.line([(42, 42), (42, 42 + bracket_len)], fill=gold_dark, width=2)
         draw.ellipse([(42 + dot_dist - 2, 42 + dot_dist - 2), (42 + dot_dist + 2, 42 + dot_dist + 2)], fill=gold_dark)
 
-        # Top-Right
         draw.line([(W - 42, 42), (W - 42 - bracket_len, 42)], fill=gold_dark, width=2)
         draw.line([(W - 42, 42), (W - 42, 42 + bracket_len)], fill=gold_dark, width=2)
         draw.ellipse([(W - 42 - dot_dist - 2, 42 + dot_dist - 2), (W - 42 - dot_dist + 2, 42 + dot_dist + 2)], fill=gold_dark)
 
-        # Bottom-Left
         draw.line([(42, H - 43), (42 + bracket_len, H - 43)], fill=gold_dark, width=2)
         draw.line([(42, H - 43), (42, H - 43 - bracket_len)], fill=gold_dark, width=2)
         draw.ellipse([(42 + dot_dist - 2, H - 43 - dot_dist - 2), (42 + dot_dist + 2, H - 43 - dot_dist + 2)], fill=gold_dark)
 
-        # Bottom-Right
         draw.line([(W - 42, H - 43), (W - 42 - bracket_len, H - 43)], fill=gold_dark, width=2)
         draw.line([(W - 42, H - 43), (W - 42, H - 43 - bracket_len)], fill=gold_dark, width=2)
         draw.ellipse([(W - 42 - dot_dist - 2, H - 43 - dot_dist - 2), (W - 42 - dot_dist + 2, H - 43 - dot_dist + 2)], fill=gold_dark)
 
-        # 3. Header Kiri
         title_text = custom_title or f"KARTU RESMI ANGGOTA • {safe_guild_name.upper()}"
         draw.text((58, 48), title_text, font=fonts["title"], fill=text_dark)
         draw.text((58, 86), sub_header_str, font=fonts["subtitle"], fill=text_gold)
 
-        # Header Kanan (Badge Peringkat)
         if rank_pos is not None:
             badge_tier = f"RANK: #{rank_pos} • CLASS-A" if rank_pos > 3 else "RANK: S-CLASS MASTER"
         else:
@@ -339,10 +310,8 @@ async def generate_official_member_card(
         b_h = bw[3] - bw[1]
         draw.text((badge_x + (badge_w - b_w) // 2, badge_y + (badge_h - b_h) // 2 - 2), badge_tier, font=fonts["badge"], fill=(255, 255, 255, 255))
 
-        # 4. Garis Pembatas Header Emas
         draw.line([(58, 109), (W - 58, 109)], fill=gold_dark, width=1)
 
-        # 5. Box Foto Avatar Kiri
         frame_box = [(58, 138), (212, 345)]
         draw.rounded_rectangle(frame_box, radius=8, fill=(255, 246, 233, 255), outline=gold_light, width=1)
 
@@ -358,10 +327,8 @@ async def generate_official_member_card(
         else:
             draw.ellipse([(pic_cx - pic_r, pic_cy - pic_r), (pic_cx + pic_r, pic_cy + pic_r)], fill=(120, 140, 170, 255))
 
-        # Lis Emas Konsentris Sempurna Sekeliling Avatar
         draw.ellipse([(pic_cx - pic_r - 2, pic_cy - pic_r - 2), (pic_cx + pic_r + 2, pic_cy + pic_r + 2)], outline=gold_dark, width=2)
 
-        # Label Nama di Bawah Foto Avatar
         tag_box = [(75, 302), (195, 332)]
         draw.rounded_rectangle(tag_box, radius=6, fill=(248, 237, 218, 255), outline=gold_light, width=1)
         short_u = safe_user_name[:12]
@@ -369,7 +336,6 @@ async def generate_official_member_card(
         tb_w = tb[2] - tb[0]
         draw.text((75 + (120 - tb_w) // 2, 310), short_u, font=fonts["photo_label"], fill=text_dark)
 
-        # 6. Detail Informasi Tengah
         user_header_text = f"{safe_user_name} • {highest_role_name}"
         if len(user_header_text) > 36:
             user_header_text = user_header_text[:33] + "..."
@@ -391,7 +357,6 @@ async def generate_official_member_card(
             draw.text((415, field_y), val, font=fonts["value"], fill=text_dark)
             field_y += 33
 
-        # 7. Luxury Scalloped Wax Seal (Ukuran Proporsional & Rapi)
         seal_cx, seal_cy = 887, 240
         draw_luxury_wax_seal(
             draw=draw,
@@ -404,35 +369,29 @@ async def generate_official_member_card(
             fonts=fonts
         )
 
-        # 8. Divider Horizontal Tengah
         draw.line([(58, 415), (W - 58, 415)], fill=gold_light, width=1)
 
-        # 9. Teks Dekrit / Pengesahan
         quote_text = f"Lisensi resmi ini diterbitkan secara sah atas keaktifan dan keanggotaan terverifikasi di server {safe_guild_name}."
         q_bbox = fonts["quote"].getbbox(quote_text)
         qw = q_bbox[2] - q_bbox[0]
         draw.text(((W - qw) // 2, 445), quote_text, font=fonts["quote"], fill=(122, 103, 80, 255))
 
-        # 10. Tanda Tangan Resmi (Owner Server di Kiri, Owner Bot di Kanan)
         cx_left = 185
         sw = fonts["sign_name"].getbbox(server_owner_name)[2] - fonts["sign_name"].getbbox(server_owner_name)[0]
         draw.text((cx_left - sw // 2, 482), server_owner_name, font=fonts["sign_name"], fill=text_dark)
         srw = fonts["sign_role"].getbbox(server_owner_role)[2] - fonts["sign_role"].getbbox(server_owner_role)[0]
         draw.text((cx_left - srw // 2, 510), server_owner_role, font=fonts["sign_role"], fill=text_gold)
 
-        # Bintang & Sakura di Tengah
         draw_star(draw, W // 2 - 36, 498, r_outer=13, r_inner=6)
         draw_sakura(draw, W // 2, 498, r_petal=7)
         draw_star(draw, W // 2 + 36, 498, r_outer=13, r_inner=6)
 
-        # Owner Bot
         cx_right = 835
         bw = fonts["sign_name"].getbbox(bot_owner_name)[2] - fonts["sign_name"].getbbox(bot_owner_name)[0]
         draw.text((cx_right - bw // 2, 482), bot_owner_name, font=fonts["sign_name"], fill=text_dark)
         brw = fonts["sign_role"].getbbox(bot_owner_role)[2] - fonts["sign_role"].getbbox(bot_owner_role)[0]
         draw.text((cx_right - brw // 2, 510), bot_owner_role, font=fonts["sign_role"], fill=text_gold)
 
-        # 11. ID Otentikasi Footer (Jarak Bebas 26px di Atas Border Bawah, Tanpa Tabrakan)
         auth_str = f"ID OTENTIKASI RESMI: RTM-{target.id}-VERIFIED"
         a_bbox = fonts["auth_id"].getbbox(auth_str)
         aw = a_bbox[2] - a_bbox[0]

@@ -318,7 +318,6 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
         if member.bot:
             return
 
-        # Pembersihan instan saat user meninggalkan channel sementara
         if before.channel and str(before.channel.id) in self.active_temp_channels:
             human_members = [m for m in before.channel.members if not m.bot]
             if not human_members:

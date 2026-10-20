@@ -506,7 +506,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         for uid in users_in_cooldown:
             self.cooldown_users.pop(uid, None)
 
-        # Bersihkan dictionary game spesifik
         for g_dict in [self.active_emoji_games, self.active_hangman_games, self.active_resacak_games,
                        self.active_resipa_games, self.active_sambung_games, self.active_voting_games]:
             g_dict.pop(channel_id, None)
@@ -565,9 +564,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             return False
         return True
 
-    # ==========================================================
-    # 🎮 KATALOG MINIGAMES & RESET PERMAINAN
-    # ==========================================================
 
     @commands.command(name="games", aliases=['minigames', 'daftargame', 'listgame'])
     async def games_catalog_cmd(self, ctx):
@@ -644,9 +640,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             await ctx.send("Aksi tidak valid. Gunakan `add`, `remove`, atau `list`.")
         save_json_to_root(self.allowed_channels, 'data/game_channels.json')
 
-    # ==========================================================
-    # 🔗 REVAMPED SAMBUNG KATA (WORD CHAIN)
-    # ==========================================================
 
     @commands.command(name="sambung", aliases=['sk', 'sambungkata', 'ressambung'])
     async def sambung_kata_cmd(self, ctx):
@@ -778,9 +771,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             )
             await ctx.send(embed=win_embed)
 
-    # ==========================================================
-    # 🗳️ NEW: SI PALING... (PARTY VOTING MINIGAME)
-    # ==========================================================
 
     @commands.command(name="siapapaling", aliases=['paling', 'wholikely', 'mostlikely', 'votepertanyaan', 'sipaling'])
     async def siapa_paling_cmd(self, ctx):
@@ -851,7 +841,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             except Exception:
                 pass
 
-            # Rekapitulasi suara
             vote_counts = {p.id: 0 for p in players}
             for voter_id, target_id in vote_view.votes.items():
                 if target_id in vote_counts:
@@ -887,7 +876,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             )
             await ctx.send(embed=result_embed)
 
-            # Hadiah partisipasi
             for voter_id in vote_view.votes.keys():
                 voter_mem = next((p for p in players if p.id == voter_id), None)
                 if voter_mem:
@@ -904,9 +892,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         )
         await ctx.send(embed=final_embed)
 
-    # ==========================================================
-    # 🧩 TEBAK EMOJI
-    # ==========================================================
 
     @commands.command(name="tebakemoji", aliases=['emoji', 'resmoji', 'tebakgambar'])
     async def tebak_emoji_cmd(self, ctx):
@@ -983,7 +968,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 if content.startswith(('!', '/', '$', '.')):
                     continue
 
-                # Toleransi jawaban
                 if content == expected_answer or (len(content) >= 4 and content in expected_answer and len(content) >= len(expected_answer) * 0.6):
                     author = user_msg.author
                     multiplier = self.get_anomaly_multiplier()
@@ -1037,9 +1021,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             save_json_to_root(self.bank_data, 'data/bank_data.json')
             await ctx.send("❌ Gagal mengirim DM. Pastikan DM akunmu terbuka!")
 
-    # ==========================================================
-    # 🔤 SUSUN KATA (ANAGRAM)
-    # ==========================================================
 
     @commands.command(name="susunkata", aliases=['acak', 'resacak'])
     async def susunkata_cmd(self, ctx):
@@ -1128,9 +1109,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             desc = "\n".join([f"**#{n}.** {u}: {s} poin" for n, (u, s) in enumerate(sorted_lb, 1)])
             await ctx.send(embed=discord.Embed(title="🏆 Papan Skor Susun Kata", description=desc, color=discord.Color.gold()))
 
-    # ==========================================================
-    # 🔬 KUIS IPA & SAINS
-    # ==========================================================
 
     @commands.command(name="kuisipa", aliases=['ipa', 'resipa', 'sains'])
     async def kuisipa_cmd(self, ctx):
@@ -1219,9 +1197,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             desc = "\n".join([f"**#{n}.** {u}: {s} poin" for n, (u, s) in enumerate(sorted_lb, 1)])
             await ctx.send(embed=discord.Embed(title="🏆 Papan Skor Kuis IPA", description=desc, color=discord.Color.teal()))
 
-    # ==========================================================
-    # 🪢 HANGMAN (TEBAK KATA KLASIK)
-    # ==========================================================
 
     @commands.command(name="hangman", aliases=['tebakkata', 'resman'])
     async def hangman_cmd(self, ctx):
@@ -1355,9 +1330,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 save_json_to_root(self.bank_data, 'data/bank_data.json')
                 await ctx.send("❌ Gagal mengirim DM. Pastikan DM akunmu terbuka!")
 
-    # ==========================================================
-    # 🕵️ SIAPA AKU?
-    # ==========================================================
 
     @commands.command(name="siapaaku", aliases=['tebaksiapa', 'siapakahaku'])
     async def siapa_aku_cmd(self, ctx):
@@ -1452,9 +1424,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             desc = "\n".join([f"**#{n}.** {u}: **{s}** poin" for n, (u, s) in enumerate(sorted_lb, 1)])
             await ctx.send(embed=discord.Embed(title="🏆 Papan Skor Akhir 'Siapa Aku?'", description=desc, color=0xffd700))
 
-    # ==========================================================
-    # ⚡ HITUNG CEPAT
-    # ==========================================================
 
     @commands.command(name="hitungcepat", aliases=['math', 'hitung', 'matematika'])
     async def hitung_cepat_cmd(self, ctx):
@@ -1529,9 +1498,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             desc = "\n".join([f"**#{n}.** {u}: **{s}** soal benar" for n, (u, s) in enumerate(sorted_lb, 1)])
             await ctx.send(embed=discord.Embed(title="🏆 Papan Skor Hitung Cepat", description=desc, color=0x2ecc71))
 
-    # ==========================================================
-    # 🤔 PERNAH GAK PERNAH (NEVER HAVE I EVER)
-    # ==========================================================
 
     @commands.command(name="pernahgak", aliases=['nhie', 'pernah'])
     async def pernah_gak_cmd(self, ctx):
@@ -1604,9 +1570,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         )
         await ctx.send(embed=summary_embed)
 
-    # ==========================================================
-    # 🎭 MATA-MATA (SPYFALL)
-    # ==========================================================
 
     @commands.command(name="matamata", aliases=['spyfall', 'spy'])
     async def matamata_cmd(self, ctx):
@@ -1747,9 +1710,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         game['game_ended'] = True
         await self.end_game_cleanup(ctx.channel.id, ctx.channel)
 
-    # ==========================================================
-    # 🎤 KUIS MUSIK & VOICE TRIVIA
-    # ==========================================================
 
     @commands.command(name="kuismusik", aliases=['startquiz', 'musicquiz'])
     async def kuis_musik_cmd(self, ctx):
@@ -1807,7 +1767,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 if is_bonus: bonus_winners.extend(correct_this_round)
                 await asyncio.sleep(4)
 
-            # Leaderboard & Hadiah
             sorted_scores = sorted(self.session_scores.items(), key=lambda x: x[1], reverse=True)
             self.bank_data = load_json_from_root('data/bank_data.json')
             self.level_data = load_json_from_root('data/level_data.json')
@@ -1830,9 +1789,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         finally:
             await self.end_game_cleanup(ctx.channel.id, ctx.channel, 'music')
 
-    # ==========================================================
-    # 🏆 UTILITY DISPLAY LEADERBOARD
-    # ==========================================================
 
     async def display_leaderboard(self, ctx, game_title):
         if not self.session_scores: return
@@ -1848,9 +1804,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             )
         await ctx.send(embed=embed)
 
-    # ==========================================================
-    # 🧩 DAILY PUZZLE & DONATION MANAGEMENT
-    # ==========================================================
 
     @commands.command(name="jawab")
     async def jawab_teka_teki_cmd(self, ctx, *, user_answer: str):

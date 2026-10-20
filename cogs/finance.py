@@ -64,12 +64,10 @@ def parse_quick_amount(text: str) -> int:
     - rp 50000 / rp. 50.000 -> 50.000
     - makan 25000 -> 25.000 (hanya jika ada konteks transaksi keuangan)
     """
-    # 1. Bersihkan mention discord dan url dulu agar ID snowflake bot/user tidak terdeteksi sebagai nominal uang
     text_clean = strip_discord_formatting(text).lower().replace(",", ".")
     if not text_clean:
         return 0
 
-    # 2. Format Juta (jt / juta): contoh 1.5jt, 2 juta
     match_jt = re.search(r'\b(\d+(?:\.\d+)?)\s*(?:jt|juta)\b', text_clean)
     if match_jt:
         try:
@@ -78,7 +76,6 @@ def parse_quick_amount(text: str) -> int:
                 return val
         except Exception: pass
 
-    # 3. Format Ribu (rb / k / ribu): contoh 25k, 50rb, 100 ribu
     match_rb = re.search(r'\b(\d+(?:\.\d+)?)\s*(?:rb|k|ribu)\b', text_clean)
     if match_rb:
         try:
@@ -87,7 +84,6 @@ def parse_quick_amount(text: str) -> int:
                 return val
         except Exception: pass
 
-    # 4. Format Eksplisit Rupiah (rp / rp.): contoh rp 50.000, rp50000
     match_rp = re.search(r'\brp\.?\s*(\d{1,3}(?:\.\d{3})+|\d{3,9})\b', text_clean)
     if match_rp:
         try:
@@ -97,7 +93,6 @@ def parse_quick_amount(text: str) -> int:
                 return val
         except Exception: pass
 
-    # 5. Format Angka bertitik ribuan (contoh: 25.000, 150.000)
     match_dot = re.search(r'\b(\d{1,3}(?:\.\d{3})+)\b', text_clean)
     if match_dot:
         try:
@@ -107,8 +102,6 @@ def parse_quick_amount(text: str) -> int:
                 return val
         except Exception: pass
 
-    # 6. Angka polos 4-9 digit (contoh: 25000, 50000)
-    # HANYA diekstrak jika terdapat kata kunci transaksi keuangan yang jelas
     tx_intent_words = [
         "catat", "beli", "bayar", "makan", "minum", "jajan", "bensin", "parkir",
         "ongkir", "gaji", "masuk", "keluar", "topup", "sewa", "tagihan", "belanja",
@@ -342,7 +335,6 @@ class FinancialAdvisor(commands.Cog, name="Personal Financial Advisor"):
                 except Exception:
                     pass
 
-        # Sanitasi data: bersihkan transaksi anomali hasil salah tangkap mention bot (> 10 Miliar atau note bot)
         changed = False
         for uid, profile in list(self.data.items()):
             txs = profile.get("transactions", [])
@@ -902,7 +894,6 @@ class FinancialAdvisor(commands.Cog, name="Personal Financial Advisor"):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        # Hanya layani percakapan di Direct Message (DM) pribadi yang bukan dari bot
         if message.guild is not None or message.author.bot:
             return
 
@@ -910,14 +901,12 @@ class FinancialAdvisor(commands.Cog, name="Personal Financial Advisor"):
         if message.content.startswith(prefixes):
             return
 
-        # Bersihkan mention user/bot, role, channel, emoji, dan url
         text_clean = strip_discord_formatting(message.content).strip()
         if not text_clean:
-            return  # Pesan hanya berisi mention bot / link, jangan diintersep
+            return
 
         text_lower = text_clean.lower()
 
-        # 1. Cek Intent: Cek Saldo / Buka Dasbor Portofolio
         if text_lower in ["saldo", "dompet", "cek saldo", "cek dompet", "kas", "keuangan", "portofolio", "dasbor"] or \
            bool(re.search(r'\b(cek saldo|saldo saya|lihat saldo|dompet saya|dasbor keuangan)\b', text_lower)):
             embed = self.build_dashboard_embed(message.author)
@@ -925,14 +914,12 @@ class FinancialAdvisor(commands.Cog, name="Personal Financial Advisor"):
             await message.channel.send(embed=embed, view=view)
             return
 
-        # 2. Cek Intent: Mutasi / Arus Kas
         if text_lower in ["mutasi", "cashflow", "arus kas", "rekap", "laporan"] or \
            bool(re.search(r'\b(cek mutasi|arus kas|laporan keuangan|rekap keuangan|riwayat transaksi)\b', text_lower)):
             embed = self.build_cashflow_embed(message.author)
             await message.channel.send(embed=embed)
             return
 
-        # 3. Cek Intent: Pencatatan Transaksi Cepat (Natural Language Logging via DM)
         nominal = parse_quick_amount(text_clean)
         if nominal > 0:
             tx_type = detect_tx_type(text_clean)
@@ -944,8 +931,6 @@ class FinancialAdvisor(commands.Cog, name="Personal Financial Advisor"):
             await message.channel.send(embed=embed)
             return
 
-        # 4. Cek Intent: Konsultasi Keuangan Eksplisit via Chat DM (AI Financial Advisor)
-        # HANYA jika pesan secara spesifik membahas rencana keuangan/investasi/budgeting
         financial_explicit_triggers = [
             "konsultasi keuangan", "saran keuangan", "tips keuangan", "manajemen keuangan",
             "audit keuangan", "rekomendasi budget", "rencana keuangan", "dana darurat",
@@ -968,8 +953,6 @@ class FinancialAdvisor(commands.Cog, name="Personal Financial Advisor"):
                     await message.channel.send(embed=embed)
             return
 
-        # Jika pesan adalah percakapan biasa (contoh: "halo", "lagi apa", dsb),
-        # biarkan lewat agar cogs/gemini.py (Raka AI) dapat merespons obrolan secara alami.
 
 async def setup(bot):
     await bot.add_cog(FinancialAdvisor(bot))

@@ -108,7 +108,7 @@ KNOWN_IMAGE_DOMAINS = (
     'i.redd.it',
     'pbs.twimg.com'
 )
-MAX_IMAGE_DOWNLOAD_BYTES = 8 * 1024 * 1024  # 8 MB
+MAX_IMAGE_DOWNLOAD_BYTES = 8 * 1024 * 1024
 
 def extract_candidate_image_urls(text: str) -> list:
     """
@@ -134,22 +134,18 @@ def extract_candidate_image_urls(text: str) -> list:
             path = parsed.path.lower()
             netloc = parsed.netloc.lower()
 
-            # Prioritas 1: Path berakhiran ekstensi gambar
             if any(path.endswith(ext) for ext in IMAGE_EXTENSIONS):
                 candidates.append(clean_url)
                 continue
 
-            # Prioritas 2: Domain dikenal sebagai image CDN / media server
             if any(domain in netloc for domain in KNOWN_IMAGE_DOMAINS):
                 candidates.append(clean_url)
                 continue
 
-            # Prioritas 3: Path mengandung indikasi media/gambar kuat
             if any(hint in path for hint in ('/attachments/', '/images/', '/img/', '/photos/', '/media/')):
                 candidates.append(clean_url)
                 continue
 
-            # Prioritas 4: Query parameter memuat indikasi format gambar (misal format=jpg)
             query = parsed.query.lower()
             if any(f"format={ext[1:]}" in query for ext in IMAGE_EXTENSIONS):
                 candidates.append(clean_url)
@@ -604,7 +600,6 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
             if history_list:
                 final_context_str += "\n[SHORT-TERM MEMORY (15 Chat Terakhir dari Berbagai User di Sini)]:\n" + "\n".join(history_list) + "\n"
 
-        # Memori Pengetahuan Kode & Fitur Bot RTMBOT
         try:
             from cogs.bot_knowledge_engine import find_relevant_knowledge
             codebase_kb = find_relevant_knowledge(message_content)
@@ -705,11 +700,9 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
             creator_id=creator_id
         )
 
-        # Realtime Dynamic User Data & Guild Status Injection
         realtime_user_context = ""
         try:
             uid_key = str(user.id)
-            # 1. Economy & Leveling Data
             bank_data = load_json_file('data/bank_data.json', {})
             user_balance = bank_data.get(uid_key, {}).get('balance', 0)
             
@@ -731,7 +724,6 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                             rank_pos = idx + 1
                             break
 
-            # 2. Member Serial ID
             serial_id = "-"
             if guild_id:
                 try:
@@ -742,7 +734,6 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                 except Exception:
                     pass
 
-            # 3. Active Voice Channels
             vc_info = []
             if guild_id:
                 g_obj = self.bot.get_guild(int(guild_id))
@@ -814,7 +805,6 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
 
     async def get_images_from_message(self, message):
         images = []
-        # 1. Baca dari file attachment langsung
         for att in message.attachments:
             log.info(f"[IMG_READ] filename={att.filename} content_type={att.content_type}")
             if any(att.filename.lower().endswith(ext) for ext in IMAGE_EXTENSIONS):
@@ -832,7 +822,6 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                 except Exception as e:
                     log.error(f"[IMG_READ] FAIL attachment {att.filename}: {e}")
 
-        # 2. Baca dari direct media URLs pada teks pesan & embeds (maksimal 3 gambar)
         if len(images) < 3 and message.content:
             candidate_urls = extract_candidate_image_urls(message.content)
             if message.embeds:
@@ -1049,7 +1038,6 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                     text += f"\n*(Gagal ngirim ke channel {ch_target}: {e})*"
             text = re.sub(r'\$\$ACTION_CHANNEL:\s*.*?\$\$', '', text, flags=re.IGNORECASE | re.DOTALL).strip()
 
-            # ACTION_EXECUTE_COMMAND: Jembatan Eksekusi Nyata Command Discord
             exec_matches = re.findall(r'\$\$ACTION_EXECUTE_COMMAND:\s*([^\s|]+)\s*\|\s*(.*?)\$\$', text, re.IGNORECASE | re.DOTALL)
             for cmd_ch_target, raw_cmd in exec_matches:
                 try:
@@ -1214,7 +1202,6 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
         try: await message.delete()
         except: pass
 
-        # Cross-Channel Media Purge jika pelanggaran berasal dari attachment di guild
         if message.guild and message.attachments and not is_wh:
             try:
                 current_ts = time.time()
@@ -1331,7 +1318,7 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
             settings = load_json_file(SETTINGS_FILE, {})
             trigger_channels = settings.get(str(message.guild.id), {}).get("trigger_channels", [])
             if message.channel.id in trigger_channels:
-                return # Biarkan moderation.py yang menghandle Trigger Channel Trap
+                return
             
         guild_id = message.guild.id if message.guild else None
         images = []
@@ -1442,7 +1429,6 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                 buffer = self.chat_buffer.setdefault(message.channel.id, deque(maxlen=10))
                 media_flag = " [Ada Lampiran]" if message.attachments else ""
                 buffer.append(f"{message.author.display_name}: {message.content}{media_flag}")
-                # Rate limit flooding ditangani secara otoritatif dan terpusat oleh cogs/moderation.py
                 if bool(INVITE_REGEX.search(message.content)):
                     return await self.handle_violation(message, "kick", "Pengguna terdeteksi mengirim pesan berisi promosi server. Sistem telah menjatuhkan sanksi secara otomatis.")
                 for url in URL_REGEX.findall(message.content):
@@ -1583,7 +1569,6 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
 
         prefix = "!"
 
-        # Fitur membalas pesan berawalan prefix (!) tapi bukan command
         if message.content.startswith(prefix):
             content_body = message.content[len(prefix):].strip()
             if content_body:
@@ -1653,7 +1638,6 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                     log.error(f"[DM_CHAT_ERROR] {e}")
                 return
 
-        # Perbaikan: Bot akan merespons jika di-tag ATAU jika pesannya di-reply (di semua server)
         if message.guild and (self.bot.user in message.mentions or is_reply_to_bot):
             try:
                 async with message.channel.typing():
@@ -1662,7 +1646,6 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                     images = await self.get_images_from_message(message)
                     ctx_data = self.get_brain_context(clean_content, getattr(message, 'guild', None), message.channel.id)
                     
-                    # Berikan prompt yang sesuai apakah di-reply atau di-tag
                     if is_reply_to_bot and self.bot.user not in message.mentions:
                         prompt = f"User mereply pesan lu: {clean_content}"
                     else:
@@ -1680,15 +1663,12 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
 
         chat_session = self.active_chats.get(message.channel.id)
         
-        # Cek apakah user sedang mereply orang lain (bukan bot)
         is_reply_to_other = message.reference and isinstance(message.reference.resolved, discord.Message) and message.reference.resolved.author.id != self.bot.user.id
         
         if (chat_session or expert_active) and not message.content.startswith(prefix):
-            # Jika mereply orang lain dan bot tidak ditag, abaikan (jangan nimbrung)
             if is_reply_to_other and self.bot.user not in message.mentions:
                 return
                 
-            # Tambahan: Jangan membalas pesan Owner kecuali dia nge-tag/me-reply bot
             is_owner = (await self.bot.is_owner(message.author)) or self.is_creator(message.author.id) or (message.guild and message.author.id == message.guild.owner_id)
             is_replying_to_bot = message.reference and isinstance(message.reference.resolved, discord.Message) and message.reference.resolved.author.id == self.bot.user.id
             if is_owner and not (self.bot.user in message.mentions or is_replying_to_bot):

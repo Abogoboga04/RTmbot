@@ -1710,7 +1710,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
     async def _create_welcome_card(self, member: discord.Member, title: str) -> io.BytesIO:
         if generate_official_member_card:
             try:
-                # Ambil data level dan saldo jika ada (default 0)
                 exp = 0
                 level = 0
                 balance = 0
@@ -1750,7 +1749,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         background = Image.new('RGBA', (width, height), (20, 22, 26, 255))
         draw = ImageDraw.Draw(background)
         
-        # Left accent circle
         draw.ellipse((-150, -50, 320, 400), fill=(30, 34, 45, 255)) 
         draw.ellipse((-130, -30, 300, 380), outline=(88, 101, 242, 180), width=4) 
         
@@ -1854,7 +1852,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             buttons = [
                 {
                     "type": 2,
-                    "style": 4, # Red / Danger
+                    "style": 4,
                     "label": f"Timeouts count: {global_count}",
                     "custom_id": "disabled_trap_counter",
                     "disabled": True,
@@ -2107,7 +2105,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             try:
                 await member.timeout(duration, reason=escalation_applied)
                 await self.increment_timeout_counter()
-                # Log escalation to channel
                 log_embed = self._create_embed(
                     title="🚨 Auto Escalation Triggered",
                     description=f"{member.mention} has been auto-timed out because they have reached **{warn_count} warnings**.",
@@ -2299,10 +2296,8 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             r'discord-nitro', r'claim-reward', r'free-gift'
         ]
         
-        # Bersihkan karakter tak terlihat (Zero-Width Characters & Soft Hyphen)
         clean_text = re.sub(r'[\u200B-\u200D\uFEFF\u00AD]', '', content)
         
-        # Normalisasi homoglyph Unicode (Cyrillic / Fullwidth ke Latin ASCII standar)
         try:
             normalized_text = unicodedata.normalize('NFKD', clean_text).encode('ascii', 'ignore').decode('utf-8')
         except Exception:
@@ -2826,7 +2821,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             content_text = f"Halo, {member.mention}! Selamat datang!"
             footer_text = f"Kamu adalah anggota ke-{member.guild.member_count}! • {member.guild.name}"
 
-            # Siapkan kartu resmi sambutan (berisi foto profil member & sertifikat) jika tidak ada custom banner URL
             card_bytes = None
             file = None
             if not welcome_banner_url:
@@ -2864,7 +2858,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             except Exception as e:
                 print(f"[WELCOME] Exception during send_v2_message: {e}")
 
-            # Fallback ke format embed standar jika pengiriman komponen mengalami kendala
             if not v2_sent:
                 try:
                     legacy_embed = discord.Embed(
@@ -2974,11 +2967,9 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             if isinstance(message.author, discord.Member):
                 self.bot.loop.create_task(self.send_booster_announcement(message.guild, message.author))
             
-        # Ambil konfigurasi Channel Rules di kanal ini
         channel_rules = self.get_channel_rules(message.guild.id, message.channel.id)
         auto_delete_delay = channel_rules.get("auto_delete_seconds", 0)
 
-        # 1. Jika pesan dari bot ini sendiri (RTMBOT)
         if message.author.id == self.bot.user.id:
             if auto_delete_delay > 0:
                 self.bot.loop.create_task(self._safe_delete_message(message, auto_delete_delay))
@@ -2986,24 +2977,19 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
 
         is_webhook = message.webhook_id is not None
 
-        # 2. Aturan Anti-Bot (disallow_bots) & Auto-Delete untuk Bot Lain / Webhook
         if message.author.bot or is_webhook:
-            # Jika anti-bot aktif: langsung hapus instan tanpa menunggu delay
             if channel_rules.get("disallow_bots"):
                 self.bot.loop.create_task(self._safe_delete_message(message, 0))
                 return
             
-            # Jika anti-bot nonaktif tapi auto-delete timer aktif: jadwalkan hapus otomatis
             if auto_delete_delay > 0:
                 self.bot.loop.create_task(self._safe_delete_message(message, auto_delete_delay))
 
-            # Proteksi Khusus Webhook Bocor / Compromised Webhook
             if is_webhook:
                 guild_settings = self.get_guild_settings(message.guild.id)
                 trigger_channels = guild_settings.get("trigger_channels", [])
                 first_media = message.attachments[0].url if message.attachments else None
                 
-                # Cek 1: Webhook mengirim di Honeypot Channel
                 if message.channel.id in trigger_channels:
                     try: await message.delete()
                     except: pass
@@ -3019,7 +3005,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                     )
                     return
 
-                # Cek 2: Webhook mengirim tautan Phishing / Scam
                 wh_content_lower = message.content.lower()
                 scam_keywords = ['nitro', 'gift', 'airdrop', 'free steam', 'disocrd', 'dlscord', 'discrod', 't.me/']
                 urls = re.findall(r'(https?://[^\s]+)', wh_content_lower)
@@ -3046,11 +3031,9 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         user_id_str = str(message.author.id)
         is_command = message.content.startswith(tuple(await self.bot.get_prefix(message)))
         
-        # 3. Jadwalkan Hapus Otomatis (Auto Delete Timer) untuk pesan anggota jika aktif di kanal ini
         if auto_delete_delay > 0:
             self.bot.loop.create_task(self._safe_delete_message(message, auto_delete_delay))
         
-        # Trigger Channel Trap (Honey-Pot)
         trigger_channels = guild_settings.get("trigger_channels", [])
         if message.channel.id in trigger_channels and not is_command:
             trap_media_bytes = None
@@ -3073,7 +3056,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                 return
 
             try:
-                # Global Timeout (Lintas Server) - Eskalasi Cerdas & Anti-Downgrade
                 timeout_duration = timedelta(days=27, hours=23, minutes=59)
                 timeout_reason = "Terdeteksi mengirim pesan berisi spam atau phising (Sistem Anti-Spam)"
                 now_utc = datetime.now(timezone.utc)
@@ -3120,7 +3102,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                 media_filename=trap_media_filename
             )
             
-            # Auto-update Trap Message Globally
             await self.increment_timeout_counter(message.channel.id)
             return
 
@@ -3233,7 +3214,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                        await self.send_spam_log_v2(message.guild, message.author, message.channel.mention, "Gagal Menghapus Pesan Spam", "Bot kekurangan izin Manage Messages.", str(message.id))
 
 
-                # Safe timeout check
                 now_utc = datetime.now(timezone.utc)
                 should_timeout = True
                 if message.author.is_timed_out() and message.author.timed_out_until:
@@ -3353,8 +3333,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                         pass
                     return
 
-            # Rapid & Basic media spam dinonaktifkan sesuai preferensi Owner.
-            # Keamanan gambar mengandalkan pencocokan perceptual hash (anti-phishing) dan heavy_bucket (anti-raid).
             heavy_bucket = self.media_spam_heavy_cooldown.get_bucket(message)
             heavy_retry_after = heavy_bucket.update_rate_limit()
             
@@ -4493,7 +4471,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             from cogs.v2_layout import edit_v2_message
             resp = await edit_v2_message(self.bot, channel.id, panel_message.id, [card])
             if resp is None:
-                # If editing fails (e.g. 400 Bad Request due to legacy embeds), we should delete the old one and clear the ID
                 try: await panel_message.delete()
                 except: pass
                 guild_settings['mod_panel_message_id'] = None
@@ -4629,15 +4606,12 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                 footer=f"Terakhir diperbarui: {datetime.now(WIB).strftime('%d/%m/%Y %H:%M:%S')} WIB"
             )
             
-            # Send message and get response dict
             response = await send_v2_message(self.bot, ctx.channel.id, [card])
             if response:
                 guild_settings['mod_panel_message_id'] = int(response['id'])
                 guild_settings['mod_panel_channel_id'] = ctx.channel.id
                 self.save_settings()
             
-            # We don't attach View directly to the API response, but since we registered the Persistent View globally in setup(),
-            # discord.py will route the custom_ids to the callbacks!
 
         except discord.Forbidden:
             await ctx.author.send(embed=self._create_embed(description="❌ Bot tidak memiliki izin `Send Messages` dan `Embed Links` di channel tersebut. Silakan minta admin server untuk memberikan izin yang sesuai.", color=self.color_error))
@@ -5069,7 +5043,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             return True
 
         def add_buttons(self):
-            # Baris 0: Tindakan Hukuman (Punishments)
             warn_button = discord.ui.Button(label="Warn", style=discord.ButtonStyle.secondary, emoji="⚠️", row=0, custom_id="modpanel_warn")
             warn_button.callback = self.warn_user_callback
             self.add_item(warn_button)
@@ -5086,7 +5059,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             ban_button.callback = self.ban_user_callback
             self.add_item(ban_button)
             
-            # Baris 1: Cabut Hukuman (Reversals)
             unwarn_button = discord.ui.Button(label="Unwarn", style=discord.ButtonStyle.success, emoji="🛡️", row=1, custom_id="modpanel_unwarn")
             unwarn_button.callback = self.unwarn_user_callback
             self.add_item(unwarn_button)
@@ -5099,7 +5071,6 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             unban_button.callback = self.unban_user_callback
             self.add_item(unban_button)
 
-            # Baris 2: Manajemen Channel (Channel Tools)
             clear_button = discord.ui.Button(label="Clear Chat", style=discord.ButtonStyle.danger, emoji="🧹", row=2, custom_id="modpanel_clear")
             clear_button.callback = self.clear_messages_callback
             self.add_item(clear_button)
@@ -5318,7 +5289,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             buttons = [
                 {
                     "type": 2,
-                    "style": 4, # Red / Danger
+                    "style": 4,
                     "label": f"Timeouts count: {global_count}",
                     "custom_id": "disabled_trap_counter",
                     "disabled": True,

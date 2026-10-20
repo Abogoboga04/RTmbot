@@ -108,7 +108,6 @@ def _extract_youtube_info(url, cookiefile_path=None):
                 import re
                 import json
                 
-                # Use oEmbed to reliably get Title, Channel, and Thumbnail
                 r = requests.get(f"https://www.youtube.com/oembed?url={url}&format=json", timeout=5)
                 if r.status_code == 200:
                     data = r.json()
@@ -125,7 +124,6 @@ def _extract_youtube_info(url, cookiefile_path=None):
                         if video_id:
                             thumbnail_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
                     
-                    # Scrape Description from HTML
                     description = ""
                     try:
                         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
@@ -651,8 +649,6 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
 
         tk_live_match = re.search(r'tiktok\.com/@([\w.-]+)/live', url, re.IGNORECASE)
         if tk_live_match:
-            # TikTok Live URLs usually stay the same and do not have a unique video ID,
-            # so do not cache them to avoid blocking repeated live notification updates.
             return None
 
         tiktok_patterns = [
@@ -1188,7 +1184,6 @@ Berikan teks pengumuman kamu sekarang:"""
                     
                     vid_id = _get_youtube_video_id(link_for_send)
                     youtube_thumbnail = None
-                    # Only fetch and attach thumbnail if the user hasn't turned it off
                     if vid_id and config_msg.get('embed_thumbnail', True):
                         youtube_thumbnail = f"https://img.youtube.com/vi/{vid_id}/maxresdefault.jpg"
                     
@@ -1201,10 +1196,8 @@ Berikan teks pengumuman kamu sekarang:"""
                         media_url=youtube_thumbnail
                     )
                     try:
-                        # Send the raw message first so @everyone ping works
                         if message_content and message_content.strip():
                             await target_channel.send(message_content)
-                        # Then send the V2 Card
                         resp = await send_v2_message(self.bot, target_channel.id, [card])
                     except Exception as err:
                         with open("notif_v2_error.txt", "a") as f:

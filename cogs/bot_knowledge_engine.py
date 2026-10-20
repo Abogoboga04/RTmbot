@@ -265,7 +265,6 @@ def scan_all_codebase():
                     elif "commands.hybrid_group" in dec_str or "commands.group" in dec_str:
                         cmd_type = "Command Group"
 
-                    # Parse command name & aliases
                     name_match = re.search(r'name=["\'](.*?)["\']', dec_str)
                     if name_match:
                         cmd_name = name_match.group(1)
@@ -275,14 +274,12 @@ def scan_all_codebase():
                         raw_aliases = alias_match.group(1)
                         aliases = [a.strip().strip("'\"") for a in raw_aliases.split(",") if a.strip()]
 
-                    # Parse permissions
                     if "has_permissions" in dec_str or "default_permissions" in dec_str or "is_owner" in dec_str:
                         perm_match = re.search(r'\((.*?)\)', dec_str)
                         if perm_match:
                             permissions.append(perm_match.group(1).replace("=True", ""))
 
                 if cmd_type:
-                    # Parse parameters
                     for arg in node.args.args:
                         if arg.arg not in ["self", "ctx", "interaction"]:
                             params.append(arg.arg)
@@ -335,7 +332,6 @@ def find_relevant_knowledge(query: str, max_chars: int = 1800) -> str:
     memory = load_bot_memory()
     q_lower = query.lower()
     
-    # 1. Cek Panduan Alur Kerja (Workflow Guides)
     matched_guides = []
     for guide in memory.get("workflow_guides", []):
         for kw in guide.get("keywords", []):
@@ -343,7 +339,6 @@ def find_relevant_knowledge(query: str, max_chars: int = 1800) -> str:
                 matched_guides.append(f"📌 PANDUAN {guide['topic'].upper()}:\n{guide['summary']}")
                 break
 
-    # 2. Cek Perintah Spesifik
     matched_commands = []
     for mod_file, mod_info in memory.get("modules", {}).items():
         for cmd in mod_info.get("commands", []):
@@ -354,7 +349,6 @@ def find_relevant_knowledge(query: str, max_chars: int = 1800) -> str:
                 param_str = f" <{'> <'.join(cmd['parameters'])}>" if cmd['parameters'] else ""
                 matched_commands.append(f"• `{cmd['type']}` {cmd['name']}{param_str}{perm_str}: {cmd['description']}")
 
-    # 3. Cek Modul Relevan jika belum ada match langsung
     matched_modules = []
     if not matched_commands and not matched_guides:
         for mod_file, mod_info in memory.get("modules", {}).items():

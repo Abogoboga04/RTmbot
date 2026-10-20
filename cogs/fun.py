@@ -171,7 +171,6 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
     @tasks.loop(seconds=30)
     async def check_expiry(self):
         now = time.time()
-        # Cari prank aktif yang sudah expired
         expired_docs = self.col.find({"active": True, "expires_at": {"$lt": now}})
         for doc in list(expired_docs):
             guild_id = int(doc["_id"])
@@ -183,7 +182,6 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
                 for member_id_str, assigned_nick in doc.get("nicknames", {}).items():
                     member_id = int(member_id_str)
                     
-                    # Ambil member dengan fallback fetch jika cache kosong
                     member = guild.get_member(member_id)
                     if not member:
                         try:
@@ -194,7 +192,6 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
                     if member:
                         try:
                             orig_nick = original_nicks.get(member_id_str)
-                            # Reset jika nama saat ini tidak sama dengan nama awal sebelum prank
                             if member.nick != orig_nick:
                                 await member.edit(nick=orig_nick)
                                 success += 1
@@ -202,7 +199,6 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
                         except Exception:
                             failed += 1
                 
-                # Kirim pengumuman ke channel asal tempat prank diaktifkan
                 channel_id_str = doc.get("activation_channel_id")
                 channel = None
                 if channel_id_str:
@@ -218,7 +214,6 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
                 if channel:
                     await channel.send(f"⏰ **Prank Nickname Telah Berakhir!**\nSemua nickname member (termasuk bot) telah dikembalikan ke semula sebelum diubah. (Berhasil reset **{success}** member).")
             
-            # Hapus dari db
             self.col.delete_one({"_id": doc["_id"]})
 
     @commands.hybrid_command(name="pranknama", aliases=["hewanlucu", "ubahsemua"], description="Prank ubah nama semua member server jadi nama hewan lucu sementara.")
@@ -240,7 +235,6 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
             
         dur_msg = f"selama **{duration}**" if duration else "selamanya (atau sampai direset)"
         
-        # Confirmation
         embed = discord.Embed(
             title="⚠️ Konfirmasi Prank Nickname",
             description=f"Apakah kamu yakin ingin mengubah **SEMUA** nickname member (termasuk bot ini sendiri) di server ini {dur_msg}? (Balas dengan `ya` atau `tidak`)",
@@ -269,11 +263,9 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
         original_nicknames = {}
         
         for member in ctx.guild.members:
-            # Skip bot lain, tapi JANGAN skip bot ini sendiri
             if member.bot and member.id != self.bot.user.id:
                 continue
                 
-            # Skip owner dan member dengan role lebih tinggi (kecuali bot itu sendiri)
             if member != ctx.guild.owner and ctx.guild.me.top_role <= member.top_role and member.id != self.bot.user.id:
                 failed += 1
                 continue
@@ -299,7 +291,7 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
                 new_nickname = f"{random_animal[:-1]}{repeated_chars}{random.randint(1, 99)}"
                 used_nicknames.add(new_nickname)
             
-            original_nick = member.nick # Simpan nama original (bisa berupa String atau None)
+            original_nick = member.nick
             
             try:
                 await member.edit(nick=new_nickname)
@@ -310,7 +302,6 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
             except Exception:
                 failed += 1
                 
-        # Simpan ke DB
         prank_data = {
             "_id": str(ctx.guild.id),
             "active": True,
@@ -350,7 +341,6 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
             
         await ctx.send("🔄 Mengembalikan semua nickname menjadi normal... Harap bersabar!")
         
-        # Ambil data original nicknames dari DB
         doc = self.col.find_one({"_id": str(ctx.guild.id)})
         original_nicks = doc.get("original_nicknames", {}) if doc else {}
         
@@ -377,7 +367,6 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
                 except Exception:
                     failed += 1
             else:
-                # Fallback jika tidak ada di DB, hapus nickname saja
                 try:
                     if member.nick is not None:
                         await member.edit(nick=None)
@@ -386,13 +375,11 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
                 except Exception:
                     failed += 1
                 
-        # Hapus data dari DB
         self.col.delete_one({"_id": str(ctx.guild.id)})
         await ctx.send(f"✅ Selesai! Berhasil mereset nickname **{success}** member kembali ke semula.\n❌ Gagal mereset **{failed}** member.")
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        # Proteksi agar nickname tetap (sticky)
         if before.nick != after.nick:
             guild_id_str = str(after.guild.id)
             doc = self.col.find_one({"_id": guild_id_str, "active": True})
@@ -407,7 +394,6 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
                 member_id_str = str(after.id)
                 assigned_nick = doc.get("nicknames", {}).get(member_id_str)
                 
-                # Jika member mencoba mengganti namanya sendiri padahal prank sedang aktif, ubah balik!
                 if assigned_nick:
                     if after.nick != assigned_nick:
                         try:
@@ -415,7 +401,6 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
                         except Exception:
                             pass
                 else:
-                    # Jika member belum terdaftar nickname pranknya (misal terlewat), generate baru
                     used_nicks = set(doc.get("nicknames", {}).values())
                     new_nickname = None
                     attempts = 0
@@ -446,7 +431,6 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        # Otomatis ubah nama member baru yang join jika prank sedang aktif
         guild_id_str = str(member.guild.id)
         doc = self.col.find_one({"_id": guild_id_str, "active": True})
         if doc:
@@ -741,11 +725,10 @@ class EntertainmentArcade(commands.Cog, name="Entertainment & Social Fun"):
             await ctx.send("Lu mau ship sama diri sendiri? Jomblo banget sih bang. 🗿")
             return
             
-        # Menggunakan seed berdasarkan ID kedua user supaya hasilnya konsisten
         seed = int(user1.id) + int(user2.id)
         random.seed(seed)
         percent = random.randint(0, 100)
-        random.seed() # reset seed
+        random.seed()
         
         bar_length = 10
         filled = int((percent / 100) * bar_length)
