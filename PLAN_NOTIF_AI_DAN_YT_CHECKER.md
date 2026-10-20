@@ -526,16 +526,16 @@ Berdasarkan temuan notifikasi siaran asing (seperti Jeje Adriel `tSGFKJwthGY`, F
 
 ---
 
-## 12. PERBAIKAN BUG `!balapan` & RENCANA EKSPANSI UNIFIED SOCIAL MEDIA CHECKER (TIKTOK & INSTAGRAM)
+## 12. PERBAIKAN BUG `!balapan` & RENCANA FITUR MANDIRI TIKTOK AUTO-CHECKER
 
 ### A. Perbaikan Bug `!balapan` (`TavernPartyGames` Error)
 
 #### 1. Analisis Akar Masalah
-Pada file [cogs/party_games.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/party_games.py) baris 2146 dan 2407, perintah `!balapan` dan penambahan taruhan memanggil method helper:
+Pada file [cogs/party_games.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/party_games.py) baris 2146 dan 2407, pemanggilan `!balapan` dan penambahan taruhan memanggil method helper:
 ```python
 self._get_current_bets_text(race_state['bets'], race_state['horses'])
 ```
-Namun, method `_get_current_bets_text` belum didefinisikan di dalam kelas `TavernPartyGames`, sehingga Python melemparkan:
+Method `_get_current_bets_text` belum didefinisikan di dalam kelas `TavernPartyGames`, sehingga Python memicu:
 ```text
 Unhandled command error in 'balapan': 'TavernPartyGames' object has no attribute '_get_current_bets_text'
 ```
@@ -558,79 +558,67 @@ def _get_current_bets_text(self, bets: dict, horses: list) -> str:
 
 ---
 
-### B. Rencana Penyatuan Auto-Checker TikTok & Instagram ke dalam `cogs/yt_checker_test.py`
+### B. Rencana Fitur Mandiri TikTok Native Auto-Checker (Sistem Notifikasi Otomatis Persis YouTube)
 
-Sesuai permintaan pengguna, fitur ini **disatukan langsung** ke dalam cog checker yang sudah ada (`cogs/yt_checker_test.py`) agar menjadi satu kesatuan mesin pemantau media sosial terpadu (*Unified Social Media Checker*).
+Sesuai permintaan pengguna, fitur pemantau TikTok dibuat **mandiri dengan logika persis seperti YouTube** (Instagram ditunda ke tahap berikutnya):
+1. Pengguna mendaftarkan akun TikTok yang dipantau (misal `!ttadd @rizwanfadilah.a.s`).
+2. Bot secara otomatis melakukan pemantauan berkala (*background loop*).
+3. Saat akun target mengunggah video TikTok baru:
+   - Link video langsung ditangkap seketika (`https://www.tiktok.com/@{username}/video/{id}`).
+   - Metadata lengkap diekstrak (caption, nama kreator, cover thumbnail, upload timestamp).
+   - Gemini AI menyusun copywriting pengumuman kontekstual.
+   - Mengirim kartu Discord V2 (**1 pesan tunggal terpadu**).
+   - ID video dicatat ke cache MongoDB agar tidak terjadi spam/notifikasi ganda.
 
-#### 1. Struktur Data Universal di MongoDB (`yt_test_config`)
-Daftar target yang dipantau diperluas dengan kolom `platform`:
-```json
-{
-  "platform": "tiktok", // "youtube" | "tiktok" | "instagram"
-  "identifier": "rizwanfadilah.a.s", // username / handle / channel_id
-  "channel_name": "Rizwan Fadilah",
-  "target_discord_channel_id": 1417636236356485141,
-  "mention_role": "@everyone",
-  "enabled": true
-}
-```
+#### 1. Mekanisme Ekstraksi Metadata TikTok (Kebal Slardar WAF)
+- Halaman web TikTok desktop saat ini dilindungi oleh *Slardar WAF* yang memblokir scraping `urllib/aiohttp` polos.
+- Solusi andal 100%: Menggunakan engine `yt_dlp` (yang sudah terpasang di bot) dijalankan secara *asynchronous* (`asyncio.to_thread`):
+  ```python
+  ydl_opts = {
+      'extract_flat': True,
+      'quiet': True,
+      'no_warnings': True,
+      'playlist_items': '1:3' # Ambil 3 video terbaru
+  }
+  ```
+  *Hasil Uji Langsung pada `@rizwanfadilah.a.s`:* Berhasil 100% dalam ~3 detik, mendapatkan Video ID (`7698275878328978740`), Caption (`skrg dah bisa jamming bareng...`), Creator Name (`Njan`), Cover URL, dan Timestamp unggahan.
 
-#### 2. Mesin Pengecekan TikTok (TikTok Native Checker)
-- **Deteksi Video Baru:**
-  - Membaca halaman publik `https://www.tiktok.com/@{username}` dengan header browser modern.
-  - Mengekstrak data JSON `__UNIVERSAL_DATA_FOR_REHYDRATION__` / `SIGI_STATE` untuk mendapatkan daftar `itemList` (ID video, deskripsi/caption, createTime, cover URL).
-  - Menggunakan TikTok Official oEmbed API (`https://www.tiktok.com/oembed?url={video_url}`) untuk verifikasi metadata judul dan kreator.
-- **Deteksi TikTok Live:**
-  - Memeriksa endpoint status siaran `https://www.tiktok.com/@{username}/live` untuk membaca status kamar siaran (`live_room` / `room_id`).
+#### 2. Struktur Penyimpanan di MongoDB
+- Koleksi `tiktok_test_config`:
+  - Menyimpan daftar akun TikTok yang dipantau (`username`, `channel_name`, `target_discord_channel_id`, `mention_role`, `enabled`).
+- Koleksi `tiktok_test_cache`:
+  - Menyimpan riwayat ID video TikTok yang sudah pernah dikirim (`posted_tiktok_ids`).
 
-#### 3. Mesin Pengecekan Instagram (Instagram Native Checker)
-- **Deteksi Postingan & Reels Baru:**
-  - Menggunakan endpoint Zero-Auth Instagram Web Profile API:
-    `https://www.instagram.com/api/v1/users/web_profile_info/?username={username}`
-    dengan header `x-ig-app-id: 936619743392459`.
-  - Mengambil daftar postingan terbaru dari `edge_owner_to_timeline_media` (shortcode, caption, display_url, timestamp, is_video).
-  - Menggunakan Instagram oEmbed API sebagai verifikasi fallback.
-- **Deteksi Instagram Live:**
-  - Mendeteksi flag status siaran langsung aktif pada profil kreator.
+#### 3. Timestamp Freshness Guard & Anti-Spam
+- Video yang terdeteksi dicek timestamp-nya (`timestamp`).
+- Jika video sudah diunggah lebih dari 6 jam lalu saat bot pertama kali memantau, video langsung dimasukkan ke cache diam-diam tanpa spam pengumuman.
 
 #### 4. Harmonisasi Tampilan Discord V2 Card (1 Pesan Tunggal)
-Mengikuti standar tampilan 1:1 Foto 3 yang sudah diterapkan pada YouTube:
-- **TikTok Notification:**
-  - Mention & Hype AI: `@everyone [AI copywriting santai relevan dengan video TikTok]`
-  - Judul: `[{caption_singkat}]({tiktok_url})`
-  - Subtitle: `{cuplikan_caption}...\n\n{tiktok_url}`
-  - Tombol: `"Tonton di TikTok"` (Link Style 5)
-  - Layout: Discord V2 Components (1 pesan utuh tanpa pesan susulan).
-- **Instagram Notification:**
-  - Mention & Hype AI: `@everyone [AI copywriting santai relevan dengan post/reel IG]`
-  - Judul: `[{caption_singkat}]({ig_url})`
-  - Subtitle: `{cuplikan_caption}...\n\n{ig_url}`
-  - Tombol: `"Buka di Instagram"` (Link Style 5)
-  - Layout: Discord V2 Components (1 pesan utuh tanpa pesan susulan).
+Mengikuti standar tampilan 1:1 Foto 3:
+- Mention & AI Hype: `@everyone [Copywriting santai kontekstual dari Gemini sesuai caption video]`
+- Judul: `[{caption_singkat}]({tiktok_url})` (Markdown H1 Link)
+- Subtitle: `{deskripsi_caption}...\n\n{tiktok_url}`
+- Gambar: Cover / Thumbnail Video TikTok
+- Tombol: `"Tonton di TikTok"` (Link Button, Style 5)
+- Pengiriman: Disatukan dalam 1 pesan via `send_v2_message(..., content=mention_content)`.
 
-#### 5. Command Set Terpadu
-- **Pendaftaran:**
-  - `!ytadd <identifier>` (YouTube yang sudah ada)
-  - `!ttadd <username>` / `!tiktokadd <username>` (TikTok)
-  - `!igadd <username>` / `!instagramadd <username>` (Instagram)
-- **Uji Coba Langsung:**
-  - `!yttest <url>` (YouTube yang sudah ada)
-  - `!tttest <url>` (TikTok manual test)
-  - `!igtest <url>` (Instagram manual test)
-- **Daftar & Status:**
-  - `!sociallist` / `!ytlist` $\rightarrow$ Menampilkan ringkasan channel YouTube, TikTok, dan Instagram yang sedang aktif dipantau.
-  - `!socialcheck` / `!ytcheck` $\rightarrow$ Memeriksa update terbaru semua platform sekaligus.
+#### 5. Perintah Pengguna Khusus TikTok (Dedicated Commands)
+- `!ttadd <username>`: Daftarkan akun TikTok untuk dipantau secara otomatis (target Discord ditetapkan ke channel saat ini).
+- `!ttdel <username>`: Hapus akun TikTok dari daftar pantauan.
+- `!ttlist`: Tampilkan daftar akun TikTok yang sedang aktif dipantau.
+- `!tttest <url>`: Uji coba langsung pengiriman kartu notifikasi V2 untuk link TikTok tertentu.
+- `!ttcheck`: Paksa pengecekan pembaruan video TikTok secara manual saat itu juga.
 
 ---
 
-### C. Checklist Fase 4 (Balapan Bugfix & Social Media Checker)
+### C. Checklist Fase 4 (Balapan Bugfix & TikTok Native Checker)
 - [ ] Menunggu Masukan & Persetujuan Pengguna ("ACC") untuk Rencana Fase 4
 - [ ] Terapkan fungsi `_get_current_bets_text` di [cogs/party_games.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/party_games.py)
-- [ ] Terapkan parser & checker TikTok di [cogs/yt_checker_test.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/yt_checker_test.py)
-- [ ] Terapkan parser & checker Instagram di [cogs/yt_checker_test.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/yt_checker_test.py)
-- [ ] Integrasikan commands `!ttadd`, `!igadd`, `!tttest`, `!igtest`, dan `!sociallist`
+- [ ] Terapkan modul & loop TikTok Native Checker di [cogs/yt_checker_test.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/yt_checker_test.py)
+- [ ] Terapkan commands `!ttadd`, `!ttdel`, `!ttlist`, `!tttest`, dan `!ttcheck`
 - [ ] Validasi syntax `py_compile` pada kedua file cog
 - [ ] Git commit dan push ke remote `abogoboga main`
+
 
 
 
