@@ -72,7 +72,21 @@ MODULE_METADATA = {
             "AI Chatbot percakapan alami melalui tag @RTMBOT, reply pesan, atau awalan !",
             "Codebase Self-Aware Memory: Mengetahui seluruh fitur, sintaks perintah, dan panduan bot",
             "Deteksi link phising dan gambar spam berbahaya dengan visual reasoning",
+            "Filter Keamanan & Whitelist Domain (/aifilter): /aifilter tambah_whitelist <domain> untuk whitelist link/domain aman agar tidak dihapus bot, /aifilter hapus_whitelist <domain>",
+            "Filter TLD Ekstensi (/aifilter): /aifilter tambah_tld <tld> untuk memblokir ekstensi mencurigakan (.xyz, .top, dll), /aifilter hapus_tld <tld>",
+            "Filter Kata & Gambar AI (/aifilter): /aifilter tambah_kata, /aifilter hapus_kata, /aifilter blokir_gambar",
             "Clear chat DM (!clear / !cleardm di DM pribadi untuk menghapus pesan bot & reset memori)"
+        ]
+    },
+    "social_checker.py": {
+        "name": "Social Media Real-Time Monitor (YouTube & TikTok)",
+        "category": "Radar & Social Media",
+        "description": "Pemantau channel YouTube dan akun TikTok secara otomatis dan real-time menggunakan MongoDB untuk pelacakan status live/video baru dan pengiriman kartu notifikasi.",
+        "key_features": [
+            "YouTube Tracker: /yt add, /yt remove, /yt setchannel, /yt setmention, /yt setmode, /yt toggle, /yt list, /yt test, /yt check",
+            "TikTok Tracker: /tt add, /tt remove, /tt setchannel, /tt setmention, /tt setmode, /tt toggle, /tt list, /tt test, /tt check",
+            "Checker Control: /checker list, /checker check, /checker interval, /checker cache, /checker resetcache",
+            "Penyimpanan database MongoDB untuk riwayat video terakhir dan live status"
         ]
     },
     "minigames.py": {
@@ -153,6 +167,7 @@ MODULE_METADATA = {
         "key_features": [
             "Informasi pengguna (/userinfo, !userinfo) dan server (/serverinfo, !serverinfo)",
             "Unduh avatar resolusi penuh (/avatar, !avatar) dan banner (/banner, !banner)",
+            "Salin ID role via UI Dropdown (/getroleid, !idrole, !roleid) tanpa tag/mention (Anti-Ping)",
             "Statistik bot, memory usage, uptime, dan ping (/botinfo, !ping)"
         ]
     },
@@ -173,6 +188,21 @@ WORKFLOW_GUIDES = [
         "topic": "Setup Server & Dashboard Utama",
         "keywords": ["setup", "dashboard", "konfigurasi", "atur", "pengaturan", "panel"],
         "summary": "Gunakan perintah `/setup` (khusus Administrator) untuk membuka Master Setup Dashboard. Di dashboard ini kamu bisa mengatur: Welcome Channel & Pesan, Booster Channel & Pesan, Ticket Channel & Kategori, Log Channel Audit, dan Trigger Channel Anti-Spam Trap."
+    },
+    {
+        "topic": "Keamanan Link, TLD & Domain Whitelist (AIFilter)",
+        "keywords": ["whitelist", "domain", "tld", "kehapus", "aifilter", "link", "aman", "filter link", "blokir link", "izin link", "phishing", "scam"],
+        "summary": "Panduan pengelolaan domain aman dan proteksi link via `/aifilter`:\n1. Tambah domain ke whitelist (agar link aman dan tidak terhapus bot):\n   `/aifilter tambah_whitelist domain:<nama_domain>` (contoh: `/aifilter tambah_whitelist domain:example.com` atau `rhdevs.my.id`).\n2. Hapus domain dari whitelist:\n   `/aifilter hapus_whitelist domain:<nama_domain>`.\n3. Tambah ekstensi TLD berbahaya yang otomatis diblokir:\n   `/aifilter tambah_tld tld:<ekstensi>` (contoh: `/aifilter tambah_tld tld:.xyz` atau `.top` atau `.ru`).\n4. Hapus ekstensi TLD dari daftar blokir:\n   `/aifilter hapus_tld tld:<ekstensi>`.\n5. Tambah kata terlarang: `/aifilter tambah_kata kata:<kata>`.\n6. Hapus kata terlarang: `/aifilter hapus_kata kata:<kata>`.\n7. Blokir gambar berbahaya/phising: `/aifilter blokir_gambar deskripsi_gambar:<deskripsi>`.\nCatatan: Perintah `/aifilter` memerlukan izin Bot Owner."
+    },
+    {
+        "topic": "Social Media Real-Time Monitor (YouTube & TikTok)",
+        "keywords": ["social", "checker", "tiktok", "youtube", "yt", "tt", "feed", "cek live", "mongo", "notif video"],
+        "summary": "Panduan pemantauan media sosial real-time terintegrasi MongoDB:\n1. YouTube Monitor: `/yt add channel_id:<ID> text_channel:<#channel>` untuk memantau channel, `/yt remove channel_id:<ID>`, `/yt list`, `/yt check` untuk cek manual.\n2. TikTok Monitor: `/tt add username:<username> text_channel:<#channel>` untuk memantau akun TikTok, `/tt remove username:<username>`, `/tt list`, `/tt check` untuk cek manual.\n3. Hub Kontrol: `/checker check` untuk memeriksa seluruh feed sekarang, `/checker interval` untuk atur jeda pemindaian, dan `/checker cache` untuk melihat cache video."
+    },
+    {
+        "topic": "Salin ID Role Server Tanpa Tag (Anti-Ping)",
+        "keywords": ["role id", "id role", "getroleid", "roleid", "salin id", "ambil id role", "dropdown role", "tanpa tag"],
+        "summary": "Gunakan perintah `/getroleid` (atau `!idrole`, `!roleid`) untuk membuka menu dropdown Discord Role Select. Pilih salah satu role server untuk melihat detailnya dan menyalin ID role secara langsung tanpa perlu melakukan tag atau mention yang bisa menimbulkan ping mengganggu ke member."
     },
     {
         "topic": "Setup Pesan Sambutan (Welcome Message & Banner)",
@@ -217,10 +247,6 @@ WORKFLOW_GUIDES = [
 ]
 
 def scan_all_codebase():
-    """
-    Memindai main.py dan seluruh modul di cogs/*.py menggunakan AST untuk mengekstrak
-    daftar perintah, parameter, hak akses, dan docstring secara komprehensif.
-    """
     target_files = ["main.py"] + sorted(glob.glob("cogs/*.py"))
     modules_data = {}
 
@@ -234,7 +260,7 @@ def scan_all_codebase():
 
         try:
             tree = ast.parse(content)
-        except Exception as e:
+        except Exception:
             continue
 
         file_meta = MODULE_METADATA.get(base_name, {
@@ -249,6 +275,7 @@ def scan_all_codebase():
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 cmd_type = None
                 cmd_name = node.name
+                parent_group = None
                 aliases = []
                 permissions = []
                 params = []
@@ -264,10 +291,21 @@ def scan_all_codebase():
                         cmd_type = "Prefix (!)"
                     elif "commands.hybrid_group" in dec_str or "commands.group" in dec_str:
                         cmd_type = "Command Group"
+                    else:
+                        subgroup_match = re.search(r'([a-zA-Z0-9_]+)\.command', dec_str)
+                        if subgroup_match:
+                            grp_candidate = subgroup_match.group(1)
+                            if grp_candidate not in ["commands", "app_commands"]:
+                                cmd_type = f"Subcommand ({grp_candidate})"
+                                parent_group = grp_candidate
 
                     name_match = re.search(r'name=["\'](.*?)["\']', dec_str)
                     if name_match:
                         cmd_name = name_match.group(1)
+
+                    desc_match = re.search(r'description=["\'](.*?)["\']', dec_str)
+                    if desc_match and not doc:
+                        doc = desc_match.group(1)
 
                     alias_match = re.search(r'aliases=\[(.*?)\]', dec_str)
                     if alias_match:
@@ -284,8 +322,11 @@ def scan_all_codebase():
                         if arg.arg not in ["self", "ctx", "interaction"]:
                             params.append(arg.arg)
 
+                    display_name = f"{parent_group} {cmd_name}" if parent_group else cmd_name
                     commands_list.append({
-                        "name": cmd_name,
+                        "name": display_name,
+                        "raw_name": cmd_name,
+                        "parent_group": parent_group,
                         "aliases": aliases,
                         "type": cmd_type,
                         "parameters": params,
@@ -313,9 +354,6 @@ def scan_all_codebase():
     return full_memory
 
 def load_bot_memory():
-    """
-    Memuat data memori codebase dari disk. Jika belum ada, lakukan pemindaian otomatis.
-    """
     if os.path.exists(MEMORY_FILE_PATH):
         try:
             with open(MEMORY_FILE_PATH, "r", encoding="utf-8") as f:
@@ -324,18 +362,15 @@ def load_bot_memory():
             pass
     return scan_all_codebase()
 
-def find_relevant_knowledge(query: str, max_chars: int = 1800) -> str:
-    """
-    Mencari memori dan panduan yang paling relevan dengan query pengguna untuk
-    diinjeksikan langsung ke dalam konteks prompt AI.
-    """
+def find_relevant_knowledge(query: str, max_chars: int = 2400) -> str:
     memory = load_bot_memory()
     q_lower = query.lower()
-    
+    q_tokens = set(re.findall(r'[a-zA-Z0-9]+', q_lower))
+
     matched_guides = []
     for guide in memory.get("workflow_guides", []):
         for kw in guide.get("keywords", []):
-            if kw in q_lower:
+            if kw in q_lower or any(k in q_tokens for k in kw.split()):
                 matched_guides.append(f"📌 PANDUAN {guide['topic'].upper()}:\n{guide['summary']}")
                 break
 
@@ -343,11 +378,33 @@ def find_relevant_knowledge(query: str, max_chars: int = 1800) -> str:
     for mod_file, mod_info in memory.get("modules", {}).items():
         for cmd in mod_info.get("commands", []):
             cmd_name = cmd.get("name", "").lower()
+            raw_name = cmd.get("raw_name", "").lower()
             aliases = [a.lower() for a in cmd.get("aliases", [])]
-            if cmd_name == q_lower or cmd_name in q_lower.split() or any(a in q_lower.split() for a in aliases):
-                perm_str = f" [Izin: {', '.join(cmd['permissions'])}]" if cmd['permissions'] else ""
-                param_str = f" <{'> <'.join(cmd['parameters'])}>" if cmd['parameters'] else ""
-                matched_commands.append(f"• `{cmd['type']}` {cmd['name']}{param_str}{perm_str}: {cmd['description']}")
+            cmd_tokens = set(re.findall(r'[a-zA-Z0-9]+', cmd_name))
+            desc_tokens = set(re.findall(r'[a-zA-Z0-9]+', cmd.get("description", "").lower()))
+
+            score = 0
+            if cmd_name == q_lower or cmd_name in q_lower:
+                score += 15
+            if raw_name == q_lower or raw_name in q_lower:
+                score += 12
+            if any(a == q_lower or a in q_lower for a in aliases):
+                score += 10
+
+            common_cmd_tokens = {t for t in cmd_tokens if len(t) > 2}.intersection(q_tokens)
+            if common_cmd_tokens:
+                score += len(common_cmd_tokens) * 6
+
+            common_desc = {t for t in desc_tokens if len(t) > 2}.intersection(q_tokens) - {"dan", "yang", "untuk", "dari", "ini", "itu", "atau", "bisa", "ada"}
+            if common_desc:
+                score += len(common_desc) * 3
+
+            if score > 0:
+                perm_str = f" [Izin: {', '.join(cmd['permissions'])}]" if cmd.get('permissions') else ""
+                param_str = f" <{'> <'.join(cmd['parameters'])}>" if cmd.get('parameters') else ""
+                matched_commands.append((score, f"• `{cmd['type']}` {cmd['name']}{param_str}{perm_str}: {cmd['description']}"))
+
+    matched_commands.sort(key=lambda x: x[0], reverse=True)
 
     matched_modules = []
     if not matched_commands and not matched_guides:
@@ -364,7 +421,7 @@ def find_relevant_knowledge(query: str, max_chars: int = 1800) -> str:
     if matched_guides:
         context_parts.extend(matched_guides[:2])
     if matched_commands:
-        context_parts.append("⚙️ PERINTAH TERKAIT:\n" + "\n".join(matched_commands[:6]))
+        context_parts.append("⚙️ PERINTAH TERKAIT:\n" + "\n".join([item[1] for item in matched_commands[:8]]))
     if matched_modules:
         context_parts.append("\n".join(matched_modules[:2]))
 

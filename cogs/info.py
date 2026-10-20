@@ -203,6 +203,41 @@ class SetGenderModal(discord.ui.Modal, title='Pengaturan Role Gender'):
         except Exception as e:
             await interaction.response.send_message(f"Terjadi kesalahan: {e}", ephemeral=True)
 
+class RoleIdSelect(discord.ui.RoleSelect):
+    def __init__(self):
+        super().__init__(
+            placeholder="🔍 Pilih role untuk melihat & menyalin ID...",
+            min_values=1,
+            max_values=1,
+            custom_id="rtmbot:role_id_select"
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        selected_role = self.values[0]
+        color_val = selected_role.color if selected_role.color.value != 0 else discord.Color.blurple()
+
+        embed = discord.Embed(
+            title="📋 Informasi & ID Role (Anti-Ping)",
+            description="Detail role tanpa notifikasi atau mention:",
+            color=color_val
+        )
+        embed.add_field(name="Nama Role", value=f"`{selected_role.name}`", inline=True)
+        embed.add_field(name="ID Role (Klik / Tap untuk Salin)", value=f"```{selected_role.id}```", inline=False)
+        embed.add_field(name="Total Anggota", value=f"{len(selected_role.members):,} member", inline=True)
+        embed.add_field(name="Warna Hex", value=f"`{str(selected_role.color)}`", inline=True)
+        embed.add_field(name="Posisi Hierarki", value=f"#{selected_role.position}", inline=True)
+        embed.add_field(name="Mentionable", value="Ya" if selected_role.mentionable else "Tidak", inline=True)
+        embed.add_field(name="Dikelola Bot / Integrasi", value="Ya" if selected_role.managed else "Tidak", inline=True)
+        embed.add_field(name="Tampil Terpisah (Hoist)", value="Ya" if selected_role.hoist else "Tidak", inline=True)
+        embed.set_footer(text=f"Server: {interaction.guild.name} • Salin ID role dengan mudah")
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+class RoleIdView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=180)
+        self.add_item(RoleIdSelect())
+
 class SetGenderButton(discord.ui.Button):
     def __init__(self, bot, cog):
         super().__init__(label="Buka Formulir Pengaturan", style=discord.ButtonStyle.primary)
@@ -218,20 +253,22 @@ class SetGenderButton(discord.ui.Button):
 HELP_CATEGORIES = {
     "overview": {
         "title": "🚀 RTM-Bot • PANDUAN PUSAT BANTUAN",
-        "desc": "Selamat datang di pusat panduan **RTM-Bot**! Bot ini dilengkapi 13 modul sistem untuk mengelola administrasi, hiburan, dan komunitas Anda.\n\n"
+        "desc": "Selamat datang di pusat panduan **RTM-Bot**! Bot ini dilengkapi 17 modul sistem dengan 200+ perintah untuk mengelola administrasi, hiburan, media sosial, dan komunitas Anda.\n\n"
                 "📌 **Format Penggunaan:**\n"
                 "• Mendukung **Slash Command** (`/`) dengan autokomplet di Mobile & PC.\n"
                 "• Mendukung **Prefix Command** (`!`) untuk perintah klasik.\n\n"
                 "👉 **Pilih kategori di menu Dropdown di bawah** untuk melihat daftar perintah terperinci.",
         "color": 0x3498DB,
         "fields": [
-            {"name": "🛡️ Moderasi & Sentinel", "value": "Proteksi bot raid, timeout otomatis, honeypot, dan anti-phising AI."},
-            {"name": "💼 Asisten Keuangan Pribadi", "value": "Manajer arus kas (Cash In/Out), target anggaran belanja, dan evaluasi finansial."},
-            {"name": "📡 Radar & Notifikasi Media", "value": "Deteksi dan notifikasi otomatis konten YouTube, TikTok, dan Instagram secara real-time."},
-            {"name": "🎮 Party Games & Minigames", "value": "Balapan kuda taruhan, game Werewolf, tebak emoji, dan kuis asah otak."},
-            {"name": "⭐ Leveling & Ekonomi RSWN", "value": "Perolehan EXP chat/voice, kartu profil rank Pillow, dan toko server."},
-            {"name": "🤖 Asisten AI & Hiburan", "value": "Chatbot persona Raka tongkrongan, kartu tarot, zodiak, dan curhat anonim."},
-            {"name": "🎙️ Voice Dinamis & Utilitas", "value": "Join-to-Create Temporary Voice Channel dan utilitas profil member."}
+            {"name": "🛡️ Moderasi & Sentinel", "value": "Proteksi server, timeout, trap honeypot, panel role, dan sistem tiket."},
+            {"name": "💼 Asisten Keuangan", "value": "Arus kas (Cash In/Out), mutasi, target anggaran belanja, dan evaluasi 50/30/20."},
+            {"name": "⭐ Leveling, EXP & Toko", "value": "EXP chat/voice, kartu profil rank Pillow emas, quest harian, dan toko item."},
+            {"name": "🎮 Minigames & Werewolf", "value": "Werewolf multipemain peran lengkap, taruhan balapan kuda, kuis sains, dan tebak kata."},
+            {"name": "📡 Radar & Social Media", "value": "Pemantau channel YouTube & akun TikTok real-time via MongoDB, broadcast live/video baru."},
+            {"name": "🤖 AI Assistant & AIFilter", "value": "Chat Gemini 2.5 Flash, tanya kode bot, proteksi phising, dan whitelist domain/TLD."},
+            {"name": "🔮 Interaksi Fun & Curhat", "value": "Tarot, zodiak, roast, ship persentase cinta, dan formulir curhat anonim (Confess)."},
+            {"name": "🎙️ Voice Dinamis & Utilitas", "value": "Join-to-Create Voice Room sementara privat, profil HD, dan kutipan harian."},
+            {"name": "🪝 Webhook & Penyiaran", "value": "Penyiaran Layout V2 Type 17, pengumuman berjadwal, dan relay pesan."}
         ]
     },
     "moderation": {
@@ -240,24 +277,27 @@ HELP_CATEGORIES = {
         "color": 0xE74C3C,
         "fields": [
             {"name": "⚙️ /setup (alias !settings, !setupserver)", "value": "Master Server Control Center: Auto Role, Log, Booster, Tiket, & Panel Role."},
-            {"name": "🎭 /panelrole (alias !ambilrole, !roles)", "value": "Wizard pembuatan panel ambil role mandiri (Dropdown Menu / Tombol)."},
+            {"name": "🎭 /panelrole & /setuppanelrole", "value": "Wizard pembuatan panel ambil role mandiri (Dropdown Menu / Tombol)."},
+            {"name": "➕ /addpanelrole & /removepanelrole", "value": "Tambah atau hapus role dari pesan panel interaktif."},
             {"name": "🎫 /ticket (alias !tiket, !setupticket)", "value": "Setup kategori & pasang panel tiket bantuan interaktif terpadu."},
-            {"name": "🛡️ /modpanel", "value": "Dasbor moderasi real-time: Voice Pulse, status keamanan, timeout aktif, & quick actions."},
-            {"name": "🔨 /ban <member> [alasan]", "value": "Blokir member permanen dari server dengan proteksi hierarki role."},
-            {"name": "🔓 /unban <user_id> [alasan]", "value": "Buka kembali blokir pengguna berdasarkan ID akun Discord."},
-            {"name": "👢 /kick <member> [alasan]", "value": "Keluarkan member dari server secara aman."},
-            {"name": "🧹 /softban <member> [alasan]", "value": "Ban dan unban instan untuk membersihkan seluruh pesan 7 hari terakhir."},
-            {"name": "⏳ /timeout <member> <durasi> [alasan]", "value": "Bungkam member sementara (contoh: 10m, 1h, 1d)."},
-            {"name": "🔊 /untimeout <member>", "value": "Cabut status bungkam (timeout) member seketika."},
-            {"name": "⚠️ /warn <member> [alasan]", "value": "Catat surat peringatan resmi untuk member."},
-            {"name": "📋 /warnings <member>", "value": "Lihat daftar dan riwayat catatan peringatan resmi member."},
+            {"name": "🛡️ /modpanel & /toggle_status", "value": "Dasbor moderasi real-time: status keamanan, timeout aktif, & quick actions."},
+            {"name": "🔨 /ban <member> [alasan] & /unban <user_id>", "value": "Blokir atau buka blokir member dari server secara aman."},
+            {"name": "👢 /kick <member> [alasan] & /softban <member>", "value": "Keluarkan member atau ban-unban instan untuk bersihkan riwayat chat 7 hari."},
+            {"name": "⏳ /timeout <member> <durasi> & /untimeout", "value": "Bungkam member sementara (contoh: 10m, 1h, 1d) atau cabut timeout."},
+            {"name": "⚠️ /warn <member> [alasan], /unwarn, /warnings", "value": "Catat, cabut, dan periksa riwayat surat peringatan resmi member."},
             {"name": "🗑️ /clear <jumlah> [channel]", "value": "Hapus pesan massal di channel (mendukung Text, Voice Channel, Stage, dan Thread)."},
             {"name": "🔒 /lock & /unlock", "value": "Kunci atau buka kembali izin berbicara channel dari member biasa."},
             {"name": "⏱️ /slowmode <detik>", "value": "Atur batas waktu jeda cooldown kirim pesan di channel (0 untuk matikan)."},
             {"name": "🍯 /trap", "value": "Atur channel jebakan (Honey-Pot) untuk auto-timeout 28 hari spammer/phishing."},
-            {"name": "📜 /set_log_channel <channel>", "value": "Atur channel khusus untuk pencatatan log sistem keamanan & moderasi."},
+            {"name": "🔢 !addtrapcount <jumlah> & !settrapcount", "value": "Sinkronisasi atau atur manual counter pelanggar jebakan spam."},
+            {"name": "📜 /set_log_channel <channel> & /setspamlog", "value": "Atur channel pencatatan log audit sistem keamanan & moderasi."},
+            {"name": "📜 /setwelcomechannel & /setgoodbye", "value": "Atur channel ucapan selamat datang dan perpisahan member."},
+            {"name": "📢 /announce <channel> <pesan>", "value": "Kirim pengumuman resmi bertanda tangan staf ke channel target."},
             {"name": "🚨 /report", "value": "Kirimkan laporan pelanggaran rahasia kepada tim moderator server via form modal."},
-            {"name": "🤖 /cyber_toggle", "value": "Aktifkan atau matikan proteksi anti-phising, anti-scam, dan filter AI."}
+            {"name": "🏷️ !addrole <member> <role> & !removerole", "value": "Tambahkan atau copot role dari anggota server."},
+            {"name": "✏️ !nick <member> [nama_baru]", "value": "Ubah nama panggilan member atau reset kembali ke nama asli."},
+            {"name": "🔇 !disconnect <member>", "value": "Putuskan koneksi voice channel member secara paksa."},
+            {"name": "📋 !channelrules <channel>", "value": "Tampilkan aturan khusus channel tertentu kepada pengguna."}
         ]
     },
     "finance": {
@@ -275,105 +315,161 @@ HELP_CATEGORIES = {
             {"name": "🗑️ /reset_keuangan", "value": "Hapus dan bersihkan seluruh catatan keuangan pribadi Anda dengan konfirmasi aman (alias `!resetfin`)."}
         ]
     },
-    "notif": {
-        "title": "📡 RADAR & NOTIFIKASI MEDIA SOSIAL",
-        "desc": "Sistem deteksi dan notifikasi konten otomatis lintas platform (YouTube, TikTok, Instagram):",
-        "color": 0xE67E22,
-        "fields": [
-            {"name": "🚀 Deteksi Otomatis", "value": "Mendeteksi link YouTube (Live, Video, Shorts), TikTok (Video, Live), dan Instagram (Reel/Post) di channel sumber dan memformatnya jadi kartu notifikasi."},
-            {"name": "➕ !addpath <source_channel_id> <target_channel_id>", "value": "Hubungkan channel sumber link dengan channel tujuan notifikasi *(Admin/Owner)*."},
-            {"name": "➖ !removepath <path_id>", "value": "Hapus konfigurasi jalur notifikasi berdasarkan ID *(Admin/Owner)*."},
-            {"name": "⚙️ !config", "value": "Buka panel kustomisasi interaktif: atur format pesan, custom role ping, tombol tonton, dan embed *(Admin/Owner)*."},
-            {"name": "📦 !checkcache", "value": "Periksa daftar video atau konten terbaru yang tersimpan dalam antrean cache notifikasi."},
-            {"name": "🧹 !resetcache", "value": "Bersihkan memori cache video untuk keperluan pengujian kirim ulang *(Admin/Owner)*."}
-        ]
-    },
-    "games": {
-        "title": "🎮 TAVERN PARTY & MINIGAMES",
-        "desc": "Game interaktif multipemain, party voting, dan kuis asah otak komunitas:\n*(Gunakan `!games` untuk membuka menu katalog interaktif)*",
-        "color": 0xF1C40F,
-        "fields": [
-            {"name": "🎮 !games (alias !minigames)", "value": "Buka katalog interaktif seluruh minigames dan panduan bermain via menu dropdown."},
-            {"name": "🔗 !sambung (alias !sk, !ressambung)", "value": "Tantangan sambung suku kata berantai multiplayer dengan combo multiplier."},
-            {"name": "🗳️ !siapapaling (alias !paling, !sipaling)", "value": "Party game seru sistem voting rahasia 'Si Paling...' dengan grafik bar suara."},
-            {"name": "🧩 !tebakemoji (alias !emoji, !resmoji)", "value": "Tebak kata/frasa berdasarkan petunjuk deretan emoji."},
-            {"name": "🔤 !susunkata (alias !acak, !resacak)", "value": "Susun kembali kata yang diacak hurufnya (Anagram) secepat mungkin."},
-            {"name": "🔬 !kuisipa (alias !ipa, !resipa)", "value": "Kuis tebak fakta sains & pengetahuan umum berhadiah koin RSWN & EXP."},
-            {"name": "🪢 !hangman (alias !tebakkata, !resman)", "value": "Tebak kata rahasia huruf demi huruf dalam 10 ronde seru."},
-            {"name": "🕵️ !siapaaku (alias !tebaksiapa)", "value": "Kuis detektif tebak tokoh, benda, atau profesi via petunjuk bertahap."},
-            {"name": "⚡ !hitungcepat (alias !math)", "value": "Adu kecepatan dan ketelitian berhitung matematika dasar."},
-            {"name": "🤔 !pernahgak (alias !nhie)", "value": "Permainan kejujuran Never Have I Ever dengan tombol interaktif."},
-            {"name": "🎭 !matamata (alias !spyfall)", "value": "Game peran tersembunyi mengungkap mata-mata di antara pemain."},
-            {"name": "🏇 !balapan (alias !race)", "value": "Arena taruhan balap kuda multiplayer berhadiah koin RSWN."},
-            {"name": "🪙 !taruhan <jumlah> <nomor_kuda>", "value": "Pasang taruhan pada kuda jagoanmu sebelum balapan dimulai."},
-            {"name": "🐺 /ww (alias !ww)", "value": "Sesi game Werewolf klasik roleplay warga vs serigala."},
-            {"name": "🧹 !stopgame (alias !resetgame)", "value": "Reset dan bersihkan status game yang macet atau terkunci di channel."}
-        ]
-    },
     "leveling": {
         "title": "⭐ LEVELING, RANK & PROGRESSION",
         "desc": "Sistem pengalaman (EXP), Voice Tracking, papan aktivitas, dan pasar komunitas:",
         "color": 0x9B59B6,
         "fields": [
-            {"name": "🎁 /giveaway (alias !kocok, !gstart)", "value": "Mulai giveaway berhadiah (panggil tanpa argumen untuk buka form interaktif)."},
-            {"name": "🎲 /reroll <id_pesan> (alias !kocokulang)", "value": "Undi ulang pemenang giveaway yang sudah berakhir."},
-            {"name": "🎖️ /rank [member] (alias !level, !kartu)", "value": "Lihat kartu profil grafis HD lengkap dengan progress bar, level, dan saldo RSWN."},
+            {"name": "🎖️ /rank [member] (alias !rank, !level, !kartu)", "value": "Lihat kartu profil grafis HD lengkap dengan stempel emas wax seal, nomor lisensi, progress bar, level, dan saldo RSWN."},
             {"name": "🏆 /leaderboard (alias /top)", "value": "Tampilkan 10 member dengan perolehan level tertinggi di server."},
             {"name": "📅 /weekly", "value": "Papan peringkat perolehan EXP mingguan server."},
-            {"name": "🎙️ /voicepanel", "value": "Pasang papan live aktivitas voice, rekor room terlama, dan peringkat voice yang selalu di paling bawah channel *(Admin)*."},
-            {"name": "❌ /voicepanel_remove", "value": "Hapus dan nonaktifkan papan aktivitas voice di server *(Admin)*."},
+            {"name": "🎙️ /voicepanel & /voicepanel_remove", "value": "Pasang atau hapus papan live aktivitas voice, rekor room terlama, dan peringkat voice di channel."},
             {"name": "⏱️ /voicetime [member]", "value": "Cek total waktu aktif di voice channel server all-time, mingguan, & peringkat server."},
             {"name": "🏆 /voicerecord", "value": "Cek rekor durasi sesi voice channel terlama server dan channel pemegang rekor."},
-            {"name": "⚙️ /setchannelrecord <channel> <jam> [menit] [detik] [sedang_aktif]", "value": "Atur atau adopsi rekor voice room terlama server agar bot melanjutkan hitungan *(Admin/Owner)*."},
-            {"name": "➕ /addvoicetime <jam> [menit] [detik] [member] [weekly]", "value": "Tambahkan durasi voice untuk diri sendiri atau member target *(Admin/Owner)*."},
-            {"name": "✏️ /setvoicetime <jam> [menit] [detik] [member] [weekly]", "value": "Atur ulang total durasi voice diri sendiri atau member target *(Admin/Owner)*."},
-            {"name": "🛒 /shop", "value": "Buka katalog toko interaktif untuk membeli item dan badge profil."},
-            {"name": "📜 /daily_quest", "value": "Periksa quest harian dan klaim hadiah EXP serta koin RSWN."},
+            {"name": "⚙️ /setchannelrecord <channel> <jam> [menit]", "value": "Atur atau adopsi rekor voice room terlama server agar bot melanjutkan hitungan."},
+            {"name": "➕ /addvoicetime & /setvoicetime", "value": "Tambahkan atau atur ulang durasi voice diri sendiri atau member target (Admin)."},
+            {"name": "🎁 /giveaway & /reroll", "value": "Mulai giveaway berhadiah via modal formulir interaktif dan undi ulang pemenang."},
+            {"name": "📜 /daily_quest & /complete_quest", "value": "Periksa quest harian dan klaim hadiah EXP serta koin RSWN."},
+            {"name": "➕ /addquest <nama> <target> <exp> <coins>", "value": "Tambahkan quest harian baru ke sistem server (Admin)."},
+            {"name": "🛒 /shop, /toggleshop, /toggleexpshop", "value": "Buka katalog toko interaktif beli item/badge, dan atur status buka/tutup toko."},
+            {"name": "🏷️ /manageitems, /additem, /removeitem", "value": "Kelola item inventaris toko, harga koin, dan badge profil (Admin)."},
             {"name": "💸 /transfercoins <member> <jumlah>", "value": "Kirimkan saldo koin RSWN milikmu ke pengguna lain."},
-            {"name": "🏦 /bank (alias /balance)", "value": "Periksa saldo rekening bank RSWN dan status utang/kredit."},
-            {"name": "💼 !work, !daily, !crime, !rob", "value": "Perintah ekonomi kasual untuk mengumpulkan koin RSWN tambahan."},
-            {"name": "🆔 Format Lisensi Kartu", "value": "Kartu profil anggota dilengkapi nomor lisensi resmi ringkas format: `5-digit ID User + 4-digit ID Server`."}
+            {"name": "💰 /givecoins <member> <jumlah> & /giveexp", "value": "Berikan bonus saldo koin atau EXP gratis kepada member (Admin)."},
+            {"name": "🛠️ /setlevelconfig & /viewlevelconfig", "value": "Atur laju pengali EXP pesan dan voice server (Admin)."},
+            {"name": "🎖️ /setlevelbadge & /removelevelbadge", "value": "Atur badge eksklusif yang ditampilkan di kartu rank member (Admin)."},
+            {"name": "🎭 /setlevelrole, /setvoicerole, /setvoiceboost", "value": "Atur role rewards otomatis saat mencapai level atau durasi voice tertentu (Admin)."}
+        ]
+    },
+    "games": {
+        "title": "🎮 TAVERN PARTY & MINIGAMES",
+        "desc": "Game interaktif multipemain, party voting, taruhan balap kuda, dan Werewolf klasik:",
+        "color": 0xF1C40F,
+        "fields": [
+            {"name": "🎮 !games (alias !minigames)", "value": "Buka katalog interaktif seluruh minigames dan panduan bermain via menu dropdown."},
+            {"name": "🐺 /ww join (alias !ww join)", "value": "Bergabung ke dalam antrean lobi permainan Werewolf."},
+            {"name": "🐺 /ww mulai (alias !ww mulai)", "value": "Mulai sesi permainan Werewolf (Minimal 4 pemain)."},
+            {"name": "🐺 /ww keluar & /ww batal", "value": "Keluar dari antrean lobi atau batalkan sesi permainan aktif."},
+            {"name": "🐺 /ww set & /ww status", "value": "Atur komposisi jumlah peran dan periksa status lobi pemain aktif."},
+            {"name": "🌙 Aksi Malam Werewolf (DM/Thread)", "value": "Perintah malam: `!bunuh <no>` (Serigala), `!lindungi <no>` (Dokter), `!terawang <no>` (Peramal), `!jaga <no>` (Pengawal), `!racun <no>` (Penyihir), `!intai <no>` (Mata-Mata)."},
+            {"name": "☀️ !vote <nomor_warga>", "value": "Voting warga di siang hari untuk menggantung tersangka Werewolf."},
+            {"name": "🏇 !balapan (alias !race)", "value": "Arena taruhan balap kuda multiplayer berhadiah koin RSWN."},
+            {"name": "🪙 !taruhan <jumlah> <nomor_kuda>", "value": "Pasang taruhan pada kuda jagoanmu (1 s/d 5) sebelum balapan dimulai."},
+            {"name": "🛑 !stopbalapan & !stopwerewolfaudio", "value": "Hentikan sesi balapan kuda atau matikan audio latar Werewolf."},
+            {"name": "🔗 !sambung (alias !sk, !ressambung)", "value": "Tantangan sambung suku kata berantai multiplayer dengan combo multiplier."},
+            {"name": "🗳️ !siapapaling (alias !paling, !sipaling)", "value": "Party game seru sistem voting rahasia 'Si Paling...' dengan grafik bar suara."},
+            {"name": "🧩 !tebakemoji & !hintemoji", "value": "Tebak kata/frasa berdasarkan petunjuk emoji dengan opsi petunjuk via DM."},
+            {"name": "🔤 !susunkata (alias !acak)", "value": "Susun kembali kata yang diacak hurufnya (Anagram) secepat mungkin."},
+            {"name": "🔬 !kuisipa", "value": "Kuis tebak fakta sains & pengetahuan umum berhadiah koin RSWN & EXP."},
+            {"name": "🪢 !hangman & !bantuanhangman", "value": "Tebak kata rahasia huruf demi huruf dalam 10 ronde seru."},
+            {"name": "🕵️ !siapaaku", "value": "Kuis detektif tebak tokoh, benda, atau profesi via petunjuk bertahap."},
+            {"name": "⚡ !hitungcepat", "value": "Adu kecepatan dan ketelitian berhitung matematika dasar."},
+            {"name": "🤔 !pernahgak", "value": "Permainan kejujuran Never Have I Ever dengan tombol interaktif."},
+            {"name": "🎭 !matamata, !tuduh, !ungkap_lokasi", "value": "Game peran tersembunyi mengungkap mata-mata di antara pemain."},
+            {"name": "🎵 !kuismusik & !jawab", "value": "Tebak judul lagu dari petunjuk lirik atau audio."},
+            {"name": "🧹 !stopgame", "value": "Reset dan bersihkan status game yang macet atau terkunci di channel."}
+        ]
+    },
+    "social": {
+        "title": "📡 RADAR & SOCIAL MEDIA CHECKER",
+        "desc": "Sistem monitoring otomatis YouTube & TikTok real-time terintegrasi MongoDB:",
+        "color": 0xE67E22,
+        "fields": [
+            {"name": "🚀 MongoDB Integration", "value": "Seluruh target channel YouTube dan akun TikTok tersimpan permanen di database MongoDB dengan pelacakan ID video dan status live."},
+            {"name": "📺 /yt add <channel_id> <text_channel>", "value": "Daftarkan channel YouTube untuk dipantau notifikasi video dan siaran livenya."},
+            {"name": "📺 /yt remove <channel_id> & /yt list", "value": "Hapus atau tampilkan daftar seluruh channel YouTube yang sedang dipantau."},
+            {"name": "📺 /yt check", "value": "Paksa bot memeriksa pembaruan channel YouTube seketika untuk pengetesan (Test Run)."},
+            {"name": "📺 /yt test <channel_id>", "value": "Kirimkan simulasi kartu notifikasi YouTube ke channel tujuan."},
+            {"name": "📺 /yt setchannel, /yt setmention, /yt setmode, /yt toggle", "value": "Kustomisasi channel tujuan, role mention, mode notifikasi, dan toggle aktif/nonaktif."},
+            {"name": "🎵 /tt add <username> <text_channel>", "value": "Daftarkan akun TikTok untuk dipantau video baru dan siaran langsungnya."},
+            {"name": "🎵 /tt remove <username> & /tt list", "value": "Hapus atau tampilkan seluruh akun TikTok yang sedang dipantau bot."},
+            {"name": "🎵 /tt check", "value": "Paksa bot memeriksa pembaruan TikTok seketika untuk pengetesan (Test Run)."},
+            {"name": "🎵 /tt test <username>", "value": "Kirimkan simulasi kartu notifikasi TikTok ke channel tujuan."},
+            {"name": "🎵 /tt setchannel, /tt setmention, /tt setmode, /tt toggle", "value": "Kustomisasi channel tujuan, mention role, mode notifikasi, dan toggle status aktif."},
+            {"name": "⚙️ /checker list & /checker check", "value": "Tampilkan rekap seluruh target YouTube & TikTok, serta trigger pemindaian massal."},
+            {"name": "⚙️ /checker interval <menit>", "value": "Atur frekuensi interval pemindaian otomatis di latar belakang."},
+            {"name": "⚙️ /checker cache & /checker resetcache", "value": "Periksa atau bersihkan data cache ID video terakhir di database."},
+            {"name": "📡 !config, !addpath, !removepath", "value": "Konfigurasi jalur feed notifikasi relay lintas channel (Owner)."},
+            {"name": "📦 !checkcache & !resetcache", "value": "Periksa atau bersihkan antrean cache feed notifikasi relay (Owner)."}
         ]
     },
     "ai": {
-        "title": "🤖 ASISTEN AI RAKA & SELF-KNOWLEDGE MEMORY",
-        "desc": "Kecerdasan buatan Gemini persona Raka dengan memori internal seluruh kode bot & interaksi kasual:",
+        "title": "🤖 ASISTEN AI RAKA & KEAMANAN LINK / TLD",
+        "desc": "Kecerdasan buatan Gemini 2.5 Flash, self-knowledge memori internal kode, dan filter link:",
         "color": 0x1ABC9C,
         "fields": [
-            {"name": "🧠 Self-Knowledge Codebase Memory", "value": "Tanyakan apa saja seputar kode, cara pakai perintah, izin admin, atau alur modul bot! Cukup tag `@RTMBOT <tanya>`, reply pesan bot, atau gunakan awalan `!<pertanyaan>`."},
-            {"name": "💬 DM Asisten Pribadi", "value": "Kirim pesan langsung (DM) ke bot untuk konsultasi pribadi atau asisten kode."},
-            {"name": "🧹 !cleardm (alias !clear)", "value": "Bersihkan pesan bot di percakapan DM pribadi dan reset sesi memori obrolan."},
-            {"name": "🔮 /tarot", "value": "Tarik 3 kartu Tarot (Masa Lalu, Sekarang, Depan) dengan tafsiran filosofis."},
-            {"name": "♈ /zodiak <nama/tanggal>", "value": "Ramalan peruntungan zodiak hari ini ala Raka."},
-            {"name": "💘 /ship <user1> [user2]", "value": "Kalkulator kecocokan persentase cinta dua pengguna."},
-            {"name": "🔥 /roast [user]", "value": "Minta Raka meroast seseorang dengan sindiran pedas tapi kocak."},
-            {"name": "🤫 /confess", "value": "Buka formulir modal rahasia untuk mengirim curhatan anonim."}
+            {"name": "🧠 Self-Knowledge Codebase Memory", "value": "Tanyakan apa saja seputar kode bot, cara pakai perintah, izin admin, atau alur modul bot! Cukup tag `@RTMBOT <tanya>`, reply pesan bot, atau awalan `!<tanya>`."},
+            {"name": "🛡️ /aifilter tambah_whitelist <domain>", "value": "Tambahkan domain website ke daftar aman agar tautan tidak terhapus bot (contoh: `/aifilter tambah_whitelist domain:example.com`)."},
+            {"name": "🛡️ /aifilter hapus_whitelist <domain>", "value": "Hapus domain website dari daftar whitelist aman."},
+            {"name": "🚫 /aifilter tambah_tld <tld>", "value": "Tambahkan ekstensi domain mencurigakan yang diblokir otomatis (contoh: `/aifilter tambah_tld tld:.xyz`)."},
+            {"name": "🚫 /aifilter hapus_tld <tld>", "value": "Hapus ekstensi domain dari daftar hitam pemblokiran."},
+            {"name": "🛑 /aifilter tambah_kata <kata> & hapus_kata", "value": "Tambahkan atau hapus kata-kata sensitif yang dilarang di server."},
+            {"name": "🖼️ /aifilter blokir_gambar <deskripsi>", "value": "Blokir konsep gambar berbahaya/phising secara visual menggunakan vision AI."},
+            {"name": "🛡️ /cyber_toggle", "value": "Aktifkan atau matikan proteksi anti-phising, anti-scam, dan filter AI."},
+            {"name": "🤖 /ai ngobrol, /ai selesai, /ai reset", "value": "Buka sesi percakapan fokus tanpa perlu mention berulang kali."},
+            {"name": "🤖 /ai rangkum [jumlah]", "value": "Rangkum poin-poin obrolan channel terakhir secara otomatis."},
+            {"name": "🎭 /aisifat atur_sifat & /aisifat hapus_sifat", "value": "Atur kepribadian atau persona kustom AI untuk pengguna."},
+            {"name": "🎭 /aisifat ngambek & /aisifat patuh", "value": "Mode respon emosional khusus untuk interaksi tertentu."},
+            {"name": "📚 /aimemori pelajari, ingatan, lupakan", "value": "Simpan atau hapus ingatan jangka panjang AI server."},
+            {"name": "⚙️ /aiconfig set_learn_channel & reset_memori", "value": "Konfigurasi channel belajar dan reset memori AI server."},
+            {"name": "🧹 !cleardm (alias !clear)", "value": "Bersihkan riwayat pesan bot di DM pribadi dan reset sesi obrolan AI."}
         ]
     },
-    "webhook": {
-        "title": "🪝 WEBHOOK RELAY & MIRRORING",
-        "desc": "Sistem relayer dan pencerminan pesan otomatis antar channel atau server:",
-        "color": 0x16A085,
+    "fun": {
+        "title": "🔮 INTERAKSI SOSIAL, FUN & CURHAT",
+        "desc": "Fitur interaksi seru, ramalan, numerologi, dan curhat anonim:",
+        "color": 0xE91E63,
         "fields": [
-            {"name": "🔗 !setwebhook <target_url>", "value": "Tautkan channel ini ke Webhook tujuan untuk mencerminkan seluruh pesan."},
-            {"name": "🗑️ !delwebhook", "value": "Hapus relayer webhook aktif di channel ini."},
-            {"name": "📋 !listwebhook", "value": "Daftar channel yang memiliki relay webhook aktif di server."},
-            {"name": "🧪 !teswebhook [pesan]", "value": "Kirim pesan uji coba untuk memverifikasi koneksi webhook target."}
+            {"name": "🔮 /tarot", "value": "Tarik 3 kartu Tarot mistis (Masa Lalu, Sekarang, Depan) dengan tafsiran filosofis ala Raka."},
+            {"name": "♈ /zodiak <nama/tanggal>", "value": "Ramalan peruntungan zodiak, karier, dan asmara hari ini."},
+            {"name": "🔢 /lifepath <tanggal_lahir>", "value": "Hitung angka takdir Life Path (Numerologi) kepribadian dan potensi diri."},
+            {"name": "🔥 /roast [user]", "value": "Minta Raka meroast seseorang dengan sindiran pedas tapi kocak."},
+            {"name": "💘 /ship <user1> [user2]", "value": "Kalkulator kecocokan persentase cinta dua pengguna."},
+            {"name": "🎱 /8ball <pertanyaan>", "value": "Tanya ke bola ajaib Magic 8-Ball untuk mendapatkan jawaban absurd dan jenaka."},
+            {"name": "🤫 /confess", "value": "Buka formulir modal rahasia untuk mengirim curhatan anonim ke channel confess."},
+            {"name": "⚙️ /confess_setup & /set_confess_channel", "value": "Atur channel penampung pesan curhatan anonim server (Admin)."},
+            {"name": "🎭 !pranknama <member> <nama> & !resetnama", "value": "Ubah nama panggilan member secara iseng atau kembalikan ke nama asli."}
         ]
     },
-    "utility": {
-        "title": "🎙️ DYNAMIC VOICE & UTILITAS SERVER",
-        "desc": "Saluran suara otomatis dan fitur pendukung server:",
+    "voice_util": {
+        "title": "🎙️ VOICE DINAMIS, QUOTES & UTILITAS",
+        "desc": "Saluran suara otomatis, profil member, kutipan, dan utilitas server:",
         "color": 0x34495E,
         "fields": [
             {"name": "🔊 Join-to-Create Voice", "value": "Masuk ke channel suara trigger untuk membuat room private otomatis."},
-            {"name": "🎛️ VC Control Panel", "value": "Panel tombol lengkap: Gembok, Mode Siluman, Tambah Kursi, Ganti Nama."},
+            {"name": "🔒 /vc lock & /vc unlock", "value": "Kunci voice room dari orang lain atau buka kembali untuk umum."},
+            {"name": "👥 /vc limit <jumlah>", "value": "Atur kapasitas batas member maksimal di ruangan (0 = tanpa batas)."},
+            {"name": "✏️ /vc rename <nama_baru>", "value": "Ganti nama voice room pribadi Anda sesuai selera."},
+            {"name": "👢 /vc kick <member>", "value": "Usir member tertentu keluar dari voice room pribadi Anda."},
+            {"name": "🔑 /vc grant <member> & /vc revoke", "value": "Berikan atau cabut izin akses khusus ke member tertentu."},
+            {"name": "👑 /vc transfer <member>", "value": "Pindahkan hak kepemilikan room kepada member lain di ruangan."},
+            {"name": "🗑️ /vc delete", "value": "Hapus ruangan voice privat seketika."},
+            {"name": "🛠️ /vcadmin settrigger & setcat", "value": "Atur kanal pemicu dan kategori penampung kamar suara (Admin)."},
+            {"name": "📊 /act", "value": "Lihat statistik durasi keaktifan suara, streaming, dan bermain game server."},
+            {"name": "💬 /resq (alias !resq, !sendquote)", "value": "Kirim kutipan inspiratif harian berdesain elegan."},
+            {"name": "📜 /setchannelq, /listquotes, /deletequote", "value": "Setup kanal kutipan dan kelola daftar kutipan server (Admin)."},
             {"name": "📝 /tulis <nama> <teks>", "value": "Renders teks menjadi gambar lembaran tulisan tangan di buku bergaris."},
             {"name": "👤 /user [user]", "value": "Lihat kartu informasi lengkap akun, tanggal gabung, dan peran member."},
             {"name": "🖼️ /avatar [user]", "value": "Ambil gambar avatar profil pengguna dalam resolusi tinggi."},
             {"name": "❓ /faq", "value": "Buka menu FAQ interaktif seputar server dan aturan komunitas."},
-            {"name": "💬 /quote <teks>", "value": "Kirim kutipan bijak untuk dikurasi admin dan raih reward EXP."},
-            {"name": "⚙️ /set_gender", "value": "Buka formulir modal untuk pengaturan role gender otomatis *(Admin)*."}
+            {"name": "🏛️ /getserverasset [guild_id]", "value": "Ekstrak nama resmi, logo HD (1024px), dan banner server Discord."},
+            {"name": "🆔 /getroleid (alias !idrole, !roleid)", "value": "Pilih role dari menu dropdown UI untuk melihat dan menyalin ID role secara instan tanpa tag/mention (Anti-Ping)."},
+            {"name": "⚙️ /set_gender", "value": "Buka formulir modal untuk pengaturan role gender otomatis (Admin)."}
+        ]
+    },
+    "webhook": {
+        "title": "🪝 WEBHOOK RELAY & PENYIARAN",
+        "desc": "Sistem relayer pesan, penyiaran layout V2 Type 17, dan pesan berjadwal:",
+        "color": 0x16A085,
+        "fields": [
+            {"name": "🪝 !send_webhook <target_url> (alias !swh)", "value": "Kirim pesan siaran dan kartu komponen Layout V2 Type 17 ke Webhook."},
+            {"name": "✏️ !edit_broadcast <message_id> (alias !eb)", "value": "Edit pesan siaran yang sudah terkirim via Webhook."},
+            {"name": "📢 !announcement <channel> <pesan>", "value": "Kirim siaran pengumuman resmi bertanda tangan server."},
+            {"name": "🖼️ !send_media <target_url> <media_url>", "value": "Kirimkan lampiran media resolusi tinggi ke Webhook Discord."},
+            {"name": "⏰ !schedule <waktu> <pesan>", "value": "Jadwalkan pengiriman pesan atau siaran otomatis di waktu mendatang."},
+            {"name": "📋 !list_schedules", "value": "Lihat daftar seluruh jadwal pengiriman pesan yang sedang aktif."},
+            {"name": "💾 !backup_config, !load_config, !list_configs", "value": "Cadangkan atau muat ulang konfigurasi webhook server."},
+            {"name": "🔗 !setwebhook <target_url> & !delwebhook", "value": "Tautkan atau copot relayer pencerminan pesan otomatis antar channel."},
+            {"name": "🧪 !teswebhook [pesan]", "value": "Kirim pesan uji coba untuk memverifikasi koneksi webhook target."}
         ]
     }
 }
@@ -388,33 +484,19 @@ class HelpView(discord.ui.View):
         row=0,
         options=[
             discord.SelectOption(label="Beranda Panduan", value="overview", description="Ringkasan umum sistem RTM-Bot", emoji="🏠"),
-            discord.SelectOption(label="Moderasi & Keamanan", value="moderation", description="Perintah ban, kick, timeout, filter AI", emoji="🛡️"),
+            discord.SelectOption(label="Moderasi & Keamanan", value="moderation", description="Setup server, ban, kick, timeout, trap", emoji="🛡️"),
             discord.SelectOption(label="Keuangan Pribadi", value="finance", description="Manajer arus kas, cash in/out, budgeting", emoji="💼"),
-            discord.SelectOption(label="Radar & Notifikasi Media", value="notif", description="Deteksi & notifikasi YouTube, TikTok, Instagram", emoji="📡"),
-            discord.SelectOption(label="Games & Minigames", value="games", description="Balapan kuda taruhan, Werewolf, kuis", emoji="🎮"),
-            discord.SelectOption(label="Leveling & Ekonomi", value="leveling", description="Kartu rank, leaderboard, toko item", emoji="⭐"),
-            discord.SelectOption(label="AI Raka & Memori Kode", value="ai", description="Chat persona Raka, tanya kode bot, DM clear", emoji="🤖"),
-            discord.SelectOption(label="Webhook Mirroring", value="webhook", description="Relay pesan otomatis antar channel/server", emoji="🪝"),
-            discord.SelectOption(label="Voice & Utilitas", value="utility", description="Temp Voice channel, tulis tangan, profil", emoji="🎙️")
+            discord.SelectOption(label="Leveling & Toko Server", value="leveling", description="Kartu rank emas, voicetime, shop, quest", emoji="⭐"),
+            discord.SelectOption(label="Party Games & Werewolf", value="games", description="Werewolf RPG, balapan kuda, kuis", emoji="🎮"),
+            discord.SelectOption(label="Radar & Social Media", value="social", description="YouTube & TikTok real-time monitor", emoji="📡"),
+            discord.SelectOption(label="AI Assistant & AIFilter", value="ai", description="Gemini chat, whitelist domain, filter TLD", emoji="🤖"),
+            discord.SelectOption(label="Interaksi Fun & Curhat", value="fun", description="Tarot, zodiak, roast, ship, confess anonim", emoji="🔮"),
+            discord.SelectOption(label="Voice Dinamis & Utilitas", value="voice_util", description="Temp VC, profil HD, quotes, tulis", emoji="🎙️"),
+            discord.SelectOption(label="Webhook & Penyiaran", value="webhook", description="Relay pesan, schedule, Layout V2 Type 17", emoji="🪝")
         ]
     )
     async def select_category(self, interaction: discord.Interaction, select: discord.ui.Select):
         selected_key = select.values[0]
-
-        if selected_key == "notif":
-            owner_id_env = os.getenv("BOT_OWNER_ID", "1000737066822410311")
-            is_owner = (
-                interaction.user.id == 1000737066822410311
-                or str(interaction.user.id) == owner_id_env
-                or await interaction.client.is_owner(interaction.user)
-            )
-            if not is_owner:
-                await interaction.response.send_message(
-                    "🚫 **Akses Ditolak**: Menu panduan **Radar & Notifikasi Media** khusus diperuntukkan bagi **Pemilik Bot (Owner)**.",
-                    ephemeral=True
-                )
-                return
-
         cat_data = HELP_CATEGORIES.get(selected_key, HELP_CATEGORIES["overview"])
         embed = discord.Embed(
             title=cat_data["title"],
@@ -424,7 +506,7 @@ class HelpView(discord.ui.View):
         for f in cat_data["fields"]:
             embed.add_field(name=f["name"], value=f["value"], inline=False)
             
-        embed.set_footer(text=f"RTM-Bot • Modul Aktif: 13 • Kategori: {selected_key.capitalize()}")
+        embed.set_footer(text=f"RTM-Bot • Modul Aktif: 17 • Kategori: {selected_key.capitalize()}")
         await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label="Beranda", style=discord.ButtonStyle.primary, emoji="🏠", custom_id="rtmbot:help_home_btn", row=1)
@@ -437,7 +519,7 @@ class HelpView(discord.ui.View):
         )
         for f in cat_data["fields"]:
             embed.add_field(name=f["name"], value=f["value"], inline=False)
-        embed.set_footer(text="RTM-Bot • Modul Aktif: 13 • Kategori: Overview")
+        embed.set_footer(text="RTM-Bot • Modul Aktif: 17 • Kategori: Overview")
         await interaction.response.edit_message(embed=embed, view=self)
 
     async def on_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item) -> None:
@@ -779,6 +861,20 @@ class InsightHub(commands.Cog, name="Community Insights & Utility"):
         embed.set_footer(text=f"Diekstrak via RTMBOT System • {target_guild.name}")
         await ctx.send(embed=embed)
 
+    @commands.hybrid_command(name="getroleid", aliases=["idrole", "roleid"], description="Ambil dan salin ID role server via UI Dropdown tanpa perlu tag role.")
+    async def get_role_id(self, ctx: commands.Context):
+        if not ctx.guild:
+            await ctx.send("Perintah ini hanya dapat digunakan di dalam server.", ephemeral=True)
+            return
+
+        embed = discord.Embed(
+            title="🔍 Pemilih ID Role Server (Anti-Ping)",
+            description="Pilih salah satu role pada menu dropdown di bawah untuk melihat dan menyalin ID-nya secara instan tanpa perlu melakukan tag/mention ke role tersebut.",
+            color=discord.Color.blue()
+        )
+        embed.set_footer(text="Aman & Bersih • Salin ID role dengan sekali klik")
+        await ctx.send(embed=embed, view=RoleIdView(), ephemeral=True)
+
     @commands.hybrid_command(name="help", aliases=["h", "bantuan"], description="Pusat panduan perintah dan fitur interaktif RTM-Bot")
     async def help_command(self, ctx: commands.Context):
         cat_data = HELP_CATEGORIES["overview"]
@@ -789,7 +885,7 @@ class InsightHub(commands.Cog, name="Community Insights & Utility"):
         )
         for f in cat_data["fields"]:
             embed.add_field(name=f["name"], value=f["value"], inline=False)
-        embed.set_footer(text="RTM-Bot • Modul Aktif: 13 • Kategori: Overview")
+        embed.set_footer(text="RTM-Bot • Modul Aktif: 17 • Kategori: Overview")
 
         view = HelpView()
         await ctx.send(embed=embed, view=view)

@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import re
+import urllib.parse
 import uuid
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -432,6 +433,52 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
         except Exception:
             return []
 
+    async def _fetch_single_tiktok_metadata(self, url: str) -> dict:
+        meta = None
+        ydl_opts = {
+            "extract_flat": True,
+            "quiet": True,
+            "no_warnings": True,
+            "socket_timeout": 10,
+        }
+        try:
+            data = await asyncio.to_thread(lambda: yt_dlp.YoutubeDL(ydl_opts).extract_info(url, download=False))
+            if data and data.get("id"):
+                meta = {
+                    "video_id": str(data.get("id")),
+                    "title": data.get("title") or "TikTok Video",
+                    "creator": data.get("uploader") or data.get("creator") or "TikTok Creator",
+                    "url": data.get("webpage_url") or url,
+                    "thumbnail": data.get("thumbnail"),
+                    "description": data.get("title") or "",
+                    "is_live": False,
+                }
+        except Exception:
+            pass
+
+        if not meta or not meta.get("thumbnail"):
+            try:
+                clean_url = urllib.parse.quote(url, safe="")
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(f"https://www.tikwm.com/api/?url={clean_url}", timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                        if resp.status == 200:
+                            res_json = await resp.json()
+                            if res_json.get("code") == 0 and res_json.get("data"):
+                                d = res_json["data"]
+                                meta = {
+                                    "video_id": str(d.get("id") or (meta.get("video_id") if meta else "")),
+                                    "title": d.get("title") or (meta.get("title") if meta else "TikTok Video"),
+                                    "creator": d.get("author", {}).get("unique_id") or d.get("author", {}).get("nickname") or (meta.get("creator") if meta else "TikTok Creator"),
+                                    "url": url,
+                                    "thumbnail": d.get("cover") or d.get("origin_cover") or (meta.get("thumbnail") if meta else None),
+                                    "description": d.get("title") or "",
+                                    "is_live": False,
+                                }
+            except Exception:
+                pass
+
+        return meta
+
     async def _send_content_card(self, target: dict, content_data: dict):
         channel = self.bot.get_channel(target["target_channel_id"])
         if not channel:
@@ -552,7 +599,7 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
         await self.bot.wait_until_ready()
 
     @commands.hybrid_group(name="yt", description="Manajemen pemantauan YouTube")
-    @commands.is_owner()
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
     async def yt_group(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
             await ctx.send("Gunakan `/yt add`, `/yt remove`, `/yt list`, `/yt setchannel`, `/yt setmode`, `/yt check`.", ephemeral=True)
@@ -673,9 +720,11 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
             lines.append(f"{idx}. **{t['display_name']}** (`{t['identifier']}`) - {ch_mention} [{status}] Mode: `{t.get('message_mode', 'ai')}` Mention: `{t.get('mention_role')}`")
         await ctx.send("\n".join(lines), ephemeral=True)
 
-    @yt_group.command(name="test", description="Kirim kartu V2 uji coba untuk URL YouTube")
-    @commands.is_owner()
-    async def yt_test(self, ctx: commands.Context, url: str):
+    @yt_group.command(name="test", description="Kirim kartu V2 uji coba untuk URL YouTube dan tampilkan detail preview")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def yt_test(self, ctx: commands.Context, url: str, channel: discord.TextChannel = None):
+        target_channel = channel or ctx.channel
+        await ctx.defer(ephemeral=True)
         vid = self._extract_youtube_id(url)
         if not vid:
             return await ctx.send("URL YouTube tidak valid.", ephemeral=True)
@@ -685,13 +734,28 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
             "platform": "youtube",
             "identifier": meta.get("channel_id") or "test",
             "display_name": meta.get("creator", "Creator"),
-            "target_channel_id": ctx.channel.id,
-            "mention_role": "@everyone",
+            "target_channel_id": target_channel.id,
+            "mention_role": "none",
             "message_mode": "ai",
             "custom_template": None,
         }
-        await self._send_content_card(dummy_target, meta)
-        await ctx.send("Uji coba kartu V2 YouTube berhasil dikirim.", ephemeral=True)
+        card_sent = await self._send_content_card(dummy_target, meta)
+        embed = discord.Embed(
+            title="🎬 Preview Pengujian Notifikasi YouTube",
+            description="Pengujian kartu notifikasi V2 berhasil diproses dengan detail konten di bawah ini:",
+            color=0xFF0000
+        )
+        embed.add_field(name="👤 Channel / Kreator", value=f"**{meta.get('creator', 'Creator')}**", inline=True)
+        embed.add_field(name="🆔 ID Video", value=f"`{meta.get('video_id', vid)}`", inline=True)
+        embed.add_field(name="📢 Saluran Target", value=target_channel.mention, inline=True)
+        embed.add_field(name="📝 Judul Video", value=meta.get('title', 'Video')[:250], inline=False)
+        embed.add_field(name="🔗 Tautan Video", value=f"[Buka Video YouTube]({meta.get('url', url)})", inline=False)
+        status_text = f"✅ Kartu V2 berhasil dikirim ke {target_channel.mention}." if card_sent else f"⚠️ Gagal mengirim kartu V2 ke {target_channel.mention}."
+        embed.add_field(name="⚡ Status Kartu V2", value=status_text, inline=False)
+        if meta.get("thumbnail"):
+            embed.set_thumbnail(url=meta["thumbnail"])
+        embed.set_footer(text="Gunakan link video YouTube siapapun untuk preview format kartu notifikasi.")
+        await ctx.send(embed=embed, ephemeral=True)
 
     @yt_group.command(name="check", description="Paksa cek pembaruan YouTube sekarang")
     @commands.is_owner()
@@ -715,7 +779,7 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
         await ctx.send(f"Pengecekan selesai. Ditemukan dan dikirim: {found_any} konten baru.", ephemeral=True)
 
     @commands.hybrid_group(name="tt", description="Manajemen pemantauan TikTok")
-    @commands.is_owner()
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
     async def tt_group(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
             await ctx.send("Gunakan `/tt add`, `/tt remove`, `/tt list`, `/tt setchannel`, `/tt setmode`, `/tt check`.", ephemeral=True)
@@ -838,40 +902,46 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
             lines.append(f"{idx}. **@{t['display_name']}** - {ch_mention} [{status}] Mode: `{t.get('message_mode', 'ai')}` Mention: `{t.get('mention_role')}`")
         await ctx.send("\n".join(lines), ephemeral=True)
 
-    @tt_group.command(name="test", description="Kirim kartu V2 uji coba untuk URL TikTok")
-    @commands.is_owner()
-    async def tt_test(self, ctx: commands.Context, url: str):
+    @tt_group.command(name="test", description="Kirim kartu V2 uji coba untuk URL TikTok dan tampilkan detail preview")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def tt_test(self, ctx: commands.Context, url: str, channel: discord.TextChannel = None):
+        target_channel = channel or ctx.channel
         await ctx.defer(ephemeral=True)
-        ydl_opts = {
-            "extract_flat": True,
-            "quiet": True,
-            "no_warnings": True,
-            "socket_timeout": 10,
-        }
         try:
-            data = await asyncio.to_thread(lambda: yt_dlp.YoutubeDL(ydl_opts).extract_info(url, download=False))
-            meta = {
-                "video_id": str(data.get("id")),
-                "title": data.get("title") or "TikTok Video",
-                "creator": data.get("uploader") or "TikTok Creator",
-                "url": url,
-                "thumbnail": data.get("thumbnail"),
-                "description": data.get("title") or "",
-                "is_live": False,
-            }
+            meta = await self._fetch_single_tiktok_metadata(url)
+            if not meta or not meta.get("video_id"):
+                return await ctx.send("❌ Gagal mengekstrak metadata TikTok. Pastikan URL valid dan video bersifat publik.", ephemeral=True)
+
             dummy_target = {
                 "platform": "tiktok",
                 "identifier": meta["creator"],
                 "display_name": meta["creator"],
-                "target_channel_id": ctx.channel.id,
-                "mention_role": "@everyone",
+                "target_channel_id": target_channel.id,
+                "mention_role": "none",
                 "message_mode": "ai",
                 "custom_template": None,
             }
-            await self._send_content_card(dummy_target, meta)
-            await ctx.send("Uji coba kartu V2 TikTok berhasil dikirim.", ephemeral=True)
+            card_sent = await self._send_content_card(dummy_target, meta)
+
+            embed = discord.Embed(
+                title="🎬 Preview Pengujian Notifikasi TikTok",
+                description="Pengujian kartu notifikasi V2 berhasil diproses dengan detail konten di bawah ini:",
+                color=0x00F2FE
+            )
+            embed.add_field(name="👤 Kreator / Akun", value=f"**@{meta['creator']}**", inline=True)
+            embed.add_field(name="🆔 ID Video", value=f"`{meta['video_id']}`", inline=True)
+            embed.add_field(name="📢 Saluran Target", value=target_channel.mention, inline=True)
+            caption_preview = meta['title'][:250] + ("..." if len(meta['title']) > 250 else "")
+            embed.add_field(name="📝 Caption / Judul", value=caption_preview, inline=False)
+            embed.add_field(name="🔗 Tautan Video", value=f"[Buka Video TikTok]({meta['url']})", inline=False)
+            status_text = f"✅ Kartu V2 berhasil dikirim ke {target_channel.mention}." if card_sent else f"⚠️ Gagal mengirim kartu V2 ke {target_channel.mention}."
+            embed.add_field(name="⚡ Status Kartu V2", value=status_text, inline=False)
+            if meta.get("thumbnail"):
+                embed.set_thumbnail(url=meta["thumbnail"])
+            embed.set_footer(text="Gunakan link video TikTok siapapun untuk preview format kartu notifikasi.")
+            await ctx.send(embed=embed, ephemeral=True)
         except Exception as e:
-            await ctx.send(f"Gagal mengambil metadata TikTok: {e}", ephemeral=True)
+            await ctx.send(f"❌ Terjadi kesalahan saat menguji URL TikTok: {e}", ephemeral=True)
 
     @tt_group.command(name="check", description="Paksa cek pembaruan TikTok sekarang")
     @commands.is_owner()

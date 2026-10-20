@@ -9,8 +9,45 @@
         "description": "Modul fungsional main.py",
         "key_features": []
       },
-      "commands_count": 0,
-      "commands": []
+      "commands_count": 3,
+      "commands": [
+        {
+          "name": "bot backupnow",
+          "raw_name": "backupnow",
+          "parent_group": "bot",
+          "aliases": [],
+          "type": "Subcommand (bot)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "bot sendbackup",
+          "raw_name": "sendbackup",
+          "parent_group": "bot",
+          "aliases": [],
+          "type": "Subcommand (bot)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "bot cogbackup",
+          "raw_name": "cogbackup",
+          "parent_group": "bot",
+          "aliases": [],
+          "type": "Subcommand (bot)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Tidak ada deskripsi"
+        }
+      ]
     },
     "activity.py": {
       "metadata": {
@@ -26,6 +63,8 @@
       "commands": [
         {
           "name": "act",
+          "raw_name": "act",
+          "parent_group": null,
           "aliases": [
             "setact",
             "statusbot"
@@ -35,7 +74,7 @@
           "permissions": [
             ""
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Atur status aktivitas dan presence bot (Khusus Owner)"
         }
       ]
     },
@@ -80,6 +119,8 @@
       "commands": [
         {
           "name": "cash_in",
+          "raw_name": "cash_in",
+          "parent_group": null,
           "aliases": [
             "in",
             "masuk",
@@ -91,10 +132,12 @@
             "kategori"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Catat dana masuk atau penghasilan baru ke rekening pribadi Anda."
         },
         {
           "name": "cash_out",
+          "raw_name": "cash_out",
+          "parent_group": null,
           "aliases": [
             "out",
             "keluar",
@@ -106,10 +149,12 @@
             "kategori"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Catat pengeluaran atau belanja kas harian Anda."
         },
         {
           "name": "keuangan",
+          "raw_name": "keuangan",
+          "parent_group": null,
           "aliases": [
             "saldo",
             "wallet",
@@ -118,10 +163,12 @@
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Buka dasbor portofolio keuangan pribadi dan saldo kas Anda."
         },
         {
           "name": "cashflow",
+          "raw_name": "cashflow",
+          "parent_group": null,
           "aliases": [
             "mutasi",
             "laporan_keuangan"
@@ -129,10 +176,12 @@
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Lihat laporan arus kas bulanan dan rincian transaksi terbaru."
         },
         {
           "name": "anggaran",
+          "raw_name": "anggaran",
+          "parent_group": null,
           "aliases": [
             "budget",
             "setbudget"
@@ -142,10 +191,12 @@
             "nominal"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Tetapkan target batas pengeluaran (budget) bulanan Anda."
         },
         {
           "name": "konsultasi_keuangan",
+          "raw_name": "konsultasi_keuangan",
+          "parent_group": null,
           "aliases": [
             "evaluasi_keuangan",
             "fin_advice",
@@ -154,10 +205,12 @@
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Konsultasikan portofolio & evaluasi pengeluaran langsung dengan AI Perencana Keuangan."
         },
         {
           "name": "export_keuangan",
+          "raw_name": "export_keuangan",
+          "parent_group": null,
           "aliases": [
             "exportfin",
             "unduh_keuangan"
@@ -165,17 +218,19 @@
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Unduh rekapan riwayat mutasi transaksi keuangan pribadi Anda dalam file CSV."
         },
         {
           "name": "reset_keuangan",
+          "raw_name": "reset_keuangan",
+          "parent_group": null,
           "aliases": [
             "resetfin"
           ],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Hapus seluruh saldo dan riwayat catatan finansial pribadi Anda."
         }
       ]
     },
@@ -193,6 +248,8 @@
       "commands": [
         {
           "name": "pranknama",
+          "raw_name": "pranknama",
+          "parent_group": null,
           "aliases": [
             "hewanlucu",
             "ubahsemua"
@@ -208,6 +265,8 @@
         },
         {
           "name": "resetnama",
+          "raw_name": "resetnama",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
@@ -218,6 +277,8 @@
         },
         {
           "name": "set_confess_channel",
+          "raw_name": "set_confess_channel",
+          "parent_group": null,
           "aliases": [],
           "type": "Slash (/)",
           "parameters": [
@@ -226,62 +287,76 @@
           "permissions": [
             "administrator"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Set channel untuk menampung curhatan anonim."
         },
         {
           "name": "confess_setup",
+          "raw_name": "confess_setup",
+          "parent_group": null,
           "aliases": [],
           "type": "Slash (/)",
           "parameters": [],
           "permissions": [
             "administrator"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Kirim pesan instruksi dengan tombol curhat anonim di channel ini."
         },
         {
           "name": "confess",
+          "raw_name": "confess",
+          "parent_group": null,
           "aliases": [],
           "type": "Slash (/)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Kirim curhatan anonim lewat modal."
         },
         {
           "name": "tarot",
+          "raw_name": "tarot",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Lakukan ramalan Tarot (3 Kartu: Past, Present, Future) dengan tafsiran Raka."
         },
         {
           "name": "zodiak",
+          "raw_name": "zodiak",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Lihat ramalan zodiak harian ala Raka berdasarkan nama zodiak atau tanggal lahir (contoh: 25-10)."
         },
         {
           "name": "lifepath",
+          "raw_name": "lifepath",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Hitung Angka Lifepath (Numerologi) kamu berdasarkan tanggal lahir (format: DD-MM-YYYY)."
         },
         {
           "name": "roast",
+          "raw_name": "roast",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
             "user"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Minta Raka buat nge-roast (ngejek) seseorang atau diri sendiri."
         },
         {
           "name": "ship",
+          "raw_name": "ship",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -289,15 +364,17 @@
             "user2"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Cek persentase kecocokan jodoh antara dua orang!"
         },
         {
           "name": "8ball",
+          "raw_name": "8ball",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Tanya apa saja ke Magic 8-Ball ala Raka yang sarkas."
         }
       ]
     },
@@ -310,13 +387,18 @@
           "AI Chatbot percakapan alami melalui tag @RTMBOT, reply pesan, atau awalan !",
           "Codebase Self-Aware Memory: Mengetahui seluruh fitur, sintaks perintah, dan panduan bot",
           "Deteksi link phising dan gambar spam berbahaya dengan visual reasoning",
+          "Filter Keamanan & Whitelist Domain (/aifilter): /aifilter tambah_whitelist <domain> untuk whitelist link/domain aman agar tidak dihapus bot, /aifilter hapus_whitelist <domain>",
+          "Filter TLD Ekstensi (/aifilter): /aifilter tambah_tld <tld> untuk memblokir ekstensi mencurigakan (.xyz, .top, dll), /aifilter hapus_tld <tld>",
+          "Filter Kata & Gambar AI (/aifilter): /aifilter tambah_kata, /aifilter hapus_kata, /aifilter blokir_gambar",
           "Clear chat DM (!clear / !cleardm di DM pribadi untuk menghapus pesan bot & reset memori)"
         ]
       },
-      "commands_count": 15,
+      "commands_count": 50,
       "commands": [
         {
           "name": "cyber_toggle",
+          "raw_name": "cyber_toggle",
+          "parent_group": null,
           "aliases": [
             "cybertoggle",
             "onoffcyber"
@@ -326,10 +408,12 @@
           "permissions": [
             "administrator"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Nyalakan atau matikan sistem pertahanan AI RTM"
         },
         {
           "name": "addadmin",
+          "raw_name": "addadmin",
+          "parent_group": null,
           "aliases": [
             "+admin",
             "tambahadmin"
@@ -339,10 +423,12 @@
             "member"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Tambah admin untuk otorisasi sistem Cyber RTM"
         },
         {
           "name": "deladmin",
+          "raw_name": "deladmin",
+          "parent_group": null,
           "aliases": [
             "-admin",
             "hapusadmin"
@@ -352,10 +438,12 @@
             "member"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Hapus otorisasi admin sistem Cyber RTM"
         },
         {
           "name": "ai_whitelist_kata",
+          "raw_name": "ai_whitelist_kata",
+          "parent_group": null,
           "aliases": [
             "aw",
             "aman_kata"
@@ -365,10 +453,12 @@
           "permissions": [
             ""
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Tambahkan kata ke dalam daftar aman (Whitelist) bot AI"
         },
         {
           "name": "ai_unwhitelist_kata",
+          "raw_name": "ai_unwhitelist_kata",
+          "parent_group": null,
           "aliases": [
             "auw",
             "hapus_aman_kata"
@@ -378,10 +468,12 @@
           "permissions": [
             ""
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Hapus kata dari daftar aman bot AI"
         },
         {
           "name": "expert",
+          "raw_name": "expert",
+          "parent_group": null,
           "aliases": [
             "exp",
             "ahli",
@@ -390,20 +482,24 @@
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Buka panel untuk mode AI Spesialis/Expert"
         },
         {
           "name": "stop_expert",
+          "raw_name": "stop_expert",
+          "parent_group": null,
           "aliases": [
             "stop_konsul"
           ],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Hentikan mode AI Spesialis untuk dirimu"
         },
         {
           "name": "dewa_prompt",
+          "raw_name": "dewa_prompt",
+          "parent_group": null,
           "aliases": [
             "dp",
             "prompt",
@@ -412,10 +508,12 @@
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Minta AI menyusun prompt berkualitas tinggi berdasarkan idemu"
         },
         {
           "name": "black_ai",
+          "raw_name": "black_ai",
+          "parent_group": null,
           "aliases": [
             "ba",
             "black",
@@ -426,10 +524,12 @@
           "permissions": [
             ""
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Simulasi Reverse-Engineering / Analisis teknis sistem (Mode Dev)"
         },
         {
           "name": "balas",
+          "raw_name": "balas",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -439,49 +539,533 @@
           "permissions": [
             ""
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Perintahkan bot membalas pesan orang lain secara rahasia"
         },
         {
           "name": "ai",
+          "raw_name": "ai",
+          "parent_group": null,
           "aliases": [],
           "type": "Command Group",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Panel Kontrol Induk AI Raka"
         },
         {
           "name": "aimemori",
+          "raw_name": "aimemori",
+          "parent_group": null,
           "aliases": [],
           "type": "Command Group",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Panel Kontrol Memori & Pembelajaran AI"
         },
         {
           "name": "aisifat",
+          "raw_name": "aisifat",
+          "parent_group": null,
           "aliases": [],
           "type": "Command Group",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Panel Kontrol Emosi & Persona AI"
         },
         {
           "name": "aifilter",
+          "raw_name": "aifilter",
+          "parent_group": null,
           "aliases": [],
           "type": "Command Group",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Panel Kontrol Filter Keamanan & Blokir AI"
+        },
+        {
+          "name": "ai rangkum",
+          "raw_name": "rangkum",
+          "parent_group": "ai",
+          "aliases": [
+            "summary",
+            "tldr"
+          ],
+          "type": "Subcommand (ai)",
+          "parameters": [
+            "limit"
+          ],
+          "permissions": [],
+          "description": "Rangkum pesan terbaru dalam channel ini menggunakan AI"
+        },
+        {
+          "name": "ai auto_tag_toggle",
+          "raw_name": "auto_tag_toggle",
+          "parent_group": "ai",
+          "aliases": [],
+          "type": "Subcommand (ai)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Izinkan/Blokir bot untuk sewaktu-waktu nimbrung tanpa dipanggil"
+        },
+        {
+          "name": "ai ngobrol",
+          "raw_name": "ngobrol",
+          "parent_group": "ai",
+          "aliases": [],
+          "type": "Subcommand (ai)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Aktifkan mode obrolan AI non-stop di channel ini"
+        },
+        {
+          "name": "ai selesai",
+          "raw_name": "selesai",
+          "parent_group": "ai",
+          "aliases": [],
+          "type": "Subcommand (ai)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Matikan mode obrolan AI di channel ini"
+        },
+        {
+          "name": "ai reset",
+          "raw_name": "reset",
+          "parent_group": "ai",
+          "aliases": [],
+          "type": "Subcommand (ai)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Reset ingatan jangka pendek sesi obrolan di channel ini"
+        },
+        {
+          "name": "ai atur",
+          "raw_name": "atur",
+          "parent_group": "ai",
+          "aliases": [],
+          "type": "Subcommand (ai)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Set instruksi spesifik sementara (Khusus Owner)"
+        },
+        {
+          "name": "ai hapus_semua_jadwal",
+          "raw_name": "hapus_semua_jadwal",
+          "parent_group": "ai",
+          "aliases": [
+            "hj",
+            "reset_jadwal"
+          ],
+          "type": "Subcommand (ai)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Reset semua pengingat yang dibuat oleh bot"
+        },
+        {
+          "name": "ai tanya",
+          "raw_name": "tanya",
+          "parent_group": "ai",
+          "aliases": [],
+          "type": "Subcommand (ai)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Bicara atau tanyakan sesuatu langsung pada AI tanpa me-mention"
+        },
+        {
+          "name": "aisifat ngambek",
+          "raw_name": "ngambek",
+          "parent_group": "aisifat",
+          "aliases": [],
+          "type": "Subcommand (aisifat)",
+          "parameters": [
+            "id_user",
+            "menit"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Buat AI ngambek ke user tertentu (Khusus Owner)"
+        },
+        {
+          "name": "aisifat hapus_ngambek",
+          "raw_name": "hapus_ngambek",
+          "parent_group": "aisifat",
+          "aliases": [],
+          "type": "Subcommand (aisifat)",
+          "parameters": [
+            "id_user"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Hentikan bot ngambek ke user (Khusus Owner)"
+        },
+        {
+          "name": "aisifat patuh",
+          "raw_name": "patuh",
+          "parent_group": "aisifat",
+          "aliases": [],
+          "type": "Subcommand (aisifat)",
+          "parameters": [
+            "id_user",
+            "menit"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Atur bot agar sangat patuh pada user tertentu layaknya pembantu (Khusus Owner)"
+        },
+        {
+          "name": "aisifat hapus_patuh",
+          "raw_name": "hapus_patuh",
+          "parent_group": "aisifat",
+          "aliases": [],
+          "type": "Subcommand (aisifat)",
+          "parameters": [
+            "id_user"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Hapus status patuh ke user (Khusus Owner)"
+        },
+        {
+          "name": "aisifat atur_sifat",
+          "raw_name": "atur_sifat",
+          "parent_group": "aisifat",
+          "aliases": [
+            "as",
+            "sifat"
+          ],
+          "type": "Subcommand (aisifat)",
+          "parameters": [
+            "id_user",
+            "menit"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Atur sifat khusus AI ke user tertentu (Khusus Owner)"
+        },
+        {
+          "name": "aisifat hapus_sifat",
+          "raw_name": "hapus_sifat",
+          "parent_group": "aisifat",
+          "aliases": [
+            "hs"
+          ],
+          "type": "Subcommand (aisifat)",
+          "parameters": [
+            "id_user"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Hapus sifat khusus pada user tersebut (Khusus Owner)"
+        },
+        {
+          "name": "aisifat atur_sifat_all",
+          "raw_name": "atur_sifat_all",
+          "parent_group": "aisifat",
+          "aliases": [
+            "asa"
+          ],
+          "type": "Subcommand (aisifat)",
+          "parameters": [
+            "jam"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Terapkan sifat khusus AI ke semua user (Khusus Owner)"
+        },
+        {
+          "name": "aisifat hapus_sifat_all",
+          "raw_name": "hapus_sifat_all",
+          "parent_group": "aisifat",
+          "aliases": [
+            "hsa"
+          ],
+          "type": "Subcommand (aisifat)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Kembalikan AI ke sifat bawaan aslinya (Khusus Owner)"
+        },
+        {
+          "name": "aimemori pelajari",
+          "raw_name": "pelajari",
+          "parent_group": "aimemori",
+          "aliases": [
+            "learn"
+          ],
+          "type": "Subcommand (aimemori)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Picu proses AI untuk merangkum log obrolan dan mempelajari karakter server"
+        },
+        {
+          "name": "aimemori revisi_belajar",
+          "raw_name": "revisi_belajar",
+          "parent_group": "aimemori",
+          "aliases": [
+            "rb",
+            "rev"
+          ],
+          "type": "Subcommand (aimemori)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Perbaiki paksa data ingatan/konteks yang AI simpan (Khusus Owner)"
+        },
+        {
+          "name": "aimemori hasil_belajar",
+          "raw_name": "hasil_belajar",
+          "parent_group": "aimemori",
+          "aliases": [
+            "hb",
+            "summary_data"
+          ],
+          "type": "Subcommand (aimemori)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Cek apa yang AI ketahui mengenai lingkungan server ini sejauh ini"
+        },
+        {
+          "name": "aimemori ingatan",
+          "raw_name": "ingatan",
+          "parent_group": "aimemori",
+          "aliases": [
+            "otak",
+            "brain"
+          ],
+          "type": "Subcommand (aimemori)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Lihat list data teknis/kamus yang masuk ke database memori bot"
+        },
+        {
+          "name": "aimemori hapus_artikel",
+          "raw_name": "hapus_artikel",
+          "parent_group": "aimemori",
+          "aliases": [
+            "ha",
+            "delart"
+          ],
+          "type": "Subcommand (aimemori)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Hapus dokumen yang ada di otak AI (Khusus Owner)"
+        },
+        {
+          "name": "aimemori lupakan",
+          "raw_name": "lupakan",
+          "parent_group": "aimemori",
+          "aliases": [],
+          "type": "Subcommand (aimemori)",
+          "parameters": [
+            "keyword"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Hapus kamus kata pendek dari otak AI (Khusus Owner)"
+        },
+        {
+          "name": "aifilter tambah_kata",
+          "raw_name": "tambah_kata",
+          "parent_group": "aifilter",
+          "aliases": [],
+          "type": "Subcommand (aifilter)",
+          "parameters": [
+            "kata"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Tambahkan kata ke trigger filter SPAM/URL"
+        },
+        {
+          "name": "aifilter hapus_kata",
+          "raw_name": "hapus_kata",
+          "parent_group": "aifilter",
+          "aliases": [],
+          "type": "Subcommand (aifilter)",
+          "parameters": [
+            "kata"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Hapus kata dari trigger filter"
+        },
+        {
+          "name": "aifilter tambah_tld",
+          "raw_name": "tambah_tld",
+          "parent_group": "aifilter",
+          "aliases": [],
+          "type": "Subcommand (aifilter)",
+          "parameters": [
+            "tld"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Tambah akhiran domain mencurigakan (Contoh: .xyz)"
+        },
+        {
+          "name": "aifilter hapus_tld",
+          "raw_name": "hapus_tld",
+          "parent_group": "aifilter",
+          "aliases": [],
+          "type": "Subcommand (aifilter)",
+          "parameters": [
+            "tld"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Hapus akhiran domain dari daftar hitam"
+        },
+        {
+          "name": "aifilter tambah_whitelist",
+          "raw_name": "tambah_whitelist",
+          "parent_group": "aifilter",
+          "aliases": [],
+          "type": "Subcommand (aifilter)",
+          "parameters": [
+            "domain"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Tambahkan domain website aman"
+        },
+        {
+          "name": "aifilter hapus_whitelist",
+          "raw_name": "hapus_whitelist",
+          "parent_group": "aifilter",
+          "aliases": [],
+          "type": "Subcommand (aifilter)",
+          "parameters": [
+            "domain"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Hapus domain website dari daftar aman"
+        },
+        {
+          "name": "aifilter blokir_gambar",
+          "raw_name": "blokir_gambar",
+          "parent_group": "aifilter",
+          "aliases": [],
+          "type": "Subcommand (aifilter)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Tambahkan konsep gambar yang dilarang secara manual (Khusus Owner)"
+        },
+        {
+          "name": "aifilter hapus_blokir_gambar",
+          "raw_name": "hapus_blokir_gambar",
+          "parent_group": "aifilter",
+          "aliases": [],
+          "type": "Subcommand (aifilter)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Hapus deskripsi konsep gambar yang sebelumnya dilarang (Khusus Owner)"
+        },
+        {
+          "name": "aifilter set_channel_blokir_gambar",
+          "raw_name": "set_channel_blokir_gambar",
+          "parent_group": "aifilter",
+          "aliases": [],
+          "type": "Subcommand (aifilter)",
+          "parameters": [
+            "channel"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Set channel tempat menaruh gambar yang dilarang (Blacklist)"
         },
         {
           "name": "aiconfig",
+          "raw_name": "aiconfig",
+          "parent_group": null,
           "aliases": [],
           "type": "Command Group",
           "parameters": [],
           "permissions": [
             "administrator"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Konfigurasi channel belajar AI per server"
+        },
+        {
+          "name": "aiconfig set_learn_channel",
+          "raw_name": "set_learn_channel",
+          "parent_group": "aiconfig",
+          "aliases": [],
+          "type": "Subcommand (aiconfig)",
+          "parameters": [
+            "channel"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Tambah channel sebagai sumber belajar AI di server ini"
+        },
+        {
+          "name": "aiconfig hapus_learn_channel",
+          "raw_name": "hapus_learn_channel",
+          "parent_group": "aiconfig",
+          "aliases": [],
+          "type": "Subcommand (aiconfig)",
+          "parameters": [
+            "channel"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Hapus channel dari daftar sumber belajar AI"
+        },
+        {
+          "name": "aiconfig lihat_channel",
+          "raw_name": "lihat_channel",
+          "parent_group": "aiconfig",
+          "aliases": [],
+          "type": "Subcommand (aiconfig)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Lihat daftar channel belajar AI di server ini"
+        },
+        {
+          "name": "aiconfig reset_memori",
+          "raw_name": "reset_memori",
+          "parent_group": "aiconfig",
+          "aliases": [],
+          "type": "Subcommand (aiconfig)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Hapus semua ingatan AI khusus server ini (Khusus Owner)"
         }
       ]
     },
@@ -493,51 +1077,62 @@
         "key_features": [
           "Informasi pengguna (/userinfo, !userinfo) dan server (/serverinfo, !serverinfo)",
           "Unduh avatar resolusi penuh (/avatar, !avatar) dan banner (/banner, !banner)",
+          "Salin ID role via UI Dropdown (/getroleid, !idrole, !roleid) tanpa tag/mention (Anti-Ping)",
           "Statistik bot, memory usage, uptime, dan ping (/botinfo, !ping)"
         ]
       },
-      "commands_count": 6,
+      "commands_count": 8,
       "commands": [
         {
           "name": "tulis",
+          "raw_name": "tulis",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
             "nama"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Mengubah teks menjadi gambar tulisan tangan."
         },
         {
           "name": "faq",
+          "raw_name": "faq",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Menampilkan FAQ dengan tombol."
         },
         {
           "name": "user",
+          "raw_name": "user",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
             "user"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Menampilkan info profil user."
         },
         {
           "name": "avatar",
+          "raw_name": "avatar",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
             "user"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Menampilkan avatar user."
         },
         {
           "name": "set_gender",
+          "raw_name": "set_gender",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
@@ -547,7 +1142,34 @@
           "description": "Tidak ada deskripsi"
         },
         {
+          "name": "getserverasset",
+          "raw_name": "getserverasset",
+          "parent_group": null,
+          "aliases": [],
+          "type": "Hybrid (/ & !)",
+          "parameters": [
+            "guild_id"
+          ],
+          "permissions": [],
+          "description": "Mengambil nama, icon HD, dan banner server untuk dokumentasi/web."
+        },
+        {
+          "name": "getroleid",
+          "raw_name": "getroleid",
+          "parent_group": null,
+          "aliases": [
+            "idrole",
+            "roleid"
+          ],
+          "type": "Hybrid (/ & !)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Ambil dan salin ID role server via UI Dropdown tanpa perlu tag role."
+        },
+        {
           "name": "help",
+          "raw_name": "help",
+          "parent_group": null,
           "aliases": [
             "h",
             "bantuan"
@@ -555,7 +1177,7 @@
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Pusat panduan perintah dan fitur interaktif RTM-Bot"
         }
       ]
     },
@@ -575,6 +1197,8 @@
       "commands": [
         {
           "name": "giveaway",
+          "raw_name": "giveaway",
+          "parent_group": null,
           "aliases": [
             "kocok",
             "gstart"
@@ -591,10 +1215,12 @@
           "permissions": [
             "administrator"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Mulai giveaway baru (ketik tanpa argumen untuk buka formulir)"
         },
         {
           "name": "reroll",
+          "raw_name": "reroll",
+          "parent_group": null,
           "aliases": [
             "kocokulang",
             "greroll"
@@ -606,10 +1232,12 @@
           "permissions": [
             "administrator"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Pilih ulang pemenang giveaway"
         },
         {
           "name": "setlevelconfig",
+          "raw_name": "setlevelconfig",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -623,6 +1251,8 @@
         },
         {
           "name": "setlevelbadge",
+          "raw_name": "setlevelbadge",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -636,6 +1266,8 @@
         },
         {
           "name": "removelevelbadge",
+          "raw_name": "removelevelbadge",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -648,6 +1280,8 @@
         },
         {
           "name": "viewlevelconfig",
+          "raw_name": "viewlevelconfig",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -656,6 +1290,8 @@
         },
         {
           "name": "setlevelannouncement",
+          "raw_name": "setlevelannouncement",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -667,6 +1303,8 @@
         },
         {
           "name": "configrates",
+          "raw_name": "configrates",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -677,6 +1315,8 @@
         },
         {
           "name": "setlevelrole",
+          "raw_name": "setlevelrole",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -690,6 +1330,8 @@
         },
         {
           "name": "removelevelrole",
+          "raw_name": "removelevelrole",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -702,6 +1344,8 @@
         },
         {
           "name": "setvoicerole",
+          "raw_name": "setvoicerole",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -715,6 +1359,8 @@
         },
         {
           "name": "removevoicerole",
+          "raw_name": "removevoicerole",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -727,6 +1373,8 @@
         },
         {
           "name": "listvoiceroles",
+          "raw_name": "listvoiceroles",
+          "parent_group": null,
           "aliases": [
             "voiceroles"
           ],
@@ -737,6 +1385,8 @@
         },
         {
           "name": "setvoiceboost",
+          "raw_name": "setvoiceboost",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -750,6 +1400,8 @@
         },
         {
           "name": "removevoiceboost",
+          "raw_name": "removevoiceboost",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -762,6 +1414,8 @@
         },
         {
           "name": "listvoiceboost",
+          "raw_name": "listvoiceboost",
+          "parent_group": null,
           "aliases": [
             "voiceboosts"
           ],
@@ -772,6 +1426,8 @@
         },
         {
           "name": "uangall",
+          "raw_name": "uangall",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -784,6 +1440,8 @@
         },
         {
           "name": "xpall",
+          "raw_name": "xpall",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -796,6 +1454,8 @@
         },
         {
           "name": "addquest",
+          "raw_name": "addquest",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -810,22 +1470,28 @@
         },
         {
           "name": "daily_quest",
+          "raw_name": "daily_quest",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Cek deskripsi quest harian yang aktif saat ini"
         },
         {
           "name": "complete_quest",
+          "raw_name": "complete_quest",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Selesaikan quest harian untuk mengambil hadiah"
         },
         {
           "name": "giveexp",
+          "raw_name": "giveexp",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -839,6 +1505,8 @@
         },
         {
           "name": "givecoins",
+          "raw_name": "givecoins",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -852,6 +1520,8 @@
         },
         {
           "name": "transfercoins",
+          "raw_name": "transfercoins",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -859,10 +1529,12 @@
             "amount"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Transfer RSWN milikmu ke pengguna lain"
         },
         {
           "name": "setlevel",
+          "raw_name": "setlevel",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -876,52 +1548,64 @@
         },
         {
           "name": "leaderboard",
+          "raw_name": "leaderboard",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Melihat peringkat 10 besar EXP di server ini"
         },
         {
           "name": "weekly",
+          "raw_name": "weekly",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Melihat peringkat 10 besar EXP mingguan di server ini"
         },
         {
           "name": "voicepanel",
+          "raw_name": "voicepanel",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Pasang panel leaderboard dan aktivitas voice server yang otomatis ter-update."
         },
         {
           "name": "voicepanel_remove",
+          "raw_name": "voicepanel_remove",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Hapus dan nonaktifkan panel aktivitas voice di server ini"
         },
         {
           "name": "voicetime",
+          "raw_name": "voicetime",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
             "member"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Cek total durasi aktif di voice channel server ini"
         },
         {
           "name": "addvoicetime",
+          "raw_name": "addvoicetime",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -932,10 +1616,12 @@
             "weekly"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Tambahkan durasi voice untuk diri sendiri atau member lain"
         },
         {
           "name": "setvoicetime",
+          "raw_name": "setvoicetime",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -946,10 +1632,12 @@
             "weekly"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Atur total durasi voice diri sendiri atau member lain ke angka tertentu"
         },
         {
           "name": "setchannelrecord",
+          "raw_name": "setchannelrecord",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -960,18 +1648,22 @@
             "sedang_aktif"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Atur atau adopsi rekor voice channel terlama server (bisa untuk room yang sedang berjalan)"
         },
         {
           "name": "voicerecord",
+          "raw_name": "voicerecord",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Cek rekor durasi sesi voice channel terlama di server ini"
         },
         {
           "name": "rank",
+          "raw_name": "rank",
+          "parent_group": null,
           "aliases": [
             "karturank",
             "rankdetektif",
@@ -984,10 +1676,12 @@
             "member"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Lihat kartu lisensi resmi keanggotaan server, progress level, dan status RSWN"
         },
         {
           "name": "reduceuser",
+          "raw_name": "reduceuser",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1003,6 +1697,8 @@
         },
         {
           "name": "resetall",
+          "raw_name": "resetall",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -1013,6 +1709,8 @@
         },
         {
           "name": "manageitems",
+          "raw_name": "manageitems",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -1023,14 +1721,18 @@
         },
         {
           "name": "shop",
+          "raw_name": "shop",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Buka antarmuka toko interaktif untuk membeli item"
         },
         {
           "name": "toggleshop",
+          "raw_name": "toggleshop",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -1041,6 +1743,8 @@
         },
         {
           "name": "toggleexpshop",
+          "raw_name": "toggleexpshop",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -1051,6 +1755,8 @@
         },
         {
           "name": "additem",
+          "raw_name": "additem",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1068,6 +1774,8 @@
         },
         {
           "name": "addcollage",
+          "raw_name": "addcollage",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1080,6 +1788,8 @@
         },
         {
           "name": "removeitem",
+          "raw_name": "removeitem",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1111,6 +1821,8 @@
       "commands": [
         {
           "name": "games",
+          "raw_name": "games",
+          "parent_group": null,
           "aliases": [
             "minigames",
             "daftargame",
@@ -1123,6 +1835,8 @@
         },
         {
           "name": "stopgame",
+          "raw_name": "stopgame",
+          "parent_group": null,
           "aliases": [
             "resetgame",
             "batalgame",
@@ -1136,6 +1850,8 @@
         },
         {
           "name": "setgamechannel",
+          "raw_name": "setgamechannel",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1150,6 +1866,8 @@
         },
         {
           "name": "sambung",
+          "raw_name": "sambung",
+          "parent_group": null,
           "aliases": [
             "sk",
             "sambungkata",
@@ -1162,6 +1880,8 @@
         },
         {
           "name": "siapapaling",
+          "raw_name": "siapapaling",
+          "parent_group": null,
           "aliases": [
             "paling",
             "wholikely",
@@ -1176,6 +1896,8 @@
         },
         {
           "name": "tebakemoji",
+          "raw_name": "tebakemoji",
+          "parent_group": null,
           "aliases": [
             "emoji",
             "resmoji",
@@ -1188,6 +1910,8 @@
         },
         {
           "name": "hintemoji",
+          "raw_name": "hintemoji",
+          "parent_group": null,
           "aliases": [
             "bantuanemoji",
             "resplis"
@@ -1199,6 +1923,8 @@
         },
         {
           "name": "susunkata",
+          "raw_name": "susunkata",
+          "parent_group": null,
           "aliases": [
             "acak",
             "resacak"
@@ -1210,6 +1936,8 @@
         },
         {
           "name": "kuisipa",
+          "raw_name": "kuisipa",
+          "parent_group": null,
           "aliases": [
             "ipa",
             "resipa",
@@ -1222,6 +1950,8 @@
         },
         {
           "name": "hangman",
+          "raw_name": "hangman",
+          "parent_group": null,
           "aliases": [
             "tebakkata",
             "resman"
@@ -1233,6 +1963,8 @@
         },
         {
           "name": "bantuanhangman",
+          "raw_name": "bantuanhangman",
+          "parent_group": null,
           "aliases": [
             "hmanplis",
             "hinthangman"
@@ -1244,6 +1976,8 @@
         },
         {
           "name": "siapaaku",
+          "raw_name": "siapaaku",
+          "parent_group": null,
           "aliases": [
             "tebaksiapa",
             "siapakahaku"
@@ -1255,6 +1989,8 @@
         },
         {
           "name": "hitungcepat",
+          "raw_name": "hitungcepat",
+          "parent_group": null,
           "aliases": [
             "math",
             "hitung",
@@ -1267,6 +2003,8 @@
         },
         {
           "name": "pernahgak",
+          "raw_name": "pernahgak",
+          "parent_group": null,
           "aliases": [
             "nhie",
             "pernah"
@@ -1278,6 +2016,8 @@
         },
         {
           "name": "matamata",
+          "raw_name": "matamata",
+          "parent_group": null,
           "aliases": [
             "spyfall",
             "spy"
@@ -1289,6 +2029,8 @@
         },
         {
           "name": "tuduh",
+          "raw_name": "tuduh",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1299,6 +2041,8 @@
         },
         {
           "name": "ungkap_lokasi",
+          "raw_name": "ungkap_lokasi",
+          "parent_group": null,
           "aliases": [
             "ulokasi"
           ],
@@ -1309,6 +2053,8 @@
         },
         {
           "name": "kuismusik",
+          "raw_name": "kuismusik",
+          "parent_group": null,
           "aliases": [
             "startquiz",
             "musicquiz"
@@ -1320,6 +2066,8 @@
         },
         {
           "name": "jawab",
+          "raw_name": "jawab",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -1328,6 +2076,8 @@
         },
         {
           "name": "adddonasibtn",
+          "raw_name": "adddonasibtn",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1341,6 +2091,8 @@
         },
         {
           "name": "listdonasibtn",
+          "raw_name": "listdonasibtn",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -1351,6 +2103,8 @@
         },
         {
           "name": "removedonasibtn",
+          "raw_name": "removedonasibtn",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1381,6 +2135,8 @@
       "commands": [
         {
           "name": "addtrapcount",
+          "raw_name": "addtrapcount",
+          "parent_group": null,
           "aliases": [
             "addtimeoutcount"
           ],
@@ -1395,6 +2151,8 @@
         },
         {
           "name": "settrapcount",
+          "raw_name": "settrapcount",
+          "parent_group": null,
           "aliases": [
             "settimeoutcount"
           ],
@@ -1409,6 +2167,8 @@
         },
         {
           "name": "setuppanelrole",
+          "raw_name": "setuppanelrole",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -1422,10 +2182,12 @@
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Buat panel role dengan UI embed keren"
         },
         {
           "name": "addpanelrole",
+          "raw_name": "addpanelrole",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -1438,10 +2200,12 @@
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Tambah role ke dalam Panel Role"
         },
         {
           "name": "removepanelrole",
+          "raw_name": "removepanelrole",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -1451,10 +2215,12 @@
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Hapus role dari Panel Role"
         },
         {
           "name": "editpanelrole",
+          "raw_name": "editpanelrole",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -1467,10 +2233,12 @@
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Edit konten teks Panel Role yang sudah ada"
         },
         {
           "name": "setmainmembershiprole",
+          "raw_name": "setmainmembershiprole",
+          "parent_group": null,
           "aliases": [
             "smr"
           ],
@@ -1485,6 +2253,8 @@
         },
         {
           "name": "addmembershiprole",
+          "raw_name": "addmembershiprole",
+          "parent_group": null,
           "aliases": [
             "amr"
           ],
@@ -1499,6 +2269,8 @@
         },
         {
           "name": "removemembershiprole",
+          "raw_name": "removemembershiprole",
+          "parent_group": null,
           "aliases": [
             "rmr"
           ],
@@ -1513,6 +2285,8 @@
         },
         {
           "name": "setmembershipmessage",
+          "raw_name": "setmembershipmessage",
+          "parent_group": null,
           "aliases": [
             "smm"
           ],
@@ -1527,6 +2301,8 @@
         },
         {
           "name": "sendverificationbutton",
+          "raw_name": "sendverificationbutton",
+          "parent_group": null,
           "aliases": [
             "svb"
           ],
@@ -1539,6 +2315,8 @@
         },
         {
           "name": "kick",
+          "raw_name": "kick",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -1548,10 +2326,12 @@
             "kick_members",
             "kick_members"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Keluarkan member dari server"
         },
         {
           "name": "ban",
+          "raw_name": "ban",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -1561,10 +2341,12 @@
             "ban_members",
             "ban_members"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Blokir member dari server"
         },
         {
           "name": "softban",
+          "raw_name": "softban",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -1574,10 +2356,12 @@
             "ban_members",
             "ban_members"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Ban member dan langsung unban untuk bersihkan pesan dalam 7 hari"
         },
         {
           "name": "unban",
+          "raw_name": "unban",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
@@ -1585,10 +2369,12 @@
             "ban_members",
             "ban_members"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Cabut blokir member"
         },
         {
           "name": "warn",
+          "raw_name": "warn",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -1598,10 +2384,12 @@
             "kick_members",
             "kick_members"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Beri peringatan tercatat pada member"
         },
         {
           "name": "unwarn",
+          "raw_name": "unwarn",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -1612,10 +2400,12 @@
             "kick_members",
             "kick_members"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Hapus peringatan member"
         },
         {
           "name": "warnings",
+          "raw_name": "warnings",
+          "parent_group": null,
           "aliases": [
             "history"
           ],
@@ -1630,6 +2420,8 @@
         },
         {
           "name": "setgoodbye",
+          "raw_name": "setgoodbye",
+          "parent_group": null,
           "aliases": [
             "sbm"
           ],
@@ -1642,6 +2434,8 @@
         },
         {
           "name": "timeout",
+          "raw_name": "timeout",
+          "parent_group": null,
           "aliases": [
             "mute"
           ],
@@ -1654,10 +2448,12 @@
             "moderate_members",
             "moderate_members"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Bungkam member sementara"
         },
         {
           "name": "removetimeout",
+          "raw_name": "removetimeout",
+          "parent_group": null,
           "aliases": [
             "unmute"
           ],
@@ -1669,10 +2465,12 @@
             "moderate_members",
             "moderate_members"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Cabut status bungkam member"
         },
         {
           "name": "disconnect",
+          "raw_name": "disconnect",
+          "parent_group": null,
           "aliases": [
             "voicedisconnect",
             "vkick"
@@ -1682,10 +2480,12 @@
             "member"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Keluarkan member dari Voice Channel"
         },
         {
           "name": "clear",
+          "raw_name": "clear",
+          "parent_group": null,
           "aliases": [
             "purge",
             "bersihkan"
@@ -1699,10 +2499,12 @@
             "manage_messages",
             "manage_messages"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Menghapus pesan dalam jumlah tertentu di channel teks atau voice."
         },
         {
           "name": "slowmode",
+          "raw_name": "slowmode",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -1712,10 +2514,12 @@
             "manage_channels",
             "manage_channels"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Atur batas waktu kirim pesan channel"
         },
         {
           "name": "lock",
+          "raw_name": "lock",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -1725,10 +2529,12 @@
             "manage_channels",
             "manage_channels"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Kunci channel dari member biasa"
         },
         {
           "name": "unlock",
+          "raw_name": "unlock",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -1738,10 +2544,12 @@
             "manage_channels",
             "manage_channels"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Buka kembali kunci channel"
         },
         {
           "name": "addrole",
+          "raw_name": "addrole",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1755,6 +2563,8 @@
         },
         {
           "name": "removerole",
+          "raw_name": "removerole",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1768,6 +2578,8 @@
         },
         {
           "name": "nick",
+          "raw_name": "nick",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1780,6 +2592,8 @@
         },
         {
           "name": "channelrules",
+          "raw_name": "channelrules",
+          "parent_group": null,
           "aliases": [
             "cr"
           ],
@@ -1794,6 +2608,8 @@
         },
         {
           "name": "setwelcomechannel",
+          "raw_name": "setwelcomechannel",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -1802,10 +2618,12 @@
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Atur channel untuk ucapan selamat datang"
         },
         {
           "name": "setspamlog",
+          "raw_name": "setspamlog",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [
@@ -1814,10 +2632,12 @@
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Atur channel log khusus untuk sistem anti-spam & jebakan"
         },
         {
           "name": "addwhitelistrole",
+          "raw_name": "addwhitelistrole",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1830,6 +2650,8 @@
         },
         {
           "name": "removewhitelistrole",
+          "raw_name": "removewhitelistrole",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1842,6 +2664,8 @@
         },
         {
           "name": "setreactionrole",
+          "raw_name": "setreactionrole",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1856,6 +2680,8 @@
         },
         {
           "name": "setup",
+          "raw_name": "setup",
+          "parent_group": null,
           "aliases": [
             "settings",
             "setupserver"
@@ -1865,10 +2691,12 @@
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Buka Master Server Control Center untuk konfigurasi terpadu"
         },
         {
           "name": "panelrole",
+          "raw_name": "panelrole",
+          "parent_group": null,
           "aliases": [
             "ambilrole",
             "roles"
@@ -1878,10 +2706,12 @@
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Buka wizard visual pembuatan panel ambil role mandiri (Dropdown / Tombol)"
         },
         {
           "name": "ticket",
+          "raw_name": "ticket",
+          "parent_group": null,
           "aliases": [
             "tiket",
             "setupticket"
@@ -1891,10 +2721,12 @@
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Buka panel konfigurasi atau pasang panel tiket bantuan"
         },
         {
           "name": "announce",
+          "raw_name": "announce",
+          "parent_group": null,
           "aliases": [
             "pengumuman",
             "broadcast"
@@ -1906,20 +2738,24 @@
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Kirim pengumuman langsung via modal (Mendukung Webhook, Polling & Voice Channel)"
         },
         {
           "name": "modpanel",
+          "raw_name": "modpanel",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Membuat panel statistik dan moderasi server."
         },
         {
           "name": "toggle_status",
+          "raw_name": "toggle_status",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -1930,16 +2766,20 @@
         },
         {
           "name": "remove_modpanel",
+          "raw_name": "remove_modpanel",
+          "parent_group": null,
           "aliases": [],
           "type": "Hybrid (/ & !)",
           "parameters": [],
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Menghapus panel moderasi saat ini dari channel."
         },
         {
           "name": "trap",
+          "raw_name": "trap",
+          "parent_group": null,
           "aliases": [
             "setjebakan",
             "triggerchannel"
@@ -1952,7 +2792,7 @@
           "permissions": [
             "manage_guild"
           ],
-          "description": "Tidak ada deskripsi"
+          "description": "Set atau hapus channel sebagai jebakan anti-spam (Honey-pot)."
         }
       ]
     },
@@ -1971,6 +2811,8 @@
       "commands": [
         {
           "name": "resetcache",
+          "raw_name": "resetcache",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -1981,6 +2823,8 @@
         },
         {
           "name": "addpath",
+          "raw_name": "addpath",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -1994,6 +2838,8 @@
         },
         {
           "name": "removepath",
+          "raw_name": "removepath",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -2006,6 +2852,8 @@
         },
         {
           "name": "config",
+          "raw_name": "config",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -2016,6 +2864,8 @@
         },
         {
           "name": "checkcache",
+          "raw_name": "checkcache",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -2037,10 +2887,12 @@
           "Sistem peran tersembunyi via DM bot dengan alur pemungutan suara transparan"
         ]
       },
-      "commands_count": 6,
+      "commands_count": 13,
       "commands": [
         {
           "name": "ww",
+          "raw_name": "ww",
+          "parent_group": null,
           "aliases": [],
           "type": "Command Group",
           "parameters": [],
@@ -2048,7 +2900,81 @@
           "description": "Tidak ada deskripsi"
         },
         {
+          "name": "werewolf_group join",
+          "raw_name": "join",
+          "parent_group": "werewolf_group",
+          "aliases": [],
+          "type": "Subcommand (werewolf_group)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "werewolf_group keluar",
+          "raw_name": "keluar",
+          "parent_group": "werewolf_group",
+          "aliases": [],
+          "type": "Subcommand (werewolf_group)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "werewolf_group set",
+          "raw_name": "set",
+          "parent_group": "werewolf_group",
+          "aliases": [],
+          "type": "Subcommand (werewolf_group)",
+          "parameters": [],
+          "permissions": [
+            "manage_guild"
+          ],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "werewolf_group mulai",
+          "raw_name": "mulai",
+          "parent_group": "werewolf_group",
+          "aliases": [],
+          "type": "Subcommand (werewolf_group)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "werewolf_group batal",
+          "raw_name": "batal",
+          "parent_group": "werewolf_group",
+          "aliases": [],
+          "type": "Subcommand (werewolf_group)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "werewolf_group status",
+          "raw_name": "status",
+          "parent_group": "werewolf_group",
+          "aliases": [],
+          "type": "Subcommand (werewolf_group)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
+          "name": "werewolf_group help",
+          "raw_name": "help",
+          "parent_group": "werewolf_group",
+          "aliases": [],
+          "type": "Subcommand (werewolf_group)",
+          "parameters": [],
+          "permissions": [],
+          "description": "Tidak ada deskripsi"
+        },
+        {
           "name": "vote",
+          "raw_name": "vote",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -2059,6 +2985,8 @@
         },
         {
           "name": "stopwerewolfaudio",
+          "raw_name": "stopwerewolfaudio",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -2067,6 +2995,8 @@
         },
         {
           "name": "balapan",
+          "raw_name": "balapan",
+          "parent_group": null,
           "aliases": [
             "race"
           ],
@@ -2077,6 +3007,8 @@
         },
         {
           "name": "taruhan",
+          "raw_name": "taruhan",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -2088,6 +3020,8 @@
         },
         {
           "name": "stopbalapan",
+          "raw_name": "stopbalapan",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -2111,6 +3045,8 @@
       "commands": [
         {
           "name": "setchannelq",
+          "raw_name": "setchannelq",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -2123,6 +3059,8 @@
         },
         {
           "name": "sendquote",
+          "raw_name": "sendquote",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -2133,6 +3071,8 @@
         },
         {
           "name": "Tampilkan nama? (yes/no)",
+          "raw_name": "Tampilkan nama? (yes/no)",
+          "parent_group": null,
           "aliases": [
             "quote",
             "kirimquote"
@@ -2142,10 +3082,12 @@
             "show_name"
           ],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Kirim quotes."
         },
         {
           "name": "deletequote",
+          "raw_name": "deletequote",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -2158,6 +3100,8 @@
         },
         {
           "name": "listquotes",
+          "raw_name": "listquotes",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -2165,6 +3109,372 @@
             "administrator"
           ],
           "description": "Tidak ada deskripsi"
+        }
+      ]
+    },
+    "social_checker.py": {
+      "metadata": {
+        "name": "Social Media Real-Time Monitor (YouTube & TikTok)",
+        "category": "Radar & Social Media",
+        "description": "Pemantau channel YouTube dan akun TikTok secara otomatis dan real-time menggunakan MongoDB untuk pelacakan status live/video baru dan pengiriman kartu notifikasi.",
+        "key_features": [
+          "YouTube Tracker: /yt add, /yt remove, /yt setchannel, /yt setmention, /yt setmode, /yt toggle, /yt list, /yt test, /yt check",
+          "TikTok Tracker: /tt add, /tt remove, /tt setchannel, /tt setmention, /tt setmode, /tt toggle, /tt list, /tt test, /tt check",
+          "Checker Control: /checker list, /checker check, /checker interval, /checker cache, /checker resetcache",
+          "Penyimpanan database MongoDB untuk riwayat video terakhir dan live status"
+        ]
+      },
+      "commands_count": 26,
+      "commands": [
+        {
+          "name": "yt",
+          "raw_name": "yt",
+          "parent_group": null,
+          "aliases": [],
+          "type": "Command Group",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Manajemen pemantauan YouTube"
+        },
+        {
+          "name": "yt_group add",
+          "raw_name": "add",
+          "parent_group": "yt_group",
+          "aliases": [],
+          "type": "Subcommand (yt_group)",
+          "parameters": [
+            "identifier",
+            "target_channel"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Tambah channel YouTube untuk dipantau"
+        },
+        {
+          "name": "yt_group remove",
+          "raw_name": "remove",
+          "parent_group": "yt_group",
+          "aliases": [],
+          "type": "Subcommand (yt_group)",
+          "parameters": [
+            "identifier"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Hapus channel YouTube dari pemantauan"
+        },
+        {
+          "name": "yt_group setchannel",
+          "raw_name": "setchannel",
+          "parent_group": "yt_group",
+          "aliases": [],
+          "type": "Subcommand (yt_group)",
+          "parameters": [
+            "identifier",
+            "target_channel"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Ubah channel Discord tujuan notifikasi"
+        },
+        {
+          "name": "yt_group setmention",
+          "raw_name": "setmention",
+          "parent_group": "yt_group",
+          "aliases": [],
+          "type": "Subcommand (yt_group)",
+          "parameters": [
+            "identifier",
+            "role"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Ubah mention role (@everyone, @role, atau none)"
+        },
+        {
+          "name": "yt_group setmode",
+          "raw_name": "setmode",
+          "parent_group": "yt_group",
+          "aliases": [],
+          "type": "Subcommand (yt_group)",
+          "parameters": [
+            "identifier",
+            "mode"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Ubah mode pesan (ai, default, custom)"
+        },
+        {
+          "name": "yt_group toggle",
+          "raw_name": "toggle",
+          "parent_group": "yt_group",
+          "aliases": [],
+          "type": "Subcommand (yt_group)",
+          "parameters": [
+            "identifier"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Aktifkan atau nonaktifkan pemantauan channel"
+        },
+        {
+          "name": "yt_group list",
+          "raw_name": "list",
+          "parent_group": "yt_group",
+          "aliases": [],
+          "type": "Subcommand (yt_group)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Daftar channel YouTube yang dipantau"
+        },
+        {
+          "name": "yt_group test",
+          "raw_name": "test",
+          "parent_group": "yt_group",
+          "aliases": [],
+          "type": "Subcommand (yt_group)",
+          "parameters": [
+            "url"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Kirim kartu V2 uji coba untuk URL YouTube"
+        },
+        {
+          "name": "yt_group check",
+          "raw_name": "check",
+          "parent_group": "yt_group",
+          "aliases": [],
+          "type": "Subcommand (yt_group)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Paksa cek pembaruan YouTube sekarang"
+        },
+        {
+          "name": "tt",
+          "raw_name": "tt",
+          "parent_group": null,
+          "aliases": [],
+          "type": "Command Group",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Manajemen pemantauan TikTok"
+        },
+        {
+          "name": "tt_group add",
+          "raw_name": "add",
+          "parent_group": "tt_group",
+          "aliases": [],
+          "type": "Subcommand (tt_group)",
+          "parameters": [
+            "username",
+            "target_channel"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Tambah akun TikTok untuk dipantau"
+        },
+        {
+          "name": "tt_group remove",
+          "raw_name": "remove",
+          "parent_group": "tt_group",
+          "aliases": [],
+          "type": "Subcommand (tt_group)",
+          "parameters": [
+            "username"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Hapus akun TikTok dari pemantauan"
+        },
+        {
+          "name": "tt_group setchannel",
+          "raw_name": "setchannel",
+          "parent_group": "tt_group",
+          "aliases": [],
+          "type": "Subcommand (tt_group)",
+          "parameters": [
+            "username",
+            "target_channel"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Ubah channel Discord tujuan notifikasi"
+        },
+        {
+          "name": "tt_group setmention",
+          "raw_name": "setmention",
+          "parent_group": "tt_group",
+          "aliases": [],
+          "type": "Subcommand (tt_group)",
+          "parameters": [
+            "username",
+            "role"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Ubah mention role (@everyone, @role, atau none)"
+        },
+        {
+          "name": "tt_group setmode",
+          "raw_name": "setmode",
+          "parent_group": "tt_group",
+          "aliases": [],
+          "type": "Subcommand (tt_group)",
+          "parameters": [
+            "username",
+            "mode"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Ubah mode pesan (ai, default, custom)"
+        },
+        {
+          "name": "tt_group toggle",
+          "raw_name": "toggle",
+          "parent_group": "tt_group",
+          "aliases": [],
+          "type": "Subcommand (tt_group)",
+          "parameters": [
+            "username"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Aktifkan atau nonaktifkan pemantauan akun TikTok"
+        },
+        {
+          "name": "tt_group list",
+          "raw_name": "list",
+          "parent_group": "tt_group",
+          "aliases": [],
+          "type": "Subcommand (tt_group)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Daftar akun TikTok yang dipantau"
+        },
+        {
+          "name": "tt_group test",
+          "raw_name": "test",
+          "parent_group": "tt_group",
+          "aliases": [],
+          "type": "Subcommand (tt_group)",
+          "parameters": [
+            "url"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Kirim kartu V2 uji coba untuk URL TikTok"
+        },
+        {
+          "name": "tt_group check",
+          "raw_name": "check",
+          "parent_group": "tt_group",
+          "aliases": [],
+          "type": "Subcommand (tt_group)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Paksa cek pembaruan TikTok sekarang"
+        },
+        {
+          "name": "checker",
+          "raw_name": "checker",
+          "parent_group": null,
+          "aliases": [],
+          "type": "Command Group",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Manajemen global checker"
+        },
+        {
+          "name": "checker_group list",
+          "raw_name": "list",
+          "parent_group": "checker_group",
+          "aliases": [],
+          "type": "Subcommand (checker_group)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Daftar semua target YouTube & TikTok"
+        },
+        {
+          "name": "checker_group check",
+          "raw_name": "check",
+          "parent_group": "checker_group",
+          "aliases": [],
+          "type": "Subcommand (checker_group)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Cek pembaruan semua target secara serentak"
+        },
+        {
+          "name": "checker_group interval",
+          "raw_name": "interval",
+          "parent_group": "checker_group",
+          "aliases": [],
+          "type": "Subcommand (checker_group)",
+          "parameters": [
+            "seconds"
+          ],
+          "permissions": [
+            ""
+          ],
+          "description": "Ubah interval polling checker dalam detik"
+        },
+        {
+          "name": "checker_group cache",
+          "raw_name": "cache",
+          "parent_group": "checker_group",
+          "aliases": [],
+          "type": "Subcommand (checker_group)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Lihat jumlah ID tersimpan di cache"
+        },
+        {
+          "name": "checker_group resetcache",
+          "raw_name": "resetcache",
+          "parent_group": "checker_group",
+          "aliases": [],
+          "type": "Subcommand (checker_group)",
+          "parameters": [],
+          "permissions": [
+            ""
+          ],
+          "description": "Reset cache ID yang sudah diposting"
         }
       ]
     },
@@ -2180,23 +3490,200 @@
           "Admin setup: /vcadmin settrigger (atur kanal pemicu), /vcadmin setcat (kategori)"
         ]
       },
-      "commands_count": 2,
+      "commands_count": 15,
       "commands": [
         {
           "name": "vcadmin",
+          "raw_name": "vcadmin",
+          "parent_group": null,
           "aliases": [],
           "type": "Command Group",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Admin: Kelola konfigurasi channel suara sementara"
+        },
+        {
+          "name": "vcadmin_group settrigger",
+          "raw_name": "settrigger",
+          "parent_group": "vcadmin_group",
+          "aliases": [],
+          "type": "Subcommand (vcadmin_group)",
+          "parameters": [
+            "channel"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Admin: Atur channel pemicu untuk join-to-create"
+        },
+        {
+          "name": "vcadmin_group setcat",
+          "raw_name": "setcat",
+          "parent_group": "vcadmin_group",
+          "aliases": [],
+          "type": "Subcommand (vcadmin_group)",
+          "parameters": [
+            "category"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Admin: Atur kategori tempat channel sementara dibuat"
+        },
+        {
+          "name": "vcadmin_group reset",
+          "raw_name": "reset",
+          "parent_group": "vcadmin_group",
+          "aliases": [],
+          "type": "Subcommand (vcadmin_group)",
+          "parameters": [],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Admin: Hapus total/reset pengaturan trigger & kategori (Mematikan fitur Temp VC)"
         },
         {
           "name": "vc",
+          "raw_name": "vc",
+          "parent_group": null,
           "aliases": [],
           "type": "Command Group",
           "parameters": [],
           "permissions": [],
-          "description": "Tidak ada deskripsi"
+          "description": "Kelola ruangan pribadimu"
+        },
+        {
+          "name": "vc_group lock",
+          "raw_name": "lock",
+          "parent_group": "vc_group",
+          "aliases": [],
+          "type": "Subcommand (vc_group)",
+          "parameters": [],
+          "permissions": [
+            "lambda ctx: ctx.cog.is_owner_vc(ctx"
+          ],
+          "description": "Gembok ruangan agar orang lain tidak bisa masuk"
+        },
+        {
+          "name": "vc_group unlock",
+          "raw_name": "unlock",
+          "parent_group": "vc_group",
+          "aliases": [],
+          "type": "Subcommand (vc_group)",
+          "parameters": [],
+          "permissions": [
+            "lambda ctx: ctx.cog.is_owner_vc(ctx"
+          ],
+          "description": "Buka gembok ruangan agar siapa saja bisa masuk"
+        },
+        {
+          "name": "vc_group limit",
+          "raw_name": "limit",
+          "parent_group": "vc_group",
+          "aliases": [],
+          "type": "Subcommand (vc_group)",
+          "parameters": [
+            "limit"
+          ],
+          "permissions": [
+            "lambda ctx: ctx.cog.is_owner_vc(ctx"
+          ],
+          "description": "Atur maksimal jumlah orang di ruangan"
+        },
+        {
+          "name": "vc_group rename",
+          "raw_name": "rename",
+          "parent_group": "vc_group",
+          "aliases": [],
+          "type": "Subcommand (vc_group)",
+          "parameters": [],
+          "permissions": [
+            "lambda ctx: ctx.cog.is_owner_vc(ctx"
+          ],
+          "description": "Ganti papan nama ruangan"
+        },
+        {
+          "name": "vc_group kick",
+          "raw_name": "kick",
+          "parent_group": "vc_group",
+          "aliases": [],
+          "type": "Subcommand (vc_group)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [
+            "lambda ctx: ctx.cog.is_owner_vc(ctx"
+          ],
+          "description": "Tendang penyusup dari ruangan"
+        },
+        {
+          "name": "vc_group grant",
+          "raw_name": "grant",
+          "parent_group": "vc_group",
+          "aliases": [],
+          "type": "Subcommand (vc_group)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [
+            "lambda ctx: ctx.cog.is_owner_vc(ctx"
+          ],
+          "description": "Beri izin VIP untuk user tertentu masuk"
+        },
+        {
+          "name": "vc_group revoke",
+          "raw_name": "revoke",
+          "parent_group": "vc_group",
+          "aliases": [],
+          "type": "Subcommand (vc_group)",
+          "parameters": [
+            "member"
+          ],
+          "permissions": [
+            "lambda ctx: ctx.cog.is_owner_vc(ctx"
+          ],
+          "description": "Cabut izin VIP dari user tertentu"
+        },
+        {
+          "name": "vc_group transfer",
+          "raw_name": "transfer",
+          "parent_group": "vc_group",
+          "aliases": [],
+          "type": "Subcommand (vc_group)",
+          "parameters": [
+            "new_owner"
+          ],
+          "permissions": [
+            "lambda ctx: ctx.cog.is_owner_vc(ctx"
+          ],
+          "description": "Berikan hak milik ruangan ke temanmu"
+        },
+        {
+          "name": "vc_group delete",
+          "raw_name": "delete",
+          "parent_group": "vc_group",
+          "aliases": [],
+          "type": "Subcommand (vc_group)",
+          "parameters": [],
+          "permissions": [
+            "lambda ctx: ctx.cog.is_owner_vc(ctx"
+          ],
+          "description": "Tutup paksa dan hapus ruanganmu sekarang"
+        },
+        {
+          "name": "vcadmin_group transfer",
+          "raw_name": "transfer",
+          "parent_group": "vcadmin_group",
+          "aliases": [],
+          "type": "Subcommand (vcadmin_group)",
+          "parameters": [
+            "channel",
+            "new_owner"
+          ],
+          "permissions": [
+            "administrator"
+          ],
+          "description": "Admin: Paksa alihkan hak milik sebuah ruangan sementara"
         }
       ]
     },
@@ -2229,6 +3716,8 @@
       "commands": [
         {
           "name": "send_webhook",
+          "raw_name": "send_webhook",
+          "parent_group": null,
           "aliases": [
             "swh"
           ],
@@ -2241,6 +3730,8 @@
         },
         {
           "name": "edit_broadcast",
+          "raw_name": "edit_broadcast",
+          "parent_group": null,
           "aliases": [
             "eb"
           ],
@@ -2256,6 +3747,8 @@
         },
         {
           "name": "announcement",
+          "raw_name": "announcement",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -2268,6 +3761,8 @@
         },
         {
           "name": "send_media",
+          "raw_name": "send_media",
+          "parent_group": null,
           "aliases": [
             "sm"
           ],
@@ -2282,6 +3777,8 @@
         },
         {
           "name": "schedule",
+          "raw_name": "schedule",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -2292,6 +3789,8 @@
         },
         {
           "name": "list_schedules",
+          "raw_name": "list_schedules",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -2302,6 +3801,8 @@
         },
         {
           "name": "load_config",
+          "raw_name": "load_config",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -2315,6 +3816,8 @@
         },
         {
           "name": "backup_config",
+          "raw_name": "backup_config",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -2327,6 +3830,8 @@
         },
         {
           "name": "list_configs",
+          "raw_name": "list_configs",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [],
@@ -2337,6 +3842,8 @@
         },
         {
           "name": "set_single_role",
+          "raw_name": "set_single_role",
+          "parent_group": null,
           "aliases": [],
           "type": "Prefix (!)",
           "parameters": [
@@ -2363,6 +3870,54 @@
         "panel"
       ],
       "summary": "Gunakan perintah `/setup` (khusus Administrator) untuk membuka Master Setup Dashboard. Di dashboard ini kamu bisa mengatur: Welcome Channel & Pesan, Booster Channel & Pesan, Ticket Channel & Kategori, Log Channel Audit, dan Trigger Channel Anti-Spam Trap."
+    },
+    {
+      "topic": "Keamanan Link, TLD & Domain Whitelist (AIFilter)",
+      "keywords": [
+        "whitelist",
+        "domain",
+        "tld",
+        "kehapus",
+        "aifilter",
+        "link",
+        "aman",
+        "filter link",
+        "blokir link",
+        "izin link",
+        "phishing",
+        "scam"
+      ],
+      "summary": "Panduan pengelolaan domain aman dan proteksi link via `/aifilter`:\n1. Tambah domain ke whitelist (agar link aman dan tidak terhapus bot):\n   `/aifilter tambah_whitelist domain:<nama_domain>` (contoh: `/aifilter tambah_whitelist domain:example.com` atau `rhdevs.my.id`).\n2. Hapus domain dari whitelist:\n   `/aifilter hapus_whitelist domain:<nama_domain>`.\n3. Tambah ekstensi TLD berbahaya yang otomatis diblokir:\n   `/aifilter tambah_tld tld:<ekstensi>` (contoh: `/aifilter tambah_tld tld:.xyz` atau `.top` atau `.ru`).\n4. Hapus ekstensi TLD dari daftar blokir:\n   `/aifilter hapus_tld tld:<ekstensi>`.\n5. Tambah kata terlarang: `/aifilter tambah_kata kata:<kata>`.\n6. Hapus kata terlarang: `/aifilter hapus_kata kata:<kata>`.\n7. Blokir gambar berbahaya/phising: `/aifilter blokir_gambar deskripsi_gambar:<deskripsi>`.\nCatatan: Perintah `/aifilter` memerlukan izin Bot Owner."
+    },
+    {
+      "topic": "Social Media Real-Time Monitor (YouTube & TikTok)",
+      "keywords": [
+        "social",
+        "checker",
+        "tiktok",
+        "youtube",
+        "yt",
+        "tt",
+        "feed",
+        "cek live",
+        "mongo",
+        "notif video"
+      ],
+      "summary": "Panduan pemantauan media sosial real-time terintegrasi MongoDB:\n1. YouTube Monitor: `/yt add channel_id:<ID> text_channel:<#channel>` untuk memantau channel, `/yt remove channel_id:<ID>`, `/yt list`, `/yt check` untuk cek manual.\n2. TikTok Monitor: `/tt add username:<username> text_channel:<#channel>` untuk memantau akun TikTok, `/tt remove username:<username>`, `/tt list`, `/tt check` untuk cek manual.\n3. Hub Kontrol: `/checker check` untuk memeriksa seluruh feed sekarang, `/checker interval` untuk atur jeda pemindaian, dan `/checker cache` untuk melihat cache video."
+    },
+    {
+      "topic": "Salin ID Role Server Tanpa Tag (Anti-Ping)",
+      "keywords": [
+        "role id",
+        "id role",
+        "getroleid",
+        "roleid",
+        "salin id",
+        "ambil id role",
+        "dropdown role",
+        "tanpa tag"
+      ],
+      "summary": "Gunakan perintah `/getroleid` (atau `!idrole`, `!roleid`) untuk membuka menu dropdown Discord Role Select. Pilih salah satu role server untuk melihat detailnya dan menyalin ID role secara langsung tanpa perlu melakukan tag atau mention yang bisa menimbulkan ping mengganggu ke member."
     },
     {
       "topic": "Setup Pesan Sambutan (Welcome Message & Banner)",

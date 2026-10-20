@@ -1610,20 +1610,28 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
             if is_clear:
                 try:
                     deleted_count = 0
-                    async for msg in message.channel.history(limit=del_limit):
+                    async for msg in message.channel.history(limit=100):
                         if msg.author.id == self.bot.user.id:
                             try:
                                 await msg.delete()
                                 deleted_count += 1
+                                if deleted_count >= del_limit:
+                                    break
                                 await asyncio.sleep(0.2)
                             except Exception:
                                 pass
                     if message.author.id in self.dm_history:
                         self.dm_history[message.author.id].clear()
-                    await message.channel.send(
-                        f"🧹 Berhasil membersihkan **{deleted_count}** pesan bot di DM pribadi ini dan mereset memori percakapan.",
-                        delete_after=10
-                    )
+                    if deleted_count > 0:
+                        await message.channel.send(
+                            f"🧹 Berhasil membersihkan **{deleted_count}** pesan bot di DM pribadi ini dan mereset memori percakapan.",
+                            delete_after=6
+                        )
+                    else:
+                        await message.channel.send(
+                            "🧹 Memori percakapan AI di DM berhasil direset. (Tidak ada pesan bot yang perlu dihapus dalam riwayat terkini).",
+                            delete_after=6
+                        )
                 except Exception as e:
                     log.error(f"[DM_CLEAR_ERROR] {e}")
                 return

@@ -280,6 +280,10 @@ async def on_error(event, *args, **kwargs):
 async def on_message(message):
     if message.author.bot:
         return
+    if not message.guild:
+        lower = message.content.strip().lower()
+        if lower.startswith(("!clear", "!cleardm", "!purge", "!reset", "!hapus", "clear", "cleardm")):
+            return
     await bot.process_commands(message)
 
 @bot.event

@@ -997,11 +997,20 @@ class TavernPartyGames(commands.Cog, name="Tavern & Party Games"):
 
                 await self._send_night_action_DMs(game_state)
 
-                night_duration = global_config.get("night_duration_seconds", 90)
-                game_state['timers']['night_end_time'] = datetime.utcnow() + timedelta(seconds=night_duration)
+                night_duration = global_config.get("night_duration_seconds", 60)
+                end_time = datetime.utcnow() + timedelta(seconds=night_duration)
+                game_state['timers']['night_end_time'] = end_time
                 print(f"[{datetime.now()}] [DEBUG WW] Malam Hari {game_state['day_num']} akan berakhir pada: {game_state['timers']['night_end_time']}.")
                 try:
-                    await asyncio.sleep(night_duration)
+                    while datetime.utcnow() < end_time:
+                        living_ww = [p for p in game_state['players'].values() if p['status'] == 'alive' and p['role_info'].get('team') == 'Werewolf' and p['role'] in ['Werewolf', 'Alpha Werewolf']]
+                        living_special_village = [p for p in game_state['players'].values() if p['status'] == 'alive' and p['role_info'].get('team') == 'Village' and p['role_info'].get('action_prompt')]
+                        ww_done = not living_ww or bool(game_state.get('werewolf_votes'))
+                        village_done = all(p['obj'].id in game_state.get('role_actions_pending', {}) for p in living_special_village)
+                        if ww_done and village_done and (living_ww or living_special_village):
+                            await main_channel.send("✨ **Semua tindakan malam telah diterima.** Fajar menyingsing lebih cepat...", delete_after=5)
+                            break
+                        await asyncio.sleep(2)
                 except asyncio.CancelledError:
                     raise
 

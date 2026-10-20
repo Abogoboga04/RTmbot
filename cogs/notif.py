@@ -1196,9 +1196,7 @@ Berikan teks pengumuman kamu sekarang:"""
                         media_url=youtube_thumbnail
                     )
                     try:
-                        if message_content and message_content.strip():
-                            await target_channel.send(message_content)
-                        resp = await send_v2_message(self.bot, target_channel.id, [card])
+                        resp = await send_v2_message(self.bot, target_channel.id, [card], content=message_content)
                     except Exception as err:
                         with open("notif_v2_error.txt", "a") as f:
                             f.write(f"V2 Error: {err}\n")

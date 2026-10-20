@@ -3812,6 +3812,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             await ctx.send(embed=self._create_embed(description=f"❌ Terjadi kesalahan: {e}", color=self.color_error))
         
     @commands.hybrid_command(name="clear", aliases=["purge", "bersihkan"], description="Menghapus pesan dalam jumlah tertentu di channel teks atau voice.")
+    @commands.guild_only()
     @app_commands.default_permissions(manage_messages=True)
     @app_commands.describe(amount="Jumlah pesan yang akan dihapus (1-100)", channel="Channel target (opsional, bisa Text/Voice/Thread)")
     @commands.has_permissions(manage_messages=True)
