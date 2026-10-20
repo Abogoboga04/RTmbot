@@ -526,7 +526,7 @@ Berdasarkan temuan notifikasi siaran asing (seperti Jeje Adriel `tSGFKJwthGY`, F
 
 ---
 
-## 12. PERBAIKAN BUG `!balapan` & RENCANA FITUR MANDIRI TIKTOK AUTO-CHECKER
+## 12. PERBAIKAN BUG `!balapan` & ARSITEKTUR MANDIRI `TikTokChecker`
 
 ### A. Perbaikan Bug `!balapan` (`TavernPartyGames` Error)
 
@@ -535,7 +535,7 @@ Pada file [cogs/party_games.py](file:///c:/Users/Administrator/Downloads/rtmbot/
 ```python
 self._get_current_bets_text(race_state['bets'], race_state['horses'])
 ```
-Method `_get_current_bets_text` belum didefinisikan di dalam kelas `TavernPartyGames`, sehingga Python memicu:
+Method `_get_current_bets_text` belum didefinisikan di dalam kelas `TavernPartyGames`, sehingga memicu:
 ```text
 Unhandled command error in 'balapan': 'TavernPartyGames' object has no attribute '_get_current_bets_text'
 ```
@@ -544,10 +544,8 @@ Unhandled command error in 'balapan': 'TavernPartyGames' object has no attribute
 Menambahkan method helper `_get_current_bets_text` pada kelas `TavernPartyGames` di [cogs/party_games.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/party_games.py):
 ```python
 def _get_current_bets_text(self, bets: dict, horses: list) -> str:
-    """Format ringkasan taruhan saat ini untuk ditampilkan di embed."""
     if not bets:
         return "- Belum ada taruhan.\n"
-    
     horse_map = {h['id']: h['name'] for h in horses}
     lines = []
     for user_id_str, bet_info in bets.items():
@@ -558,66 +556,97 @@ def _get_current_bets_text(self, bets: dict, horses: list) -> str:
 
 ---
 
-### B. Rencana Fitur Mandiri TikTok Native Auto-Checker (Sistem Notifikasi Otomatis Persis YouTube)
+### B. Arsitektur Mandiri Profesional: `cogs/tiktok_checker.py` (`TikTokChecker`)
 
-Sesuai permintaan pengguna, fitur pemantau TikTok dibuat **mandiri dengan logika persis seperti YouTube** (Instagram ditunda ke tahap berikutnya):
-1. Pengguna mendaftarkan akun TikTok yang dipantau (misal `!ttadd @rizwanfadilah.a.s`).
-2. Bot secara otomatis melakukan pemantauan berkala (*background loop*).
-3. Saat akun target mengunggah video TikTok baru:
-   - Link video langsung ditangkap seketika (`https://www.tiktok.com/@{username}/video/{id}`).
-   - Metadata lengkap diekstrak (caption, nama kreator, cover thumbnail, upload timestamp).
-   - Gemini AI menyusun copywriting pengumuman kontekstual.
-   - Mengirim kartu Discord V2 (**1 pesan tunggal terpadu**).
-   - ID video dicatat ke cache MongoDB agar tidak terjadi spam/notifikasi ganda.
+Sesuai instruksi pengguna:
+- **Nama File & Kelas Ringkas & Profesional:** [cogs/tiktok_checker.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/tiktok_checker.py) $\rightarrow$ `TikTokChecker(commands.Cog)`
+- **Akses Pengujian Khusus Owner:** Seluruh perintah diproteksi dengan `@commands.is_owner()` sehingga hanya pemilik bot yang dapat mengakses dan menguji selama masa pengetesan.
+- **Dukungan Hybrid Command:** Menggunakan `@commands.hybrid_group` dan `@commands.hybrid_command` sehingga dapat dipanggil via Prefix (`!tt ...`) maupun Slash Command (`/tt ...`).
+- **Kebersihan Kode (Zero Slop / No Comment Bloat):** Kode bersih, modular, dan lugas tanpa hiasan banner ASCII, narasi berlebihan, atau catatan hardcode yang memenuhi file.
+- **Penyimpanan Terpusat di MongoDB:** Seluruh konfigurasi dan cache riwayat tersimpan permanen di database `reSwan` (koleksi `tiktok_config` dan `tiktok_cache`), aman dari restart dan deployment.
 
-#### 1. Mekanisme Ekstraksi Metadata TikTok (Kebal Slardar WAF)
-- Halaman web TikTok desktop saat ini dilindungi oleh *Slardar WAF* yang memblokir scraping `urllib/aiohttp` polos.
-- Solusi andal 100%: Menggunakan engine `yt_dlp` (yang sudah terpasang di bot) dijalankan secara *asynchronous* (`asyncio.to_thread`):
+#### 1. Skema Konfigurasi Fleksibel (Setara Penuh `cogs/notif.py`)
+Struktur konfigurasi di MongoDB (`tiktok_config`):
+```json
+{
+  "_id": "tiktok_config",
+  "data": {
+    "check_interval_seconds": 30,
+    "accounts": [
+      {
+        "username": "rizwanfadilah.a.s",
+        "display_name": "Njan",
+        "target_guild_id": 1234567890,
+        "target_channel_id": 1417636236356485141,
+        "mention_role": "@everyone",
+        "ai_enabled": true,
+        "enabled": true,
+        "added_at": "2026-10-20T18:30:00Z"
+      }
+    ]
+  }
+}
+```
+
+Struktur cache di MongoDB (`tiktok_cache`):
+```json
+{
+  "_id": "tiktok_cache",
+  "data": {
+    "posted_video_ids": ["7698275878328978740"]
+  }
+}
+```
+
+#### 2. Mesin Ekstraksi Video Otomatis (`yt_dlp` Asynchronous Engine)
+- Memindai profil target secara berkala via thread `asyncio.to_thread`:
   ```python
   ydl_opts = {
       'extract_flat': True,
       'quiet': True,
       'no_warnings': True,
-      'playlist_items': '1:3' # Ambil 3 video terbaru
+      'playlist_items': '1:3'
   }
   ```
-  *Hasil Uji Langsung pada `@rizwanfadilah.a.s`:* Berhasil 100% dalam ~3 detik, mendapatkan Video ID (`7698275878328978740`), Caption (`skrg dah bisa jamming bareng...`), Creator Name (`Njan`), Cover URL, dan Timestamp unggahan.
+- **Kelebihan Teruji:** 100% kebal blokir *Slardar WAF* TikTok, waktu eksekusi cepat (~3 detik), dan langsung menghasilkan Video ID, Caption utuh, Uploader Name, Thumbnail Cover, dan Upload Timestamp.
+- **Timestamp Freshness Guard:** Hanya memproses video yang diunggah kurang dari 6 jam untuk mencegah pengiriman arsip video lama saat akun baru didaftarkan.
 
-#### 2. Struktur Penyimpanan di MongoDB
-- Koleksi `tiktok_test_config`:
-  - Menyimpan daftar akun TikTok yang dipantau (`username`, `channel_name`, `target_discord_channel_id`, `mention_role`, `enabled`).
-- Koleksi `tiktok_test_cache`:
-  - Menyimpan riwayat ID video TikTok yang sudah pernah dikirim (`posted_tiktok_ids`).
-
-#### 3. Timestamp Freshness Guard & Anti-Spam
-- Video yang terdeteksi dicek timestamp-nya (`timestamp`).
-- Jika video sudah diunggah lebih dari 6 jam lalu saat bot pertama kali memantau, video langsung dimasukkan ke cache diam-diam tanpa spam pengumuman.
-
-#### 4. Harmonisasi Tampilan Discord V2 Card (1 Pesan Tunggal)
-Mengikuti standar tampilan 1:1 Foto 3:
-- Mention & AI Hype: `@everyone [Copywriting santai kontekstual dari Gemini sesuai caption video]`
+#### 3. Format Notifikasi Discord V2 (1 Pesan Tunggal Terpadu)
+Format diselaraskan 1:1 Foto 3:
+- Mention & AI Hype: `@everyone [Copywriting santai kontekstual dari Gemini]`
 - Judul: `[{caption_singkat}]({tiktok_url})` (Markdown H1 Link)
 - Subtitle: `{deskripsi_caption}...\n\n{tiktok_url}`
-- Gambar: Cover / Thumbnail Video TikTok
-- Tombol: `"Tonton di TikTok"` (Link Button, Style 5)
+- Gambar: Thumbnail cover video TikTok
+- Tombol: `"Tonton di TikTok"` (Link Style 5)
 - Pengiriman: Disatukan dalam 1 pesan via `send_v2_message(..., content=mention_content)`.
 
-#### 5. Perintah Pengguna Khusus TikTok (Dedicated Commands)
-- `!ttadd <username>`: Daftarkan akun TikTok untuk dipantau secara otomatis (target Discord ditetapkan ke channel saat ini).
-- `!ttdel <username>`: Hapus akun TikTok dari daftar pantauan.
-- `!ttlist`: Tampilkan daftar akun TikTok yang sedang aktif dipantau.
-- `!tttest <url>`: Uji coba langsung pengiriman kartu notifikasi V2 untuk link TikTok tertentu.
-- `!ttcheck`: Paksa pengecekan pembaruan video TikTok secara manual saat itu juga.
+#### 4. Kumpulan Perintah Lengkap (Hybrid Slash & Prefix - Owner Only)
+Root Group: `/tt` atau `!tt`
+- **Pendaftaran & Pengaturan Target:**
+  - `!tt add <username> [target_channel]` (Target channel fleksibel: bisa mention `#channel`, ketik channel ID dari server mana saja, atau kosongkan untuk channel saat ini).
+  - `!tt setchannel <username> <target_channel>` (Ubah target channel pengiriman untuk akun tertentu dari mana saja).
+  - `!tt setmention <username> <mention>` (Ubah sebutan notifikasi per akun: `@everyone`, `@role`, atau `none`).
+  - `!tt toggle <username>` (Mengaktifkan/menonaktifkan pemantauan akun tanpa menghapus datanya).
+  - `!tt interval <detik>` (Ubah interval loop pemantauan secara dinamis).
+  - `!tt remove <username>` (Hapus akun dari pemantauan).
+- **Pemantauan & Pengujian:**
+  - `!tt list` (Tampilkan embed status akun yang dipantau, target channel, role mention, status aktif, dan interval loop).
+  - `!tt test <url>` (Uji coba langsung pengiriman kartu notifikasi V2 untuk link video TikTok tertentu).
+  - `!tt check` (Trigger pengecekan manual semua akun TikTok saat itu juga).
+- **Pengelolaan Cache:**
+  - `!tt cache` (Melihat daftar ID video TikTok yang tersimpan di cache).
+  - `!tt resetcache` (Mereset riwayat cache jika ingin menguji ulang pengiriman).
 
 ---
 
-### C. Checklist Fase 4 (Balapan Bugfix & TikTok Native Checker)
+### C. Checklist Fase 4 (Balapan Bugfix & TikTokChecker Implementation)
 - [ ] Menunggu Masukan & Persetujuan Pengguna ("ACC") untuk Rencana Fase 4
 - [ ] Terapkan fungsi `_get_current_bets_text` di [cogs/party_games.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/party_games.py)
-- [ ] Terapkan modul & loop TikTok Native Checker di [cogs/yt_checker_test.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/yt_checker_test.py)
-- [ ] Terapkan commands `!ttadd`, `!ttdel`, `!ttlist`, `!tttest`, dan `!ttcheck`
-- [ ] Validasi syntax `py_compile` pada kedua file cog
+- [ ] Buat cog baru [cogs/tiktok_checker.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/tiktok_checker.py) dengan class `TikTokChecker`
+- [ ] Terapkan hybrid commands owner-only lengkap, integrasi MongoDB, loop background, dan V2 card
+- [ ] Validasi syntax `py_compile` pada seluruh file yang dimodifikasi/dibuat
 - [ ] Git commit dan push ke remote `abogoboga main`
+
 
 
 
