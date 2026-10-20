@@ -862,6 +862,20 @@ class InsightHub(commands.Cog, name="Community Insights & Utility"):
             "• **Salin Syntax 1-Klik**: Salin format perintah langsung ke clipboard.\n"
             "• **Akses Ringan**: Nyaman dibuka melalui HP maupun PC."
         )
+        buttons = [
+            {
+                "label": "Buka Katalog Perintah Web",
+                "style": 5,
+                "url": "https://rtmbot.biz.id/commands",
+                "emoji": "📖"
+            },
+            {
+                "label": "Website Resmi",
+                "style": 5,
+                "url": "https://rtmbot.biz.id",
+                "emoji": "🌐"
+            }
+        ]
         view = HelpView()
 
         embed = discord.Embed(
@@ -875,14 +889,14 @@ class InsightHub(commands.Cog, name="Community Insights & Utility"):
             title=title,
             description=description,
             color=0x238636,
+            buttons=buttons,
             footer="RTMBOT • Dokumentasi & Direktori Perintah Resmi"
         )
 
         if ctx.interaction:
-            await send_v2_interaction(self.bot, ctx.interaction, card, view=view, ephemeral=False)
+            await send_v2_interaction(self.bot, ctx.interaction, card, ephemeral=False)
         else:
-            components = [card, *view.to_components()]
-            resp = await send_v2_message(self.bot, ctx.channel.id, components)
+            resp = await send_v2_message(self.bot, ctx.channel.id, [card])
             if not resp or (isinstance(resp, dict) and "error_msg" in resp):
                 await ctx.send(embed=embed, view=view)
 
