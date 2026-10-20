@@ -274,7 +274,21 @@ async def on_resumed():
 async def on_error(event, *args, **kwargs):
     if event == "on_socket_raw_receive":
         return
-    log.error(f"❌ Terjadi error Discord generik pada event {event}") 
+    log.error(f"❌ Terjadi error Discord generik pada event {event}:", exc_info=True)
+    if event == "on_interaction" and args:
+        inter = args[0]
+        if isinstance(inter, discord.Interaction):
+            try:
+                target_name = "Unknown"
+                if inter.data:
+                    target_name = inter.data.get("name") or inter.data.get("custom_id") or "Unknown"
+                log.error(f"❌ Detail interaksi: type={inter.type}, target={target_name}, user={inter.user} ({inter.user.id})")
+                if not inter.response.is_done():
+                    await inter.response.send_message("❌ Terjadi kendala saat memproses interaksi ini.", ephemeral=True)
+                else:
+                    await inter.followup.send("❌ Terjadi kendala saat memproses interaksi ini.", ephemeral=True)
+            except Exception:
+                pass 
 
 @bot.event
 async def on_message(message):

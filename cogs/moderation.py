@@ -4403,11 +4403,14 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         
     @commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
-        if interaction.type == discord.InteractionType.component:
-            custom_id = interaction.data.get("custom_id", "")
-            if custom_id == "disabled_trap_counter":
-                await interaction.response.send_message("🔨 Fitur ini berjalan otomatis. Anda tidak perlu mengklik tombol ini.", ephemeral=True)
-                return
+        try:
+            if interaction.type == discord.InteractionType.component and interaction.data:
+                custom_id = interaction.data.get("custom_id", "")
+                if custom_id == "disabled_trap_counter":
+                    await interaction.response.send_message("🔨 Fitur ini berjalan otomatis. Anda tidak perlu mengklik tombol ini.", ephemeral=True)
+                    return
+        except Exception:
+            pass
     
     @tasks.loop(minutes=1)
     async def update_panel_task(self):

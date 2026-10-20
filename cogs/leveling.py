@@ -2610,102 +2610,107 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
 
     @commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
-        if interaction.type != discord.InteractionType.component:
-            return
-        custom_id = interaction.data.get("custom_id", "")
-        if custom_id == "voicepanel_check_self":
-            guild = interaction.guild
-            if not guild:
+        try:
+            if interaction.type != discord.InteractionType.component:
                 return
-            all_level_data = load_json(LEVEL_FILE)
-            data = all_level_data.get(str(guild.id), {})
-            user_data = data.get(str(interaction.user.id), {})
-            v_time = user_data.get("voice_time", 0)
-            max_session = user_data.get("longest_single_session", 0)
-            cur_vc = interaction.user.voice.channel if interaction.user.voice else None
-            status_str = f"Sedang aktif di #{cur_vc.name}" if cur_vc else "Tidak sedang berada di Voice Channel"
+            if not interaction.data:
+                return
+            custom_id = interaction.data.get("custom_id", "")
+            if custom_id == "voicepanel_check_self":
+                guild = interaction.guild
+                if not guild:
+                    return
+                all_level_data = load_json(LEVEL_FILE)
+                data = all_level_data.get(str(guild.id), {})
+                user_data = data.get(str(interaction.user.id), {})
+                v_time = user_data.get("voice_time", 0)
+                max_session = user_data.get("longest_single_session", 0)
+                cur_vc = interaction.user.voice.channel if (hasattr(interaction.user, 'voice') and interaction.user.voice) else None
+                status_str = f"Sedang aktif di #{cur_vc.name}" if cur_vc else "Tidak sedang berada di Voice Channel"
 
-            resp_text = (
-                f"🎙️ **Statistik Voice Kamu di {guild.name}**:\n"
-                f"• **Total Voice Akumulasi:** `{format_voice_duration(v_time)}`\n"
-                f"• **Rekor Sesi Voice Terlama:** `{format_voice_duration(max_session)}`\n"
-                f"• **Status Sekarang:** {status_str}"
-            )
-            await interaction.response.send_message(resp_text, ephemeral=True)
-        elif custom_id == "voicepanel_top20_alltime":
-            guild = interaction.guild
-            if not guild:
-                return
-            all_level_data = load_json(LEVEL_FILE)
-            data = all_level_data.get(str(guild.id), {})
-            users_with_voice = [
-                (uid, udata) for uid, udata in data.items()
-                if udata.get("voice_time", 0) > 0 and guild.get_member(int(uid))
-            ]
-            sorted_voice_all = sorted(users_with_voice, key=lambda x: x[1].get("voice_time", 0), reverse=True)[:20]
-            if not sorted_voice_all:
-                await interaction.response.send_message("Belum ada catatan durasi voice di server ini.", ephemeral=True)
-                return
+                resp_text = (
+                    f"🎙️ **Statistik Voice Kamu di {guild.name}**:\n"
+                    f"• **Total Voice Akumulasi:** `{format_voice_duration(v_time)}`\n"
+                    f"• **Rekor Sesi Voice Terlama:** `{format_voice_duration(max_session)}`\n"
+                    f"• **Status Sekarang:** {status_str}"
+                )
+                await interaction.response.send_message(resp_text, ephemeral=True)
+            elif custom_id == "voicepanel_top20_alltime":
+                guild = interaction.guild
+                if not guild:
+                    return
+                all_level_data = load_json(LEVEL_FILE)
+                data = all_level_data.get(str(guild.id), {})
+                users_with_voice = [
+                    (uid, udata) for uid, udata in data.items()
+                    if udata.get("voice_time", 0) > 0 and guild.get_member(int(uid))
+                ]
+                sorted_voice_all = sorted(users_with_voice, key=lambda x: x[1].get("voice_time", 0), reverse=True)[:20]
+                if not sorted_voice_all:
+                    await interaction.response.send_message("Belum ada catatan durasi voice di server ini.", ephemeral=True)
+                    return
 
-            medals = ["🥇", "🥈", "🥉"] + [f"`#{i}`" for i in range(4, 21)]
-            lines = []
-            for idx, (uid, udata) in enumerate(sorted_voice_all, start=1):
-                member = guild.get_member(int(uid))
-                if member:
-                    m_icon = medals[idx - 1]
-                    dur = format_voice_duration(udata.get("voice_time", 0))
-                    lines.append(f"{m_icon} **{member.display_name}** : `{dur}`")
+                medals = ["🥇", "🥈", "🥉"] + [f"`#{i}`" for i in range(4, 21)]
+                lines = []
+                for idx, (uid, udata) in enumerate(sorted_voice_all, start=1):
+                    member = guild.get_member(int(uid))
+                    if member:
+                        m_icon = medals[idx - 1]
+                        dur = format_voice_duration(udata.get("voice_time", 0))
+                        lines.append(f"{m_icon} **{member.display_name}** : `{dur}`")
 
-            resp_text = (
-                f"👑 **Top 20 Voice Akumulasi | {guild.name}**\n\n"
-                + "\n".join(lines)
-                + "\n\n*Peringkat 1 hingga 10 juga ditampilkan pada panel publik server.*"
-            )
-            await interaction.response.send_message(resp_text, ephemeral=True)
-        elif custom_id == "voicepanel_top20_session":
-            guild = interaction.guild
-            if not guild:
-                return
-            all_level_data = load_json(LEVEL_FILE)
-            data = all_level_data.get(str(guild.id), {})
-            users_with_session = [
-                (uid, udata) for uid, udata in data.items()
-                if udata.get("longest_single_session", 0) > 0 and guild.get_member(int(uid))
-            ]
-            sorted_voice_session = sorted(users_with_session, key=lambda x: x[1].get("longest_single_session", 0), reverse=True)[:20]
-            if not sorted_voice_session:
-                await interaction.response.send_message("Belum ada catatan rekor sesi voice di server ini.", ephemeral=True)
-                return
+                resp_text = (
+                    f"👑 **Top 20 Voice Akumulasi | {guild.name}**\n\n"
+                    + "\n".join(lines)
+                    + "\n\n*Peringkat 1 hingga 10 juga ditampilkan pada panel publik server.*"
+                )
+                await interaction.response.send_message(resp_text, ephemeral=True)
+            elif custom_id == "voicepanel_top20_session":
+                guild = interaction.guild
+                if not guild:
+                    return
+                all_level_data = load_json(LEVEL_FILE)
+                data = all_level_data.get(str(guild.id), {})
+                users_with_session = [
+                    (uid, udata) for uid, udata in data.items()
+                    if udata.get("longest_single_session", 0) > 0 and guild.get_member(int(uid))
+                ]
+                sorted_voice_session = sorted(users_with_session, key=lambda x: x[1].get("longest_single_session", 0), reverse=True)[:20]
+                if not sorted_voice_session:
+                    await interaction.response.send_message("Belum ada catatan rekor sesi voice di server ini.", ephemeral=True)
+                    return
 
-            medals = ["🥇", "🥈", "🥉"] + [f"`#{i}`" for i in range(4, 21)]
-            lines = []
-            for idx, (uid, udata) in enumerate(sorted_voice_session, start=1):
-                member = guild.get_member(int(uid))
-                if member:
-                    m_icon = medals[idx - 1]
-                    dur_peak = format_digital_clock(udata.get("longest_single_session", 0))
-                    if member.id in self._voice_active_sessions:
-                        cur_act = format_digital_clock(int(time.time() - self._voice_active_sessions[member.id]))
-                        extra_str = f" *(🔥 Aktif: `{cur_act}`)*"
-                    elif udata.get("last_single_session", 0) > 0:
-                        last_dur = format_digital_clock(udata.get("last_single_session", 0))
-                        extra_str = f" *(Terakhir: `{last_dur}`)*"
-                    else:
-                        extra_str = ""
-                    lines.append(f"{m_icon} **{member.display_name}** : `{dur_peak}`{extra_str}")
+                medals = ["🥇", "🥈", "🥉"] + [f"`#{i}`" for i in range(4, 21)]
+                lines = []
+                for idx, (uid, udata) in enumerate(sorted_voice_session, start=1):
+                    member = guild.get_member(int(uid))
+                    if member:
+                        m_icon = medals[idx - 1]
+                        dur_peak = format_digital_clock(udata.get("longest_single_session", 0))
+                        if member.id in self._voice_active_sessions:
+                            cur_act = format_digital_clock(int(time.time() - self._voice_active_sessions[member.id]))
+                            extra_str = f" *(🔥 Aktif: `{cur_act}`)*"
+                        elif udata.get("last_single_session", 0) > 0:
+                            last_dur = format_digital_clock(udata.get("last_single_session", 0))
+                            extra_str = f" *(Terakhir: `{last_dur}`)*"
+                        else:
+                            extra_str = ""
+                        lines.append(f"{m_icon} **{member.display_name}** : `{dur_peak}`{extra_str}")
 
-            resp_text = (
-                f"⚡ **Top 20 Rekor Sesi Voice Terlama | {guild.name}**\n\n"
-                + "\n".join(lines)
-                + "\n\n*Rekor nonstop (HH:MM:SS) & durasi sesi terakhir sebelum disconnect.*"
-            )
-            await interaction.response.send_message(resp_text, ephemeral=True)
-        elif custom_id == "voicepanel_refresh":
-            guild = interaction.guild
-            if not guild:
-                return
-            await self.update_voice_panel(guild)
-            await interaction.response.send_message("✅ Panel Voice berhasil diperbarui ke data terbaru!", ephemeral=True)
+                resp_text = (
+                    f"⚡ **Top 20 Rekor Sesi Voice Terlama | {guild.name}**\n\n"
+                    + "\n".join(lines)
+                    + "\n\n*Rekor nonstop (HH:MM:SS) & durasi sesi terakhir sebelum disconnect.*"
+                )
+                await interaction.response.send_message(resp_text, ephemeral=True)
+            elif custom_id == "voicepanel_refresh":
+                guild = interaction.guild
+                if not guild:
+                    return
+                await self.update_voice_panel(guild)
+                await interaction.response.send_message("✅ Panel Voice berhasil diperbarui ke data terbaru!", ephemeral=True)
+        except Exception as e:
+            log.error(f"[LEVELING_INTERACTION_ERROR] {e}")
         
     @commands.hybrid_command(
         name="rank",

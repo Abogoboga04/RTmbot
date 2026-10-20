@@ -213,30 +213,55 @@ class RoleIdSelect(discord.ui.RoleSelect):
         )
 
     async def callback(self, interaction: discord.Interaction):
-        selected_role = self.values[0]
-        color_val = selected_role.color if selected_role.color.value != 0 else discord.Color.blurple()
+        try:
+            if not self.values:
+                return await interaction.response.send_message("❌ Tidak ada role yang dipilih.", ephemeral=True)
+            selected_role = self.values[0]
+            color_val = selected_role.color if selected_role.color.value != 0 else discord.Color.blurple()
+            guild_name = interaction.guild.name if interaction.guild else "Server"
 
-        embed = discord.Embed(
-            title="📋 Informasi & ID Role (Anti-Ping)",
-            description="Detail role tanpa notifikasi atau mention:",
-            color=color_val
-        )
-        embed.add_field(name="Nama Role", value=f"`{selected_role.name}`", inline=True)
-        embed.add_field(name="ID Role (Klik / Tap untuk Salin)", value=f"```{selected_role.id}```", inline=False)
-        embed.add_field(name="Total Anggota", value=f"{len(selected_role.members):,} member", inline=True)
-        embed.add_field(name="Warna Hex", value=f"`{str(selected_role.color)}`", inline=True)
-        embed.add_field(name="Posisi Hierarki", value=f"#{selected_role.position}", inline=True)
-        embed.add_field(name="Mentionable", value="Ya" if selected_role.mentionable else "Tidak", inline=True)
-        embed.add_field(name="Dikelola Bot / Integrasi", value="Ya" if selected_role.managed else "Tidak", inline=True)
-        embed.add_field(name="Tampil Terpisah (Hoist)", value="Ya" if selected_role.hoist else "Tidak", inline=True)
-        embed.set_footer(text=f"Server: {interaction.guild.name} • Salin ID role dengan mudah")
+            embed = discord.Embed(
+                title="📋 Informasi & ID Role (Anti-Ping)",
+                description="Detail role tanpa notifikasi atau mention:",
+                color=color_val
+            )
+            embed.add_field(name="Nama Role", value=f"`{selected_role.name}`", inline=True)
+            embed.add_field(name="ID Role (Klik / Tap untuk Salin)", value=f"```{selected_role.id}```", inline=False)
+            total_members = len(selected_role.members) if hasattr(selected_role, 'members') else 0
+            embed.add_field(name="Total Anggota", value=f"{total_members:,} member", inline=True)
+            embed.add_field(name="Warna Hex", value=f"`{str(selected_role.color)}`", inline=True)
+            embed.add_field(name="Posisi Hierarki", value=f"#{selected_role.position}", inline=True)
+            embed.add_field(name="Mentionable", value="Ya" if selected_role.mentionable else "Tidak", inline=True)
+            embed.add_field(name="Dikelola Bot / Integrasi", value="Ya" if selected_role.managed else "Tidak", inline=True)
+            embed.add_field(name="Tampil Terpisah (Hoist)", value="Ya" if selected_role.hoist else "Tidak", inline=True)
+            embed.set_footer(text=f"Server: {guild_name} • Salin ID role dengan mudah")
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+            if not interaction.response.is_done():
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+            else:
+                await interaction.followup.send(embed=embed, ephemeral=True)
+        except Exception as e:
+            try:
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(f"❌ Terjadi kesalahan: {e}", ephemeral=True)
+                else:
+                    await interaction.followup.send(f"❌ Terjadi kesalahan: {e}", ephemeral=True)
+            except Exception:
+                pass
 
 class RoleIdView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=180)
         self.add_item(RoleIdSelect())
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item) -> None:
+        try:
+            if not interaction.response.is_done():
+                await interaction.response.send_message(f"❌ Terjadi kendala: {error}", ephemeral=True)
+            else:
+                await interaction.followup.send(f"❌ Terjadi kendala: {error}", ephemeral=True)
+        except Exception:
+            pass
 
 class SetGenderButton(discord.ui.Button):
     def __init__(self, bot, cog):

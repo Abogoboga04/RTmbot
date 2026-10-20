@@ -1391,157 +1391,168 @@ class BroadcastNexus(commands.Cog, name="Broadcast & Webhooks"):
 
     @commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
-        if interaction.type != discord.InteractionType.component: return
-        cid = interaction.data.get('custom_id')
-        data = self.button_actions.get(cid)
-        if not data and interaction.data.get('values'):
-            data = self.button_actions.get(interaction.data['values'][0])
-        if not data: return
-        
-        action, value = data.get('action'), data.get('value')
-        
-        if action == 'role':
-            try:
-                role_to_add = interaction.guild.get_role(int(value))
-                if not role_to_add: return await interaction.response.send_message("Role hilang.", ephemeral=True)
-                if role_to_add in interaction.user.roles:
-                    return await interaction.response.send_message(f"Sudah memiliki role **{role_to_add.name}**.", ephemeral=True)
-                
-                is_single = str(interaction.guild.id) in self.single_role_messages and str(interaction.message.id) in self.single_role_messages[str(interaction.guild.id)]
-                to_remove = []
-                if is_single:
-                    msg_role_ids = set()
-                    for comp in interaction.message.components:
-                        for child in comp.children:
-                            btn_data = self.button_actions.get(child.custom_id)
-                            if btn_data and btn_data.get('action') == 'role':
-                                try: msg_role_ids.add(int(btn_data.get('value')))
-                                except: pass
-                    for r in interaction.user.roles:
-                        if r.id in msg_role_ids and r.id != role_to_add.id:
-                            to_remove.append(r)
-                
-                if to_remove: await interaction.user.remove_roles(*to_remove)
-                await interaction.user.add_roles(role_to_add)
-                await interaction.response.send_message(f"Role **{role_to_add.name}** ditambahkan!", ephemeral=True)
-            except Exception as e:
-                await interaction.response.send_message(f"Error: {e}", ephemeral=True)
-                
-        elif action == 'ticket':
-            cfg = value if isinstance(value, dict) else {'category_id': value, 'allowed_roles': [], 'blocked_roles': []}
-            cat_id = int(cfg.get('category_id')) if cfg.get('category_id') else None
-            allowed = [int(r) for r in cfg.get('allowed_roles', []) if r]
-            blocked = [int(r) for r in cfg.get('blocked_roles', []) if r]
-            u_roles = [r.id for r in interaction.user.roles]
-
-            if any(r in blocked for r in u_roles): return await interaction.response.send_message("Akses ditolak.", ephemeral=True)
-            if allowed and not any(r in allowed for r in u_roles): return await interaction.response.send_message("Akses ditolak.", ephemeral=True)
-            if interaction.user.id in self.active_tickets: return await interaction.response.send_message("Tiket aktif sudah ada.", ephemeral=True)
-
-            await interaction.response.defer(ephemeral=True)
-
-            guild_settings = {}
-            settings_path = "data/settings.json"
-            if os.path.exists(settings_path):
+        try:
+            if interaction.type != discord.InteractionType.component: return
+            if not interaction.data: return
+            cid = interaction.data.get('custom_id')
+            data = self.button_actions.get(cid)
+            if not data and interaction.data.get('values'):
+                val = interaction.data['values'][0]
+                if isinstance(val, str):
+                    data = self.button_actions.get(val)
+            if not data: return
+            
+            action, value = data.get('action'), data.get('value')
+            
+            if action == 'role':
                 try:
-                    with open(settings_path, 'r', encoding='utf-8') as f:
-                        settings_data = json.load(f)
-                        guild_settings = settings_data.get(str(interaction.guild.id), {})
-                except Exception:
-                    pass
+                    role_to_add = interaction.guild.get_role(int(value)) if interaction.guild else None
+                    if not role_to_add: return await interaction.response.send_message("Role hilang.", ephemeral=True)
+                    if role_to_add in interaction.user.roles:
+                        return await interaction.response.send_message(f"Sudah memiliki role **{role_to_add.name}**.", ephemeral=True)
+                    
+                    is_single = str(interaction.guild.id) in self.single_role_messages and str(interaction.message.id) in self.single_role_messages[str(interaction.guild.id)]
+                    to_remove = []
+                    if is_single:
+                        msg_role_ids = set()
+                        for comp in interaction.message.components:
+                            for child in comp.children:
+                                btn_data = self.button_actions.get(child.custom_id)
+                                if btn_data and btn_data.get('action') == 'role':
+                                    try: msg_role_ids.add(int(btn_data.get('value')))
+                                    except: pass
+                        for r in interaction.user.roles:
+                            if r.id in msg_role_ids and r.id != role_to_add.id:
+                                to_remove.append(r)
+                    
+                    if to_remove: await interaction.user.remove_roles(*to_remove)
+                    await interaction.user.add_roles(role_to_add)
+                    await interaction.response.send_message(f"Role **{role_to_add.name}** ditambahkan!", ephemeral=True)
+                except Exception as e:
+                    await interaction.response.send_message(f"Error: {e}", ephemeral=True)
+                    
+            elif action == 'ticket':
+                cfg = value if isinstance(value, dict) else {'category_id': value, 'allowed_roles': [], 'blocked_roles': []}
+                cat_id = int(cfg.get('category_id')) if cfg.get('category_id') else None
+                allowed = [int(r) for r in cfg.get('allowed_roles', []) if r]
+                blocked = [int(r) for r in cfg.get('blocked_roles', []) if r]
+                u_roles = [r.id for r in interaction.user.roles] if hasattr(interaction.user, 'roles') else []
 
-            if not cat_id and guild_settings.get("ticket_category_id"):
-                cat_id = guild_settings.get("ticket_category_id")
+                if any(r in blocked for r in u_roles): return await interaction.response.send_message("Akses ditolak.", ephemeral=True)
+                if allowed and not any(r in allowed for r in u_roles): return await interaction.response.send_message("Akses ditolak.", ephemeral=True)
+                if interaction.user.id in self.active_tickets: return await interaction.response.send_message("Tiket aktif sudah ada.", ephemeral=True)
 
-            category = interaction.guild.get_channel(cat_id) if cat_id else None
+                await interaction.response.defer(ephemeral=True)
 
-            support_role_id = None
-            if allowed:
-                support_role_id = allowed[0]
-            elif guild_settings.get("ticket_support_role_id"):
-                support_role_id = guild_settings.get("ticket_support_role_id")
-            else:
-                support_role_id = int(os.getenv("TICKET_SUPPORT_ROLE_ID", 1264935423184998422))
+                guild_settings = {}
+                settings_path = "data/settings.json"
+                if os.path.exists(settings_path) and interaction.guild:
+                    try:
+                        with open(settings_path, 'r', encoding='utf-8') as f:
+                            settings_data = json.load(f)
+                            guild_settings = settings_data.get(str(interaction.guild.id), {})
+                    except Exception:
+                        pass
 
-            specific_role = interaction.guild.get_role(support_role_id) if support_role_id else None
-            if not specific_role:
-                specific_role = next((r for r in interaction.guild.roles if r.permissions.manage_channels or r.permissions.administrator), None)
+                if not cat_id and guild_settings.get("ticket_category_id"):
+                    cat_id = guild_settings.get("ticket_category_id")
 
-            ow = {
-                interaction.guild.default_role: discord.PermissionOverwrite(view_channel=False),
-                interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True, attach_files=True),
-                interaction.guild.me: discord.PermissionOverwrite(view_channel=True, send_messages=True, manage_channels=True, manage_messages=True)
-            }
-            if specific_role: ow[specific_role] = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
+                category = interaction.guild.get_channel(cat_id) if (interaction.guild and cat_id) else None
 
-            tc = await interaction.guild.create_text_channel(
-                f"ticket-{interaction.user.name.lower()}",
-                overwrites=ow,
-                category=category,
-                topic=f"Tiket Bantuan untuk {interaction.user.name} (ID: {interaction.user.id})"
-            )
-            cid = str(uuid.uuid4())
-            self.button_actions[cid] = {'action': 'close_ticket', 'value': str(interaction.user.id)}
-            view = discord.ui.View(timeout=None)
-            view.add_item(discord.ui.Button(label="Tutup Tiket", style=discord.ButtonStyle.red, custom_id=cid, emoji="🔒"))
-            
-            from cogs.v2_layout import build_v2_card, send_v2_message
-            card = build_v2_card(
-                title=f"🎫 Tiket Bantuan • {interaction.user.display_name}",
-                description=(
-                    f"Halo {interaction.user.mention}, selamat datang di kanal dukungan pribadi Anda!\n"
-                    "Silakan jelaskan kendala atau pertanyaan Anda dengan jelas.\n"
-                    "Tim staf kami akan segera merespons Anda secepatnya."
-                ),
-                fields=[
-                    {"name": "👤 Pembuat Tiket", "value": f"{interaction.user.mention} (`{interaction.user.id}`)"},
-                    {"name": "🛡️ Tim Staf", "value": specific_role.mention if specific_role else "`Staf / Admin`"}
-                ],
-                color=0x2ECC71,
-                footer="Klik tombol Tutup Tiket di bawah jika urusan Anda telah selesai."
-            )
-            staff_ping = specific_role.mention if specific_role else ""
-            resp = await send_v2_message(self.bot, tc.id, [card])
-            if not resp:
-                await tc.send(f"Tiket dari {interaction.user.mention} {staff_ping}", view=view)
-            else:
-                real_msg = await tc.fetch_message(int(resp["id"]))
-                await real_msg.edit(view=view)
-                if staff_ping:
-                    await tc.send(f"{interaction.user.mention} {staff_ping}", delete_after=5)
+                support_role_id = None
+                if allowed:
+                    support_role_id = allowed[0]
+                elif guild_settings.get("ticket_support_role_id"):
+                    support_role_id = guild_settings.get("ticket_support_role_id")
+                else:
+                    support_role_id = int(os.getenv("TICKET_SUPPORT_ROLE_ID", 1264935423184998422))
 
-            await interaction.followup.send(f"✅ Tiket dibuka: {tc.mention}", ephemeral=True)
-            self.active_tickets[interaction.user.id] = tc.id
-            self.bot.loop.create_task(self.delete_ticket_after_delay(tc, interaction.user.id))
+                specific_role = interaction.guild.get_role(support_role_id) if (interaction.guild and support_role_id) else None
+                if not specific_role and interaction.guild:
+                    specific_role = next((r for r in interaction.guild.roles if r.permissions.manage_channels or r.permissions.administrator), None)
 
-        elif action == 'close_ticket':
-            uid = int(value)
-            is_staff = interaction.user.guild_permissions.manage_channels or interaction.user.guild_permissions.administrator
-            is_creator = interaction.user.id == uid
-            if not is_creator and not is_staff:
-                return await interaction.response.send_message("🚫 Anda tidak memiliki izin untuk menutup tiket ini.", ephemeral=True)
-            await interaction.response.defer()
-            if uid in self.active_tickets: del self.active_tickets[uid]
-            try: await interaction.channel.delete()
-            except: pass
-            
-        elif action == 'channel':
-            try:
-                tc = interaction.guild.get_channel(int(value))
-                if tc:
-                    await tc.set_permissions(interaction.user, view_channel=True)
-                    await interaction.response.send_message(f"Akses ke {tc.mention} dibuka!", ephemeral=True)
-            except:
-                await interaction.response.send_message("Gagal akses kanal.", ephemeral=True)
+                if not interaction.guild:
+                    return await interaction.followup.send("Tiket hanya dapat dibuat di server.", ephemeral=True)
 
-        elif action == 'translate':
-            await interaction.response.defer(ephemeral=True)
-            txt = interaction.message.content or ""
-            if interaction.message.embeds: txt += "\n" + (interaction.message.embeds[0].description or "")
-            try:
-                res = await genai.GenerativeModel('gemini-2.5-flash').generate_content_async(f"Terjemahkan ke {value}:\n{txt}")
-                await interaction.followup.send(res.text, ephemeral=True)
-            except Exception as e: await interaction.followup.send(f"Error AI: {e}", ephemeral=True)
+                ow = {
+                    interaction.guild.default_role: discord.PermissionOverwrite(view_channel=False),
+                    interaction.user: discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True, attach_files=True),
+                    interaction.guild.me: discord.PermissionOverwrite(view_channel=True, send_messages=True, manage_channels=True, manage_messages=True)
+                }
+                if specific_role: ow[specific_role] = discord.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
+
+                tc = await interaction.guild.create_text_channel(
+                    f"ticket-{interaction.user.name.lower()}",
+                    overwrites=ow,
+                    category=category,
+                    topic=f"Tiket Bantuan untuk {interaction.user.name} (ID: {interaction.user.id})"
+                )
+                cid = str(uuid.uuid4())
+                self.button_actions[cid] = {'action': 'close_ticket', 'value': str(interaction.user.id)}
+                view = discord.ui.View(timeout=None)
+                view.add_item(discord.ui.Button(label="Tutup Tiket", style=discord.ButtonStyle.red, custom_id=cid, emoji="🔒"))
+                
+                from cogs.v2_layout import build_v2_card, send_v2_message
+                card = build_v2_card(
+                    title=f"🎫 Tiket Bantuan • {interaction.user.display_name}",
+                    description=(
+                        f"Halo {interaction.user.mention}, selamat datang di kanal dukungan pribadi Anda!\n"
+                        "Silakan jelaskan kendala atau pertanyaan Anda dengan jelas.\n"
+                        "Tim staf kami akan segera merespons Anda secepatnya."
+                    ),
+                    fields=[
+                        {"name": "👤 Pembuat Tiket", "value": f"{interaction.user.mention} (`{interaction.user.id}`)"},
+                        {"name": "🛡️ Tim Staf", "value": specific_role.mention if specific_role else "`Staf / Admin`"}
+                    ],
+                    color=0x2ECC71,
+                    footer="Klik tombol Tutup Tiket di bawah jika urusan Anda telah selesai."
+                )
+                staff_ping = specific_role.mention if specific_role else ""
+                resp = await send_v2_message(self.bot, tc.id, [card])
+                if not resp or not isinstance(resp, dict) or "id" not in resp:
+                    await tc.send(f"Tiket dari {interaction.user.mention} {staff_ping}", view=view)
+                else:
+                    real_msg = await tc.fetch_message(int(resp["id"]))
+                    await real_msg.edit(view=view)
+                    if staff_ping:
+                        await tc.send(f"{interaction.user.mention} {staff_ping}", delete_after=5)
+
+                await interaction.followup.send(f"✅ Tiket dibuka: {tc.mention}", ephemeral=True)
+                self.active_tickets[interaction.user.id] = tc.id
+                self.bot.loop.create_task(self.delete_ticket_after_delay(tc, interaction.user.id))
+
+            elif action == 'close_ticket':
+                uid = int(value)
+                is_staff = False
+                if interaction.guild and hasattr(interaction.user, 'guild_permissions'):
+                    is_staff = interaction.user.guild_permissions.manage_channels or interaction.user.guild_permissions.administrator
+                is_creator = interaction.user.id == uid
+                if not is_creator and not is_staff:
+                    return await interaction.response.send_message("🚫 Anda tidak memiliki izin untuk menutup tiket ini.", ephemeral=True)
+                await interaction.response.defer()
+                if uid in self.active_tickets: del self.active_tickets[uid]
+                try: await interaction.channel.delete()
+                except: pass
+                
+            elif action == 'channel':
+                try:
+                    tc = interaction.guild.get_channel(int(value)) if interaction.guild else None
+                    if tc:
+                        await tc.set_permissions(interaction.user, view_channel=True)
+                        await interaction.response.send_message(f"Akses ke {tc.mention} dibuka!", ephemeral=True)
+                except:
+                    await interaction.response.send_message("Gagal akses kanal.", ephemeral=True)
+
+            elif action == 'translate':
+                await interaction.response.defer(ephemeral=True)
+                txt = interaction.message.content or ""
+                if interaction.message.embeds: txt += "\n" + (interaction.message.embeds[0].description or "")
+                try:
+                    res = await genai.GenerativeModel('gemini-2.5-flash').generate_content_async(f"Terjemahkan ke {value}:\n{txt}")
+                    await interaction.followup.send(res.text, ephemeral=True)
+                except Exception as e: await interaction.followup.send(f"Error AI: {e}", ephemeral=True)
+        except Exception as e:
+            logging.error(f"[WEBHOOK_INTERACTION_ERROR] {e}")
 
     async def delete_ticket_after_delay(self, channel, user_id):
         await asyncio.sleep(3300)
