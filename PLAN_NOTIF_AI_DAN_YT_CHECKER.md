@@ -452,3 +452,71 @@ Berdasarkan hasil uji coba langsung pengguna pada siaran langsung Luthfi Halimaw
 - [x] Validasi syntax `py_compile`
 - [x] Commit dan push ke `abogoboga main`
 
+---
+
+## 11. RENCANA PENYEMPURNAAN FASE 3: ISOLASI KEPEMILIKAN CHANNEL & PEMBERSIHAN KEBOCORAN REKOMENDASI LIVE (ZERO ROGUE NOTIFICATION)
+
+Berdasarkan temuan notifikasi siaran asing (seperti Jeje Adriel `tSGFKJwthGY`, FirmanGG `jyajpUQxXRE`, Quiet Autumn Jazz `RhlcFv2E-B8`, dan Nafari `EzLIGNMMaWw`):
+
+### A. Analisis Akar Masalah (Root Cause Analysis)
+
+1. **Bukan Halusinasi Bot, Melainkan Kebocoran Scraping Rekomendasi Sidebar YouTube**:
+   - Saat bot memindai endpoint siaran langsung `https://www.youtube.com/channel/{channel_id}/live` untuk channel Luthfi Halimawan (`UCrEj4d2ynysNsYttTYROXEg`), YouTube memuat pemutar siaran aktif Luthfi (`0ZR1PPQHp98`).
+   - Bersamaan dengan itu, di panel sidebar YouTube (*Up Next* / *Recommended Live Streams*), YouTube secara dinamis menyajikan daftar siaran langsung dari streamer-streamer lain yang sedang aktif di Indonesia (Jeje Adriel, FirmanGG, Nafari, dsb.).
+   - Pada fungsi `_check_direct_live_endpoint`, ekstraksi video menggunakan regex bebas:
+     ```python
+     vids = re.findall(r'\"videoId\":\"([a-zA-Z0-9_-]{11})\"', html)
+     ```
+     Regex ini menangkap **seluruh video ID** yang tertulis di HTML, termasuk video-video rekomendasi di sidebar yang sama-sama memiliki indikator siaran live.
+
+2. **Hilangnya Filter Validasi Kepemilikan (*Channel Ownership Verification*)**:
+   - Setelah video Luthfi (`0ZR1PPQHp98`) terkirim dan masuk cache di tick pertama, loop polling (setiap 30 detik) memeriksa kembali daftar video.
+   - Karena `0ZR1PPQHp98` sudah ada di cache, loop mengambil video berikutnya dari hasil scraping halaman tersebut (yaitu video rekomendasi pertama: `tSGFKJwthGY` milik Jeje Adriel).
+   - Di fungsi `classify_stream_status` dan `yt_check_loop`, bot membaca metadata oEmbed dari video tersebut (`Jeje Adriel`) dan langsung mengirimkannya ke Discord karena **tidak ada validasi apakah Channel ID / Channel Name video tersebut cocok dengan channel yang sedang dipantau (`channel_id`)**.
+   - Setiap 30 detik berikutnya, bot terus mengambil video rekomendasi live berikutnya (`jyajpUQxXRE` milik FirmanGG, lalu Cafe Jazz, lalu Nafari).
+
+---
+
+### B. Rencana Perbaikan Teknis (Implementasi Fase 3)
+
+#### 1. Ekstraksi Live Presisi Tinggi via Tag `<link rel="canonical">` (Bebas Sidebar)
+- Di endpoint `https://www.youtube.com/channel/{channel_id}/live`, tag canonical di dalam `<head>`:
+  - **Jika channel sedang Live:** Tag canonical PASTI berupa:
+    ```html
+    <link rel="canonical" href="https://www.youtube.com/watch?v={VIDEO_ID}">
+    ```
+    Tag ini **hanya satu** dan **hanya merujuk ke video milik channel itu sendiri**, sama sekali tidak terpengaruh oleh 100+ rekomendasi di sidebar.
+  - **Jika channel TIDAK Live:** Tag canonical merujuk kembali ke channel (`https://www.youtube.com/channel/{channel_id}`).
+- Kita ubah fungsi `_check_direct_live_endpoint` agar secara spesifik membaca tag canonical ini:
+  ```python
+  canon_match = re.search(r'<link rel="canonical" href="https://www\.youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})"', html)
+  if canon_match:
+      return canon_match.group(1)
+  return None
+  ```
+
+#### 2. Strict Channel Ownership Guard (Penyaring Mutlak Pemilik Video)
+- Di dalam `classify_stream_status` dan `yt_check_loop`, tambahkan validasi identitas channel:
+  - Setiap halaman watch YouTube menyimpan tag JSON: `"channelId":"(UC[a-zA-Z0-9_-]{22})"`.
+  - Jika video yang terdeteksi memiliki `channelId` yang berbeda dengan `channel_id` yang sedang dipantau oleh bot:
+    ```python
+    if detected_channel_id and detected_channel_id != expected_channel_id:
+        print(f"[YT GUARD] Video {vid} ditolak: Milik {detected_channel_id}, bukan {expected_channel_id}")
+        continue # Lewati dan jangan pernah dikirim ke Discord!
+    ```
+  - Ini memberikan perlindungan 100% sehingga video dari channel luar **mustahil** lolos ke Discord.
+
+#### 3. Pembersihan Cache MongoDB (`yt_test_cache`)
+- Menghapus 4 video rogue rekomendasi (`tSGFKJwthGY`, `jyajpUQxXRE`, `RhlcFv2E-B8`, `EzLIGNMMaWw`) dari koleksi `yt_test_cache` di database MongoDB agar riwayat cache bersih kembali.
+
+---
+
+### C. Checklist Fase 3
+- [ ] Menunggu Masukan & Persetujuan Pengguna ("ACC") untuk Rencana Fase 3
+- [ ] Terapkan ekstraksi canonical tag di `_check_direct_live_endpoint`
+- [ ] Terapkan Strict Channel Ownership Guard di `classify_stream_status` & `yt_check_loop`
+- [ ] Bersihkan ID rogue dari `yt_test_cache` di MongoDB
+- [ ] Validasi syntax `py_compile`
+- [ ] Commit dan push ke `abogoboga main`
+
+
