@@ -279,7 +279,8 @@ class SetGenderButton(discord.ui.Button):
 HELP_CATEGORIES = {
     "overview": {
         "title": "📋 Panduan Fitur Bot",
-        "desc": "Halo! Pilih kategori di menu dropdown di bawah untuk melihat daftar perintah dan cara pakainya.\n\n"
+        "desc": "Halo! Seluruh 230 perintah aktif bot kini dapat kamu jelajahi langsung pada katalog web interaktif dengan fitur pencarian cepat dan salin syntax 1-klik.\n\n"
+                "• **Katalog Web Resmi**: [rtmbot.biz.id/commands](https://rtmbot.biz.id/commands)\n"
                 "• **Slash Command (`/`)**: Ketik garis miring `/` di kolom chat untuk opsi otomatis.\n"
                 "• **Prefix Command (`!`)**: Gunakan tanda seru `!` untuk perintah teks klasik.",
         "color": 0x3498DB,
@@ -501,6 +502,8 @@ class HelpView(discord.ui.View):
     def __init__(self, bot=None):
         super().__init__(timeout=None)
         self.bot = bot
+        self.add_item(discord.ui.Button(label="Buka Katalog Perintah Web", url="https://rtmbot.biz.id/commands", style=discord.ButtonStyle.link, emoji="📖", row=1))
+        self.add_item(discord.ui.Button(label="Website Utama", url="https://rtmbot.biz.id", style=discord.ButtonStyle.link, emoji="🌐", row=1))
 
     @discord.ui.select(
         placeholder="Pilih kategori panduan...",
@@ -906,7 +909,7 @@ class InsightHub(commands.Cog, name="Community Insights & Utility"):
             description=cat_data["desc"],
             fields=cat_data["fields"],
             color=cat_data["color"],
-            footer="Pilih kategori di menu bawah untuk melihat daftar perintah."
+            footer="Klik tombol di bawah untuk membuka katalog dokumentasi lengkap di browser."
         )
         view = HelpView(self.bot)
         if ctx.interaction:
