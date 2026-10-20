@@ -67,7 +67,7 @@ MODULE_METADATA = {
     "gemini.py": {
         "name": "Unified AI Assistant & Cyber Security Engine",
         "category": "Kecerdasan Buatan & Keamanan",
-        "description": "Asisten AI cerdas berbasis Google Gemini 2.5 Flash, reasoning gambar, filter phising/SARA cerdas, persona dinamis, dan memori percakapan.",
+        "description": "Asisten AI cerdas untuk tanya jawab, analisis gambar, filter link mencurigakan, persona dinamis, dan memori percakapan.",
         "key_features": [
             "AI Chatbot percakapan alami melalui tag @RTMBOT, reply pesan, atau awalan !",
             "Codebase Self-Aware Memory: Mengetahui seluruh fitur, sintaks perintah, dan panduan bot",
@@ -172,13 +172,14 @@ MODULE_METADATA = {
         ]
     },
     "v2_layout.py": {
-        "name": "Discord Component Type 17 Engine",
-        "category": "Arsitektur Komponen V2",
-        "description": "Modul pembangun struktur JSON kontainer kartu modern Type 17, Media Gallery Type 12, Text Display Type 10, dan HTTP sender aman flag 32768.",
+        "name": "Card Layout Engine",
+        "category": "Tampilan & Desain Pesan",
+        "description": "Modul pembangun struktur kartu modern interaktif, galeri media, teks berformat, dan pengirim pesan kartu resmi.",
         "key_features": [
-            "build_v2_card: Container Card Type 17 borderless (color=None) dengan penempatan media & footer presisi",
-            "send_v2_message: Pengirim HTTP payload Component V2 tanpa root content untuk mencegah error 400",
-            "send_v2_interaction: Integrasi aman interaksi callback & persistent view"
+            "build_v2_card: Pembuat kartu pesan modern dengan penempatan media dan footer rapi",
+            "send_v2_message: Pengirim pesan kartu interaktif ke channel server",
+            "send_v2_interaction: Integrasi interaksi callback tombol dan menu pilihan",
+            "update_v2_interaction: Pembaru kartu interaktif secara mulus saat tombol atau dropdown ditekan"
         ]
     }
 }
@@ -342,7 +343,7 @@ def scan_all_codebase():
 
     full_memory = {
         "bot_name": "RTMBOT",
-        "description": "Multi-purpose Discord Bot Profesional untuk Moderasi, Keamanan Sentinel, Leveling Bersertifikat Resmi, Tiket Support, Voice Sementara, AI Gemini, Ekonomi RSWN, dan Party Minigames.",
+        "description": "Multi-purpose Discord Bot untuk Moderasi, Keamanan Server, Leveling, Tiket Bantuan, Voice Sementara, Asisten AI, Catatan Keuangan, dan Party Minigames.",
         "modules": modules_data,
         "workflow_guides": WORKFLOW_GUIDES
     }

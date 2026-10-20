@@ -293,5 +293,62 @@ async def edit_v2_message(bot, channel_id: int, message_id: int, components: lis
         return None
 
 
+async def update_v2_interaction(bot, interaction: discord.Interaction, card: dict, view: discord.ui.View = None):
+    components = [card]
+    if view:
+        components.extend(view.to_components())
+
+    if not interaction.response.is_done():
+        payload = {
+            "type": 7,
+            "data": {
+                "flags": 32768,
+                "components": components
+            }
+        }
+        route = discord.http.Route(
+            'POST',
+            '/interactions/{interaction_id}/{interaction_token}/callback',
+            interaction_id=interaction.id,
+            interaction_token=interaction.token
+        )
+        try:
+            resp = await bot.http.request(route, json=payload)
+            try:
+                interaction.response._response_type = discord.InteractionResponseType.deferred_message_update
+            except Exception:
+                pass
+            if view and not view.is_finished():
+                register_view(bot, view)
+            return resp
+        except Exception as e:
+            print(f"[V2_LAYOUT] update_v2_interaction callback failed: {e}")
+
+    app_id = getattr(bot, "application_id", None) or (bot.user.id if bot.user else None)
+    if app_id:
+        route = discord.http.Route(
+            'PATCH',
+            '/webhooks/{application_id}/{interaction_token}/messages/@original',
+            application_id=app_id,
+            interaction_token=interaction.token
+        )
+        try:
+            resp = await bot.http.request(route, json={"components": components})
+            if view and not view.is_finished():
+                register_view(bot, view)
+            return resp
+        except Exception as e:
+            print(f"[V2_LAYOUT] update_v2_interaction patch failed: {e}")
+
+    try:
+        if interaction.message:
+            return await edit_v2_message(bot, interaction.message.channel.id, interaction.message.id, components)
+    except Exception as e:
+        print(f"[V2_LAYOUT] update_v2_interaction edit message fallback failed: {e}")
+
+    return None
+
+
 async def setup(bot):
     pass
+
