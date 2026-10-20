@@ -464,7 +464,8 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
     async def _check_direct_live_endpoint(self, channel_id: str):
         """
         Cek cepat langsung ke endpoint /channel/{id}/live.
-        Jika channel sedang siaran langsung, endpoint ini seketika memuat video on-air.
+        Jika channel sedang siaran langsung, tag canonical di <head> memuat watch URL video on-air milik channel ini.
+        Kebal 100% dari rekomendasi sidebar video streamer lain.
         """
         url = f"https://www.youtube.com/channel/{channel_id}/live"
         headers = {
@@ -481,10 +482,14 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
                         return vid
                     if resp.status == 200:
                         html = await resp.text()
-                        if '"isLive":true' in html or 'BroadcastEvent' in html or '"isLiveNow":true' in html:
-                            vids = re.findall(r'\"videoId\":\"([a-zA-Z0-9_-]{11})\"', html)
-                            if vids:
-                                return vids[0]
+                        # Tag canonical di <head> secara eksklusif hanya mengarah ke watch?v={vid} jika channel ini live!
+                        canon_match = re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']https://www\.youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})["\']', html)
+                        if canon_match:
+                            return canon_match.group(1)
+                        # Alternatif: meta og:url yang mengarah ke watch?v={vid}
+                        og_match = re.search(r'<meta\s+property=["\']og:url["\']\s+content=["\']https://www\.youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})["\']', html)
+                        if og_match:
+                            return og_match.group(1)
         except Exception as e:
             print(f"[YT DIRECT LIVE ERROR] {e}")
         return None
@@ -670,6 +675,7 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
             "status": "live" if is_known_live else "upload",
             "title": meta.get("title"),
             "channel_name": meta.get("channel_name"),
+            "channel_id": None,
             "description": None,
             "thumbnail_url": meta.get("thumbnail_url") or f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
         }
@@ -686,6 +692,11 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
                 async with session.get(watch_url, headers=headers) as resp:
                     if resp.status == 200:
                         html = await resp.text()
+
+                        # Ekstraksi Channel ID pemilik video dari HTML watch
+                        cid_match = re.search(r'\"channelId\":\"(UC[a-zA-Z0-9_-]{22})\"', html)
+                        if cid_match:
+                            info["channel_id"] = cid_match.group(1)
 
                         # Fallback title jika oEmbed gagal
                         if not info["title"]:
@@ -971,6 +982,18 @@ Berikan 1 respon pengumuman kamu sekarang:"""
                 # Konten baru ditemukan! Analisis status siaran
                 is_known_live = item.get("is_live_hint", False)
                 classification = await self.classify_stream_status(vid, is_known_live=is_known_live)
+
+                # 🛡️ STRICT CHANNEL OWNERSHIP GUARD:
+                # Validasi mutlak kepemilikan video. Cegah kebocoran video streamer lain dari panel rekomendasi YouTube!
+                detected_cid = classification.get("channel_id")
+                if detected_cid and detected_cid != channel_id:
+                    print(f"[YT GUARD] Video {vid} DITOLAK: Milik {detected_cid} ({classification.get('channel_name')}), bukan target {channel_id} ({c_name}).")
+                    if vid not in posted_ids:
+                        posted_ids.append(vid)
+                        self.cache["posted_video_ids"] = posted_ids
+                        self._save_cache()
+                    continue
+
                 item["status"] = classification["status"]
                 if classification.get("title"):
                     item["title"] = classification["title"]
@@ -1313,6 +1336,14 @@ Berikan 1 respon pengumuman kamu sekarang:"""
                 if target_disc_channel:
                     is_known_live = top_item.get("is_live_hint", False)
                     classification = await self.classify_stream_status(top_vid, is_known_live=is_known_live)
+
+                    # 🛡️ STRICT CHANNEL OWNERSHIP GUARD:
+                    detected_cid = classification.get("channel_id")
+                    if detected_cid and detected_cid != channel_id:
+                        print(f"[YT GUARD CMD] Video {top_vid} DITOLAK: Milik {detected_cid}, bukan target {channel_id}.")
+                        report_lines.append(f"• **{c_name}**: Konten `{top_vid}` diabaikan (milik channel lain: `{classification.get('channel_name')}`).")
+                        continue
+
                     top_item["status"] = classification["status"]
                     top_item["title"] = classification.get("title") or top_item.get("title") or "Video YouTube"
                     top_item["channel_name"] = classification.get("channel_name") or c_name
