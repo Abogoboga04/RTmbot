@@ -499,61 +499,10 @@ HELP_CATEGORIES = {
 }
 
 class HelpView(discord.ui.View):
-    def __init__(self, bot=None):
+    def __init__(self):
         super().__init__(timeout=None)
-        self.bot = bot
-        self.add_item(discord.ui.Button(label="Buka Katalog Perintah Web", url="https://rtmbot.biz.id/commands", style=discord.ButtonStyle.link, emoji="📖", row=1))
-        self.add_item(discord.ui.Button(label="Website Utama", url="https://rtmbot.biz.id", style=discord.ButtonStyle.link, emoji="🌐", row=1))
-
-    @discord.ui.select(
-        placeholder="Pilih kategori panduan...",
-        custom_id="rtmbot:help_category_select",
-        row=0,
-        options=[
-            discord.SelectOption(label="Beranda Panduan", value="overview", description="Menu utama dan rangkuman panduan", emoji="🏠"),
-            discord.SelectOption(label="Moderasi & Keamanan", value="moderation", description="Kelola member, keamanan, dan channel", emoji="🛡️"),
-            discord.SelectOption(label="Catatan Keuangan", value="finance", description="Catat uang masuk, keluar, dan saldo", emoji="💼"),
-            discord.SelectOption(label="Level & Toko Server", value="leveling", description="Kartu rank, durasi voice, dan toko", emoji="⭐"),
-            discord.SelectOption(label="Game & Werewolf", value="games", description="Werewolf, balap kuda, dan kuis seru", emoji="🎮"),
-            discord.SelectOption(label="Notifikasi Media Sosial", value="social", description="Pantau konten YouTube & TikTok", emoji="📡"),
-            discord.SelectOption(label="Asisten AI & Filter Link", value="ai", description="Tanya jawab dan keamanan link", emoji="🤖"),
-            discord.SelectOption(label="Hiburan & Curhat", value="fun", description="Zodiak, tarot, dan curhat rahasia", emoji="🔮"),
-            discord.SelectOption(label="Voice Room & Info", value="voice_util", description="Room privat dan info server", emoji="🎙️"),
-            discord.SelectOption(label="Pesan Siaran & Jadwal", value="webhook", description="Pengumuman resmi dan jadwal pesan", emoji="🪝")
-        ]
-    )
-    async def select_category(self, interaction: discord.Interaction, select: discord.ui.Select):
-        bot = self.bot or interaction.client
-        selected_key = select.values[0]
-        cat_data = HELP_CATEGORIES.get(selected_key, HELP_CATEGORIES["overview"])
-        card = build_v2_card(
-            title=cat_data["title"],
-            description=cat_data["desc"],
-            fields=cat_data["fields"],
-            color=cat_data["color"],
-            footer=f"RTM-Bot • Kategori: {cat_data['title']}"
-        )
-        await update_v2_interaction(bot, interaction, card, self)
-
-    @discord.ui.button(label="Beranda", style=discord.ButtonStyle.primary, emoji="🏠", custom_id="rtmbot:help_home_btn", row=1)
-    async def home_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        bot = self.bot or interaction.client
-        cat_data = HELP_CATEGORIES["overview"]
-        card = build_v2_card(
-            title=cat_data["title"],
-            description=cat_data["desc"],
-            fields=cat_data["fields"],
-            color=cat_data["color"],
-            footer="RTM-Bot • Panduan Menu Utama"
-        )
-        await update_v2_interaction(bot, interaction, card, self)
-
-    async def on_error(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item) -> None:
-        try:
-            if not interaction.response.is_done():
-                await interaction.response.send_message("❌ Terjadi kendala saat memperbarui tampilan. Coba jalankan kembali `/help`.", ephemeral=True)
-        except Exception:
-            pass
+        self.add_item(discord.ui.Button(label="Buka Katalog Perintah Web", url="https://rtmbot.biz.id/commands", style=discord.ButtonStyle.link, emoji="📖"))
+        self.add_item(discord.ui.Button(label="Website Resmi", url="https://rtmbot.biz.id", style=discord.ButtonStyle.link, emoji="🌐"))
 
 class InsightHub(commands.Cog, name="Community Insights & Utility"):
     def __init__(self, bot):
@@ -563,7 +512,7 @@ class InsightHub(commands.Cog, name="Community Insights & Utility"):
         self.gender_warning_cooldown = {}
 
     async def cog_load(self):
-        self.bot.add_view(HelpView(self.bot))
+        self.bot.add_view(HelpView())
         try:
             if not self.sync_server_stats.is_running():
                 self.sync_server_stats.start()
@@ -901,24 +850,41 @@ class InsightHub(commands.Cog, name="Community Insights & Utility"):
         embed.set_footer(text="Aman & Bersih • Salin ID role dengan sekali klik")
         await ctx.send(embed=embed, view=RoleIdView(), ephemeral=True)
 
-    @commands.hybrid_command(name="help", aliases=["h", "bantuan"], description="Panduan lengkap fitur dan perintah bot")
+    @commands.hybrid_command(name="help", aliases=["h", "bantuan"], description="Katalog lengkap seluruh perintah bot di website")
     async def help_command(self, ctx: commands.Context):
-        cat_data = HELP_CATEGORIES["overview"]
-        card = build_v2_card(
-            title=cat_data["title"],
-            description=cat_data["desc"],
-            fields=cat_data["fields"],
-            color=cat_data["color"],
-            footer="Klik tombol di bawah untuk membuka katalog dokumentasi lengkap di browser."
+        title = "📖 Panduan & Katalog Perintah RTMBOT"
+        description = (
+            "Seluruh dokumentasi dan panduan pemakaian **230 perintah aktif** kini dapat kamu akses langsung melalui situs web resmi kami:\n\n"
+            "👉 **https://rtmbot.biz.id/commands**\n\n"
+            "**Fitur Katalog Dokumentasi:**\n"
+            "• **Pencarian Instan**: Cari nama perintah, alias, atau parameter secara cepat.\n"
+            "• **Filter Lengkap**: Kategori Moderasi, Keuangan Kas Riil, Kamar Suara, Minigames, dll.\n"
+            "• **Salin Syntax 1-Klik**: Salin format perintah langsung ke clipboard.\n"
+            "• **Akses Ringan**: Nyaman dibuka melalui HP maupun PC."
         )
-        view = HelpView(self.bot)
+        view = HelpView()
+
+        embed = discord.Embed(
+            title=title,
+            description=description,
+            color=0x238636
+        )
+        embed.set_footer(text="RTMBOT • Dokumentasi & Direktori Perintah Resmi")
+
+        card = build_v2_card(
+            title=title,
+            description=description,
+            color=0x238636,
+            footer="RTMBOT • Dokumentasi & Direktori Perintah Resmi"
+        )
+
         if ctx.interaction:
             await send_v2_interaction(self.bot, ctx.interaction, card, view=view, ephemeral=False)
         else:
             components = [card, *view.to_components()]
             resp = await send_v2_message(self.bot, ctx.channel.id, components)
-            if resp and isinstance(resp, dict) and "id" in resp:
-                register_view(self.bot, view, message_id=int(resp["id"]))
+            if not resp or (isinstance(resp, dict) and "error_msg" in resp):
+                await ctx.send(embed=embed, view=view)
 
 async def setup(bot):
     await bot.add_cog(InsightHub(bot))
