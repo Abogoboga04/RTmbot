@@ -21,6 +21,7 @@
 7. [Arsitektur Database MongoDB & Sinkronisasi Cache](#7-arsitektur-database-mongodb--sinkronisasi-cache)
 8. [Rencana Kode Teknis & Diff Implementasi](#8-rencana-kode-teknis--diff-implementasi)
 9. [Checklist Validasi & Status Persetujuan](#9-checklist-validasi--status-persetujuan)
+10. [Rencana Penyempurnaan Fase 2: Deteksi Live, Deskripsi Konten, Reduksi Delay, & 1 Pesan Tunggal](#10-rencana-penyempurnaan-fase-2-deteksi-live-deskripsi-konten-reduksi-delay--1-pesan-tunggal)
 
 ---
 
@@ -365,8 +366,89 @@ async def send_notification_card(self, target_channel: discord.TextChannel, vide
 
 ### Status Dokumen Saat Ini:
 - [x] Dokumen Master Plan Tunggal Disusun & Diharmonisasikan
-- [x] Mendapat Persetujuan Pengguna ("ACC")
-- [x] Implementasi Kode di `cogs/yt_checker_test.py`
+- [x] Mendapat Persetujuan Pengguna ("ACC") Fase 1
+- [x] Implementasi Kode Fase 1 di `cogs/yt_checker_test.py`
 - [x] Validasi Syntax dengan `py_compile` (0 error)
-- [x] Simulasi Deteksi Video Reguler, Shorts, dan Live Stream Terverifikasi
 - [x] Git Commit & Push ke remote `abogoboga main`
+- [x] Tinjauan & Persetujuan Pengguna ("ACC") untuk Fase 2
+- [x] Implementasi Kode Fase 2 di `cogs/yt_checker_test.py`
+- [x] Validasi Syntax Fase 2 dengan `py_compile` (0 error)
+- [x] Git Commit & Push Fase 2 ke remote `abogoboga main`
+
+---
+
+## 10. RENCANA PENYEMPURNAAN FASE 2: DETEKSI LIVE, DESKRIPSI KONTEN, REDUKSI DELAY, & 1 PESAN TUNGGAL
+
+Berdasarkan hasil uji coba langsung pengguna pada siaran langsung Luthfi Halimawan (`0ZR1PPQHp98`):
+
+### A. Analisis Akar Masalah (Root Cause)
+
+#### 1. Masalah: Live Stream Terdeteksi sebagai Video Upload Biasa
+- **Penyebab:** Pada `classify_stream_status`, fungsi mengandalkan request scraping halaman `https://www.youtube.com/watch?v={id}` dengan `timeout = 6` detik. Halaman watch YouTube berukuran besar (~1.3 MB). Di server cloud/Docker, jeda transfer data terkadang melebihi 6 detik sehingga memicu `TimeoutError`. Saat timeout terjadi, blok `try` gagal dan `info["status"]` tidak sempat diubah, tetap berada pada nilai default yaitu `"upload"`.
+- **Bukti Teknis:** Di halaman watch `0ZR1PPQHp98`, indikator live sebenarnya ada (`"isLive":true`, `"isLiveNow":true`, dan `<meta itemprop="isLiveBroadcast" content="True">`), namun terlewat jika request HTML timeout atau jika indikator modern YouTube di tab `/streams` (`"text":"LIVE"`, `"badgeStyle":"THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE"`) tidak dibaca langsung sejak awal.
+
+#### 2. Masalah: Delay Notifikasi 1-2 Menit
+- **Penyebab:** 
+  1. Default interval loop saat ini adalah 60 detik (1 menit). Jika streamer mulai live tepat beberapa detik setelah bot melakukan pengecekan, bot baru akan melakukan pengecekan berikutnya 55-58 detik kemudian.
+  2. Server YouTube membutuhkan 15-30 detik untuk mendistribusikan metadata live ke playlist dan feed.
+  3. Ditambah waktu generate copywriting AI Gemini (3-5 detik), total jeda dari streamer klik "Go Live" hingga notifikasi muncul menjadi ~1-2 menit.
+
+#### 3. Masalah: Cuplikan Deskripsi Video / Stream Tidak Muncul
+- **Penyebab:** Pada pembaruan sebelumnya, baris subtitle di `send_notification_card` di-hardcode menjadi `card_desc = f"{video_url}"`, sehingga variabel deskripsi (`desc`) diabaikan dan tidak dimasukkan ke dalam kartu.
+
+#### 4. Masalah: Pesan Terpecah Menjadi 2 Pesan (Pesan Teks Ping + Kartu V2 Susulan)
+- **Penyebab:** Pada `send_notification_card`, bot mengeksekusi dua panggilan terpisah:
+  1. `await target_channel.send(content=mention_content)` $\rightarrow$ menghasilkan pesan teks ping terpisah.
+  2. `await send_v2_message(self.bot, target_channel.id, [card])` $\rightarrow$ menghasilkan pesan kartu susulan di bawahnya.
+  Padahal fungsi `send_v2_message` di [cogs/v2_layout.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/v2_layout.py) sudah mendukung parameter `content`, di mana teks mention akan disisipkan sebagai komponen Text Display (Type 10) di baris teratas kartu dalam **1 PESAN TUNGGAL**.
+
+---
+
+### B. Rencana Perbaikan Teknis (Implementasi Fase 2)
+
+#### 1. Deteksi Ganda Status Live Stream (Zero Failure)
+- **Tingkat 1 (Early Detection di `/streams`):** Saat `_fetch_from_live_tab` memindai endpoint `/streams`, jika menemukan badge `"text":"LIVE"` atau `"THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE"`, video ID tersebut langsung ditandai dengan flag `is_live = True`.
+- **Tingkat 2 (Direct Endpoint `/live`):** Menambahkan request cepat ke `https://www.youtube.com/channel/{id}/live`. Jika diarahkan atau memuat video ID terkait, maka status otomatis 100% adalah `live`.
+- **Tingkat 3 (Watch Page Scanner yang Lebih Tangguh):**
+  - Menaikkan timeout scraping watch page dari **6 detik menjadi 12 detik**.
+  - Menambahkan pengecekan: `"isLive":true`, `"isLiveNow":true`, `isLiveBroadcast`, dan `liveBroadcastDetails`.
+
+#### 2. Pengurangan Delay (Mempercepat Notifikasi)
+- Menurunkan interval default pengecekan otomatis dari 60 detik menjadi **30 detik**.
+- Karena sistem menggunakan scraping ringan HTML dan oEmbed tanpa menghabiskan kuota Google Cloud API, interval 30 detik sangat aman dan membuat deteksi siaran langsung 2x lebih responsif.
+
+#### 3. Menampilkan Cuplikan Deskripsi Konten
+- Mengembalikan cuplikan deskripsi di dalam `send_notification_card`:
+  ```python
+  if desc and desc.strip():
+      clean_desc = desc[:200].strip().replace("\n", " ")
+      card_desc = f"{clean_desc}...\n\n{video_url}"
+  else:
+      card_desc = f"{video_url}"
+  ```
+- Ekstraksi deskripsi dioptimalkan dengan membaca `shortDescription` dan tag `<meta property="og:description">`.
+
+#### 4. Penyatuan Menjadi 1 Pesan Utuh (Single Message Discord)
+- Menghapus panggilan terpisah `await target_channel.send(content=mention_content)`.
+- Mengirim langsung mention dan AI hype ke dalam `send_v2_message`:
+  ```python
+  await send_v2_message(
+      self.bot, 
+      target_channel.id, 
+      [card], 
+      content=mention_content # Mention @everyone dan AI hype langsung menyatu di atas kartu
+  )
+  ```
+- Discord akan mengirimkan **1 pesan tunggal** yang bersih, rapi, dan tetap memicu notifikasi ping `@everyone`.
+
+---
+
+### C. Checklist Fase 2
+- [x] Menunggu Masukan & Persetujuan Pengguna ("ACC") untuk Rencana Fase 2
+- [x] Terapkan Deteksi Ganda Live Stream di [cogs/yt_checker_test.py](file:///c:/Users/Administrator/Downloads/rtmbot/cogs/yt_checker_test.py)
+- [x] Terapkan penggabungan 1 pesan utuh via `send_v2_message(..., content=...)`
+- [x] Terapkan cuplikan deskripsi di kartu
+- [x] Turunkan default loop interval ke 30 detik
+- [x] Validasi syntax `py_compile`
+- [x] Commit dan push ke `abogoboga main`
+

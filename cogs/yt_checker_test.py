@@ -66,8 +66,8 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
         self.config = self._load_config()
         self.cache = self._load_cache()
         
-        # Terapkan interval dari konfigurasi (default: 60 detik / 1 menit)
-        interval_sec = self.config.get("check_interval_seconds", 60)
+        # Terapkan interval dari konfigurasi (default: 30 detik agar live responsif)
+        interval_sec = self.config.get("check_interval_seconds", 30)
         try:
             self.yt_check_loop.change_interval(seconds=interval_sec)
         except Exception:
@@ -94,7 +94,7 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
         self.yt_check_loop.cancel()
 
     def _get_interval_text(self):
-        sec = self.config.get("check_interval_seconds", 60)
+        sec = self.config.get("check_interval_seconds", 30)
         if sec >= 60:
             mnt = sec // 60
             sisa_sec = sec % 60
@@ -108,7 +108,7 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
     # ==========================================
     def _load_config(self):
         default_config = {
-            "check_interval_seconds": 60,
+            "check_interval_seconds": 30,
             "channels": []
         }
         self._ensure_mongo()
@@ -426,8 +426,47 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
         """
         Layer 2: Dedicated Live Stream Guard (/streams)
         Mendeteksi siaran langsung yang baru dimulai seketika saat on-air.
+        Mengembalikan daftar video ID dan set ID yang memiliki badge LIVE aktif.
         """
         url = f"https://www.youtube.com/channel/{channel_id}/streams"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
+        }
+        vids = []
+        live_now_ids = set()
+        try:
+            timeout = aiohttp.ClientTimeout(total=8)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(url, headers=headers) as resp:
+                    if resp.status == 200:
+                        html = await resp.text()
+                        raw_vids = re.findall(r'\"videoId\":\"([a-zA-Z0-9_-]{11})\"', html)
+                        seen = set()
+                        for v in raw_vids:
+                            if v not in seen:
+                                seen.add(v)
+                                vids.append(v)
+                                # Cek apakah video ini memiliki indikator/badge LIVE aktif di sekitarnya
+                                v_pos = html.find(v)
+                                if v_pos != -1:
+                                    context = html[max(0, v_pos - 150):min(len(html), v_pos + 1200)]
+                                    if (
+                                        '"text":"LIVE"' in context
+                                        or 'THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE' in context
+                                        or 'BADGE_STYLE_TYPE_LIVE_NOW' in context
+                                    ):
+                                        live_now_ids.add(v)
+        except Exception as e:
+            print(f"[YT LIVE TAB ERROR] {e}")
+        return vids[:5], live_now_ids
+
+    async def _check_direct_live_endpoint(self, channel_id: str):
+        """
+        Cek cepat langsung ke endpoint /channel/{id}/live.
+        Jika channel sedang siaran langsung, endpoint ini seketika memuat video on-air.
+        """
+        url = f"https://www.youtube.com/channel/{channel_id}/live"
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
@@ -435,20 +474,20 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
         try:
             timeout = aiohttp.ClientTimeout(total=8)
             async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(url, headers=headers) as resp:
+                async with session.get(url, headers=headers, allow_redirects=True) as resp:
+                    final_url = str(resp.url)
+                    vid = self._extract_video_id(final_url)
+                    if vid:
+                        return vid
                     if resp.status == 200:
                         html = await resp.text()
-                        vids = re.findall(r'\"videoId\":\"([a-zA-Z0-9_-]{11})\"', html)
-                        seen = set()
-                        out = []
-                        for v in vids:
-                            if v not in seen:
-                                seen.add(v)
-                                out.append(v)
-                        return out[:5]
+                        if '"isLive":true' in html or 'BroadcastEvent' in html or '"isLiveNow":true' in html:
+                            vids = re.findall(r'\"videoId\":\"([a-zA-Z0-9_-]{11})\"', html)
+                            if vids:
+                                return vids[0]
         except Exception as e:
-            print(f"[YT LIVE TAB ERROR] {e}")
-        return []
+            print(f"[YT DIRECT LIVE ERROR] {e}")
+        return None
 
     async def _fetch_from_shorts_tab(self, channel_id: str):
         """
@@ -481,23 +520,32 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
         """
         Triple-Layer Universal Content Detector:
         Layer 1: Universal User Uploads Playlist (UU...) -> Video reguler, Shorts, & Live sekaligus secara real-time.
-        Layer 2: Live Stream Guard (/streams) & Shorts Guard (/shorts) -> Deteksi on-air instan.
+        Layer 2: Live Stream Guard (/streams & /live) -> Deteksi on-air instan.
         Layer 3: YouTube Atom RSS Feed (feeds/videos.xml) -> Backup & Metadata feed.
         """
         tasks = [
             self._fetch_from_uu_playlist(channel_id),
             self._fetch_from_live_tab(channel_id),
             self._fetch_from_shorts_tab(channel_id),
+            self._check_direct_live_endpoint(channel_id),
             self.fetch_latest_videos_from_rss(channel_id)
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         
         uu_vids = results[0] if isinstance(results[0], list) else []
-        live_vids = results[1] if isinstance(results[1], list) else []
+        live_res = results[1] if isinstance(results[1], tuple) else ([], set())
+        live_vids, live_now_badge_ids = live_res
         shorts_vids = results[2] if isinstance(results[2], list) else []
-        rss_videos = results[3] if isinstance(results[3], list) else []
+        direct_live_vid = results[3] if isinstance(results[3], str) and results[3] else None
+        rss_videos = results[4] if isinstance(results[4], list) else []
         
         rss_map = {item["video_id"]: item for item in rss_videos}
+        
+        all_live_now_ids = set(live_now_badge_ids)
+        if direct_live_vid:
+            all_live_now_ids.add(direct_live_vid)
+            if direct_live_vid not in live_vids:
+                live_vids.insert(0, direct_live_vid)
         
         # Urutan prioritas penggabungan ID:
         # 1. Live tab (siaran on-air seketika)
@@ -513,8 +561,11 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
                 
         videos = []
         for vid in combined_ids[:10]:
+            is_hint_live = vid in all_live_now_ids
             if vid in rss_map:
-                videos.append(rss_map[vid])
+                item = dict(rss_map[vid])
+                item["is_live_hint"] = is_hint_live
+                videos.append(item)
             else:
                 videos.append({
                     "video_id": vid,
@@ -525,7 +576,8 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
                     "published": None,
                     "updated": None,
                     "thumbnail_url": f"https://img.youtube.com/vi/{vid}/maxresdefault.jpg",
-                    "description": ""
+                    "description": "",
+                    "is_live_hint": is_hint_live
                 })
         return videos
 
@@ -605,17 +657,17 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
             
         return meta
 
-    async def classify_stream_status(self, video_id: str):
+    async def classify_stream_status(self, video_id: str, is_known_live: bool = False):
         """
         Mendeteksi secara akurat metadata video dan status penayangannya:
         - Menggunakan YouTube Official oEmbed API untuk jaminan 100% judul dan nama channel
-        - Menggunakan inspeksi HTML watch untuk mendeteksi Live Stream, Premiere, atau Upload
+        - Menggunakan inspeksi HTML watch & endpoint live untuk deteksi Live Stream, Premiere, atau Upload
         """
         # 1. Tier 1: YouTube Official oEmbed API (100% akurat untuk Video, Shorts, Live, Premiere)
         meta = await self.extract_rich_metadata(video_id)
         
         info = {
-            "status": "upload",
+            "status": "live" if is_known_live else "upload",
             "title": meta.get("title"),
             "channel_name": meta.get("channel_name"),
             "description": None,
@@ -623,8 +675,13 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
         }
 
         # 2. Tier 2: Inspeksi HTML Watch untuk status siaran (Live / Premiere / Upload) & Description
+        watch_url = f"https://www.youtube.com/watch?v={video_id}"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
+        }
         try:
-            timeout_html = aiohttp.ClientTimeout(total=6)
+            timeout_html = aiohttp.ClientTimeout(total=12)
             async with aiohttp.ClientSession(timeout=timeout_html) as session:
                 async with session.get(watch_url, headers=headers) as resp:
                     if resp.status == 200:
@@ -636,15 +693,26 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
                             if t_match:
                                 info["title"] = t_match.group(1).strip()
 
-                        # Deteksi LIVE STREAMING
-                        is_live = False
-                        if '"isLive":true' in html or '"status":"LIVE_STREAMING"' in html or '"isLiveContent":true' in html:
-                            is_live = True
+                        # Deteksi LIVE STREAMING (Komprehensif)
+                        is_live = is_known_live
+                        if not is_live:
+                            if (
+                                '"isLive":true' in html 
+                                or '"status":"LIVE_STREAMING"' in html 
+                                or '"isLiveContent":true' in html
+                                or '"isLiveNow":true' in html
+                                or 'itemprop="isLiveBroadcast"' in html
+                                or 'THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE' in html
+                                or 'liveBroadcastDetails' in html
+                                or 'BroadcastEvent' in html
+                            ):
+                                is_live = True
 
                         # Deteksi PREMIERE / UPCOMING
                         is_upcoming = False
-                        if '"upcomingEvents"' in html or '"scheduledStartTime"' in html or '"isUpcoming":true' in html:
-                            is_upcoming = True
+                        if not is_live:
+                            if '"upcomingEvents"' in html or '"scheduledStartTime"' in html or '"isUpcoming":true' in html:
+                                is_upcoming = True
 
                         if is_live:
                             info["status"] = "live"
@@ -663,13 +731,17 @@ class YouTubeNativeCheckerTest(commands.Cog, name="YouTube Native Checker Test")
                                 if og_author:
                                     info["channel_name"] = og_author.group(1)
 
-                        # Cari deskripsi pendek
+                        # Cari deskripsi konten (Multi-Fallback)
                         d_match = re.search(r'\"shortDescription\":\"(.*?)\"', html)
                         if d_match:
                             try:
                                 info["description"] = json.loads(f'{{"d":"{d_match.group(1)}"}}')["d"]
-                            except:
+                            except Exception:
                                 info["description"] = d_match.group(1)
+                        if not info["description"]:
+                            og_desc = re.search(r'<meta property=\"og:description\" content=\"(.*?)\"', html)
+                            if og_desc:
+                                info["description"] = og_desc.group(1).strip()
         except Exception as e_html:
             print(f"[YT HTML CLASSIFIER ERROR] {e_html}")
 
@@ -797,8 +869,12 @@ Berikan 1 respon pengumuman kamu sekarang:"""
         safe_title = title.replace("[", "(").replace("]", ")")
         card_title = f"[{safe_title}]({video_url})"
         
-        # Subtitle menampilkan URL tepat di bawah judul (identik Foto 3)
-        card_desc = f"{video_url}"
+        # Subtitle menampilkan deskripsi singkat (jika ada) dan URL di bawah judul
+        if desc and desc.strip():
+            clean_desc = desc[:200].strip().replace("\r", "").replace("\n\n", "\n")
+            card_desc = f"{clean_desc}...\n\n{video_url}"
+        else:
+            card_desc = f"{video_url}"
 
         try:
             card = build_v2_card(
@@ -809,11 +885,13 @@ Berikan 1 respon pengumuman kamu sekarang:"""
                 buttons=buttons,
                 media_url=thumbnail_url
             )
-            # Kirim teks mention terlebih dahulu agar notifikasi ping berfungsi
-            if mention_content and mention_content.strip():
-                await target_channel.send(content=mention_content)
-            # Kirim kartu V2
-            await send_v2_message(self.bot, target_channel.id, [card])
+            # Kirim langsung sebagai 1 pesan tunggal terpadu (mention @everyone + AI hype + V2 card)
+            await send_v2_message(
+                self.bot, 
+                target_channel.id, 
+                [card], 
+                content=mention_content
+            )
             return True
         except Exception as err:
             print(f"[YT TEST V2 FALLBACK] Gagal kirim V2 card, menggunakan Embed standar: {err}")
@@ -837,10 +915,10 @@ Berikan 1 respon pengumuman kamu sekarang:"""
     # ==========================================
     # BACKGROUND POLLING LOOP (AUTO CHECKER)
     # ==========================================
-    @tasks.loop(seconds=60)
+    @tasks.loop(seconds=30)
     async def yt_check_loop(self):
         """
-        Loop otomatis mengecek channel YouTube yang terdaftar setiap 60 detik (1 menit).
+        Loop otomatis mengecek channel YouTube yang terdaftar setiap 30 detik.
         Dilengkapi Timestamp Freshness Guard agar video lama tidak pernah terkirim sebagai notifikasi baru.
         """
         channels = self.config.get("channels", [])
@@ -891,7 +969,8 @@ Berikan 1 respon pengumuman kamu sekarang:"""
                     continue
 
                 # Konten baru ditemukan! Analisis status siaran
-                classification = await self.classify_stream_status(vid)
+                is_known_live = item.get("is_live_hint", False)
+                classification = await self.classify_stream_status(vid, is_known_live=is_known_live)
                 item["status"] = classification["status"]
                 if classification.get("title"):
                     item["title"] = classification["title"]
@@ -976,7 +1055,8 @@ Berikan 1 respon pengumuman kamu sekarang:"""
         
         async with ctx.typing():
             # 1. Klasifikasi status (Live / Premiere / Upload)
-            classification = await self.classify_stream_status(vid)
+            is_known_live = "/live/" in url
+            classification = await self.classify_stream_status(vid, is_known_live=is_known_live)
             
             title = classification.get("title") or "Video YouTube"
             channel_name = classification.get("channel_name") or "YouTube Channel"
@@ -1231,7 +1311,8 @@ Berikan 1 respon pengumuman kamu sekarang:"""
             else:
                 # Video baru ditemukan!
                 if target_disc_channel:
-                    classification = await self.classify_stream_status(top_vid)
+                    is_known_live = top_item.get("is_live_hint", False)
+                    classification = await self.classify_stream_status(top_vid, is_known_live=is_known_live)
                     top_item["status"] = classification["status"]
                     top_item["title"] = classification.get("title") or top_item.get("title") or "Video YouTube"
                     top_item["channel_name"] = classification.get("channel_name") or c_name
