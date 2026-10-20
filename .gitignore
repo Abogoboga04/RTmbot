@@ -129,14 +129,10 @@ env.bak/
 venv.bak/
 cookies.txt
 
-# Local Agent Docs & Implementation Plans
-PLAN_IMPLEMENTASI.md
+# Local Agent Docs & Scratch Files
 implementasi_plan.md
 *implementation_plan*.md
-*plan_implementasi*.md
-*PLAN_IMPLEMENTASI*.md
 *implementation_plan*
-*plan_implementasi*
 ARCHITECTURE.md
 Rules_Agent.md
 *.plan.md
