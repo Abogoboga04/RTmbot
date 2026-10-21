@@ -65,7 +65,7 @@ MODULE_METADATA = {
         ]
     },
     "gemini.py": {
-        "name": "Unified AI Assistant & Cyber Security Engine",
+        "name": "AI Assistant & Cyber Security Engine",
         "category": "Kecerdasan Buatan & Keamanan",
         "description": "Asisten AI cerdas untuk tanya jawab, analisis gambar, filter link mencurigakan, persona dinamis, dan memori percakapan.",
         "key_features": [
@@ -115,7 +115,7 @@ MODULE_METADATA = {
     "webhook.py": {
         "name": "Webhook Dispatcher & Broadcast Engine",
         "category": "Utilitas & Penyiaran",
-        "description": "Pengiriman pesan penyiaran, webhook Discord Layout V2, pengumuman berjadwal, dan manajemen pengumuman server.",
+        "description": "Pengiriman pesan penyiaran, webhook interaktif, pengumuman berjadwal, dan manajemen pengumuman server.",
         "key_features": [
             "Kirim webhook kustom (!swh / send_webhook) dan edit siaran (!eb / edit_broadcast)",
             "Pengumuman server resmi (!announcement)",

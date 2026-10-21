@@ -3251,7 +3251,7 @@
           "permissions": [
             "commands.is_owner("
           ],
-          "description": "Kirim kartu V2 uji coba untuk URL YouTube dan tampilkan detail preview"
+          "description": "Kirim uji coba notifikasi untuk URL YouTube"
         },
         {
           "name": "yt_group check",
@@ -3390,7 +3390,7 @@
           "permissions": [
             "commands.is_owner("
           ],
-          "description": "Kirim kartu V2 uji coba untuk URL TikTok dan tampilkan detail preview"
+          "description": "Kirim uji coba notifikasi untuk URL TikTok"
         },
         {
           "name": "tt_group check",
@@ -3708,7 +3708,7 @@
       "metadata": {
         "name": "Webhook Dispatcher & Broadcast Engine",
         "category": "Utilitas & Penyiaran",
-        "description": "Pengiriman pesan penyiaran, webhook Discord Layout V2, pengumuman berjadwal, dan manajemen pengumuman server.",
+        "description": "Pengiriman pesan penyiaran, webhook interaktif, pengumuman berjadwal, dan manajemen pengumuman server.",
         "key_features": [
           "Kirim webhook kustom (!swh / send_webhook) dan edit siaran (!eb / edit_broadcast)",
           "Pengumuman server resmi (!announcement)",

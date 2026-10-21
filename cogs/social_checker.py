@@ -10,6 +10,7 @@ import aiohttp
 import discord
 from discord.ext import commands, tasks
 import google.generativeai as genai
+from google.api_core import exceptions as google_exceptions
 import yt_dlp
 from dotenv import load_dotenv
 from cogs.v2_layout import build_v2_card, send_v2_message
@@ -217,22 +218,52 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
         if not API_KEYS:
             return self._fallback_hype(creator, platform, is_live)
 
-        type_text = "TikTok video" if platform == "tiktok" else ("siaran langsung (Live)" if is_live else "video YouTube")
-        prompt = (
-            f"Kamu adalah bot notifikasi ramah dan santai di server Discord. "
-            f"Kreator '{creator}' baru saja mempublikasikan {type_text} dengan judul/caption: \"{title}\". "
-            f"Tulis 1 kalimat pengantar yang seru, hangat, dan mengajak member menonton sekarang tanpa basa-basi."
-        )
+        tipe_konten = "Live Streaming TikTok" if (platform == "tiktok" and is_live) else ("Video TikTok" if platform == "tiktok" else ("Live Streaming YouTube" if is_live else "Video Baru YouTube"))
 
-        for _ in range(len(API_KEYS)):
-            try:
-                model = genai.GenerativeModel("gemini-1.5-flash")
-                response = await asyncio.to_thread(model.generate_content, prompt)
-                if response and response.text:
-                    clean_text = " ".join(response.text.strip().splitlines())
-                    return clean_text.strip('\'"')
-            except Exception:
-                rotate_api_key()
+        info_lines = []
+        if creator:
+            info_lines.append(f"- Channel/Kreator: {creator}")
+        if title:
+            info_lines.append(f"- Judul: {title}")
+
+        context_str = "\n".join(info_lines) if info_lines else "Belum ada detail khusus."
+
+        prompt = f"""Kamu adalah bot Discord server RTMxBadut.
+Tugas kamu membuat 1 kalimat notifikasi/sapaan santai dan asik buat warga server tentang {tipe_konten} yang baru rilis/dimulai.
+
+Informasi konten:
+{context_str}
+
+Panduan gaya:
+1. Hubungkan sapaan kamu secara alami dengan judul atau topik kontennya di atas. Jangan buat pujian kosong yang tidak nyambung dengan isi videonya.
+2. Gunakan bahasa obrolan Discord/tongkrongan Indonesia yang asik, santai, dan luwes.
+3. Sesuaikan dengan situasinya:
+   - Kalau video santai/keseharian/vlog, sapa warga server dengan santai dan ajak nonton.
+   - Kalau live streaming, ajak warga server langsung merapat ke live chat.
+4. Singkat, padat (cukup 1-2 kalimat). Jangan pakai hashtag dan jangan tulis URL link di dalam teks karena link sudah disediakan di tombol.
+
+Berikan teks pengumuman kamu sekarang:"""
+
+        models_to_try = ['gemini-2.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash-lite']
+
+        for model_name in models_to_try:
+            attempts = max(1, len(API_KEYS))
+            for _ in range(attempts):
+                try:
+                    model = genai.GenerativeModel(model_name)
+                    response = await asyncio.wait_for(model.generate_content_async(prompt), timeout=30.0)
+                    if response and response.text:
+                        return response.text.strip().replace('"', '')
+                except asyncio.TimeoutError:
+                    return self._fallback_hype(creator, platform, is_live)
+                except google_exceptions.ResourceExhausted:
+                    if rotate_api_key():
+                        await asyncio.sleep(1)
+                        continue
+                    else:
+                        break
+                except Exception:
+                    break
 
         return self._fallback_hype(creator, platform, is_live)
 
@@ -586,7 +617,7 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
         card = build_v2_card(
             title=f"[{title}]({url})",
             description=desc,
-            color=btn_color,
+            color=None,
             buttons=buttons,
             attachment_filename=attachment_fn,
             media_url=thumbnail if not attachment_fn else None,
@@ -771,7 +802,7 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
             lines.append(f"{idx}. **{t['display_name']}** (`{t['identifier']}`) - {ch_mention} [{status}] Mode: `{t.get('message_mode', 'ai')}` Mention: `{t.get('mention_role')}`")
         await ctx.send("\n".join(lines), ephemeral=True)
 
-    @yt_group.command(name="test", description="Kirim kartu V2 uji coba untuk URL YouTube dan tampilkan detail preview")
+    @yt_group.command(name="test", description="Kirim uji coba notifikasi untuk URL YouTube")
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
     async def yt_test(self, ctx: commands.Context, url: str, channel: discord.TextChannel = None):
         target_channel = channel or ctx.channel
@@ -793,7 +824,7 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
         card_sent = await self._send_content_card(dummy_target, meta)
         embed = discord.Embed(
             title="🎬 Preview Pengujian Notifikasi YouTube",
-            description="Pengujian kartu notifikasi V2 berhasil diproses dengan detail konten di bawah ini:",
+            description="Pengujian notifikasi berhasil diproses dengan detail konten di bawah ini:",
             color=0xFF0000
         )
         embed.add_field(name="👤 Channel / Kreator", value=f"**{meta.get('creator', 'Creator')}**", inline=True)
@@ -801,11 +832,11 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
         embed.add_field(name="📢 Saluran Target", value=target_channel.mention, inline=True)
         embed.add_field(name="📝 Judul Video", value=meta.get('title', 'Video')[:250], inline=False)
         embed.add_field(name="🔗 Tautan Video", value=f"[Buka Video YouTube]({meta.get('url', url)})", inline=False)
-        status_text = f"✅ Kartu V2 berhasil dikirim ke {target_channel.mention}." if card_sent else f"⚠️ Gagal mengirim kartu V2 ke {target_channel.mention}."
-        embed.add_field(name="⚡ Status Kartu V2", value=status_text, inline=False)
+        status_text = f"✅ Notifikasi berhasil dikirim ke {target_channel.mention}." if card_sent else f"⚠️ Gagal mengirim notifikasi ke {target_channel.mention}."
+        embed.add_field(name="⚡ Status Pengiriman", value=status_text, inline=False)
         if meta.get("thumbnail"):
             embed.set_thumbnail(url=meta["thumbnail"])
-        embed.set_footer(text="Gunakan link video YouTube siapapun untuk preview format kartu notifikasi.")
+        embed.set_footer(text="Gunakan link video YouTube siapapun untuk preview format notifikasi.")
         await ctx.send(embed=embed, ephemeral=True)
 
     @yt_group.command(name="check", description="Paksa cek pembaruan YouTube sekarang")
@@ -953,7 +984,7 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
             lines.append(f"{idx}. **@{t['display_name']}** - {ch_mention} [{status}] Mode: `{t.get('message_mode', 'ai')}` Mention: `{t.get('mention_role')}`")
         await ctx.send("\n".join(lines), ephemeral=True)
 
-    @tt_group.command(name="test", description="Kirim kartu V2 uji coba untuk URL TikTok dan tampilkan detail preview")
+    @tt_group.command(name="test", description="Kirim uji coba notifikasi untuk URL TikTok")
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
     async def tt_test(self, ctx: commands.Context, url: str, channel: discord.TextChannel = None):
         target_channel = channel or ctx.channel
@@ -976,7 +1007,7 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
 
             embed = discord.Embed(
                 title="🎬 Preview Pengujian Notifikasi TikTok",
-                description="Pengujian kartu notifikasi V2 berhasil diproses dengan detail konten di bawah ini:",
+                description="Pengujian notifikasi berhasil diproses dengan detail konten di bawah ini:",
                 color=0x00F2FE
             )
             embed.add_field(name="👤 Kreator / Akun", value=f"**@{meta['creator']}**", inline=True)
@@ -985,11 +1016,11 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
             caption_preview = meta['title'][:250] + ("..." if len(meta['title']) > 250 else "")
             embed.add_field(name="📝 Caption / Judul", value=caption_preview, inline=False)
             embed.add_field(name="🔗 Tautan Video", value=f"[Buka Video TikTok]({meta['url']})", inline=False)
-            status_text = f"✅ Kartu V2 berhasil dikirim ke {target_channel.mention}." if card_sent else f"⚠️ Gagal mengirim kartu V2 ke {target_channel.mention}."
-            embed.add_field(name="⚡ Status Kartu V2", value=status_text, inline=False)
+            status_text = f"✅ Notifikasi berhasil dikirim ke {target_channel.mention}." if card_sent else f"⚠️ Gagal mengirim notifikasi ke {target_channel.mention}."
+            embed.add_field(name="⚡ Status Pengiriman", value=status_text, inline=False)
             if meta.get("thumbnail"):
                 embed.set_thumbnail(url=meta["thumbnail"])
-            embed.set_footer(text="Gunakan link video TikTok siapapun untuk preview format kartu notifikasi.")
+            embed.set_footer(text="Gunakan link video TikTok siapapun untuk preview format notifikasi.")
             await ctx.send(embed=embed, ephemeral=True)
         except Exception as e:
             await ctx.send(f"❌ Terjadi kesalahan saat menguji URL TikTok: {e}", ephemeral=True)
