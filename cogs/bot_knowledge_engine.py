@@ -14,7 +14,7 @@ MODULE_METADATA = {
         "key_features": [
             "Master Setup Dashboard (/setup) untuk konfigurasi kanal welcome, booster, tiket, audit log, trap spam",
             "Kartu Jebakan Spam Self-Healing: Otomatis mendeteksi spam/phishing di kanal trap dan auto-timeout pelanggar",
-            "Panel Role (/setuppanelrole, /addpanelrole) dengan gaya Dropdown Select atau Button interaktif",
+            "Panel Role (/panelrole) interaktif: buat baru, kelola role, dan atur seleksi ketat atau bebas",
             "Sistem Tiket Terisolasi dengan tombol tutup manual countdown 5 detik dan transkrip",
             "Welcome & Farewell V2 Container Card borderless dengan sertifikat member 1050x660 PNG",
             "Tindakan moderasi lengkap: !mute, !unmute, !warn, !kick, !ban, !clear, !slowmode"
@@ -222,8 +222,8 @@ WORKFLOW_GUIDES = [
     },
     {
         "topic": "Setup Panel Pemilihan Role (Self-Role)",
-        "keywords": ["panel role", "setuppanelrole", "addpanelrole", "ambil role", "reaction role"],
-        "summary": "1. Jalankan `/setuppanelrole channel:<kanal> mode:<select/button> judul:<Judul Panel>`.\n2. Catat ID pesan panel yang terkirim.\n3. Tambahkan role satu per satu dengan `/addpanelrole message_id:<ID Pesan> role:<@Role> label_teks:<Nama Label> emoji:<Emoji>`.\n4. Member bisa mengambil dan melepas role dengan sekali klik dropdown atau tombol interaktif."
+        "keywords": ["panel role", "panelrole", "ambil role", "reaction role", "self role"],
+        "summary": "1. Jalankan `/panelrole` untuk membuka Studio Panel Role.\n2. Klik 'Buat Panel Baru' untuk menentukan kanal target, aturan seleksi (Ketat/Bebas), gaya tampilan (Dropdown/Tombol), serta teks judul & petunjuk.\n3. Panel yang sudah ada bisa diedit kapan saja langsung dari studio `/panelrole` (tambah/hapus role, ganti aturan, ubah teks) dan otomatis tersinkronisasi ke pesan Discord serta database."
     },
     {
         "topic": "Setup Voice Channel Sementara (Join-to-Create)",

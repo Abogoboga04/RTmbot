@@ -302,8 +302,7 @@ HELP_CATEGORIES = {
         "color": 0xE74C3C,
         "fields": [
             {"name": "⚙️ /setup (alias !settings)", "value": "Menu utama pengaturan server: role otomatis, log aktivitas, booster, dan tiket."},
-            {"name": "🎭 /panelrole & /setuppanelrole", "value": "Bikin panel ambil role sendiri menggunakan tombol atau menu pilihan."},
-            {"name": "➕ /addpanelrole & /removepanelrole", "value": "Tambah atau hapus role dari pesan panel yang sudah ada."},
+            {"name": "🎭 /panelrole", "value": "Studio panel role mandiri: buat, edit role, dan atur seleksi ketat atau bebas."},
             {"name": "🎫 /ticket (alias !tiket)", "value": "Pasang tombol pembuatan tiket bantuan untuk member yang butuh bantuan staf."},
             {"name": "🛡️ /modpanel & /toggle_status", "value": "Pantau status keamanan server dan daftar member yang sedang kena timeout."},
             {"name": "🔨 /ban <member> & /unban <user_id>", "value": "Blokir atau buka kembali akses member ke server."},
