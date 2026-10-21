@@ -59,6 +59,15 @@ def get_or_create_member_serial_id(guild: discord.Guild, member: discord.Member)
     return new_serial
 
 
+SMALL_CAPS_MAP = {
+    '\u1d00': 'A', '\u0299': 'B', '\u1d04': 'C', '\u1d05': 'D', '\u1d07': 'E',
+    '\ua730': 'F', '\u0262': 'G', '\u029c': 'H', '\u026a': 'I', '\u1d0a': 'J',
+    '\u1d0b': 'K', '\u029f': 'L', '\u1d0d': 'M', '\u0274': 'N', '\u1d0f': 'O',
+    '\u1d18': 'P', '\u0291': 'Q', '\u0280': 'R', '\ua731': 'S', '\u1d1b': 'T',
+    '\u1d1c': 'U', '\u1d20': 'V', '\u1d21': 'W', '\u1d22': 'Z', '\u028f': 'Y'
+}
+
+
 def is_safe_printable_char(ch: str) -> bool:
     code = ord(ch)
     if 32 <= code <= 126:
@@ -73,16 +82,31 @@ def is_safe_printable_char(ch: str) -> bool:
 def clean_display_text(text: str) -> str:
     if not text:
         return "MEMBER"
-    text = unicodedata.normalize('NFKC', str(text))
-    cleaned = ''.join(ch for ch in text if is_safe_printable_char(ch)).strip()
+    chars = []
+    for ch in str(text):
+        if ch in SMALL_CAPS_MAP:
+            chars.append(SMALL_CAPS_MAP[ch])
+        else:
+            code = ord(ch)
+            if 0x24b6 <= code <= 0x24cf:
+                chars.append(chr(code - 0x24b6 + ord('A')))
+            elif 0x24d0 <= code <= 0x24e9:
+                chars.append(chr(code - 0x24d0 + ord('a')))
+            elif 0x249c <= code <= 0x24b5:
+                chars.append(chr(code - 0x249c + ord('a')))
+            else:
+                chars.append(ch)
+    raw = ''.join(chars)
+    nfd = ''.join(c for c in unicodedata.normalize('NFD', raw) if unicodedata.category(c) != 'Mn')
+    nfkc = unicodedata.normalize('NFKC', nfd)
+    cleaned = ''.join(ch for ch in nfkc if is_safe_printable_char(ch)).strip()
     cleaned = re.sub(r'\s+', ' ', cleaned).strip()
     return cleaned if cleaned else "MEMBER"
 
 
-def get_card_fonts():
+def find_font(filenames):
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     asset_fonts = os.path.join(base_dir, "assets", "fonts")
-
     search_dirs = [
         asset_fonts,
         os.path.join(base_dir, "data", "fonts"),
@@ -92,30 +116,32 @@ def get_card_fonts():
         "/usr/share/fonts",
         "/usr/local/share/fonts"
     ]
+    for d in search_dirs:
+        if not os.path.exists(d):
+            continue
+        for fn in filenames:
+            p = os.path.join(d, fn)
+            if os.path.isfile(p):
+                return p
+    return None
 
-    def find_font(filenames):
-        for d in search_dirs:
-            if not os.path.exists(d):
-                continue
-            for fn in filenames:
-                p = os.path.join(d, fn)
-                if os.path.isfile(p):
-                    return p
-        return None
 
-    f_serif_bold = find_font(["georgiab.ttf", "timesbd.ttf", "DejaVuSerif-Bold.ttf", "LiberationSerif-Bold.ttf"])
-    f_serif_reg = find_font(["georgia.ttf", "times.ttf", "DejaVuSerif.ttf", "LiberationSerif-Regular.ttf"])
-    f_sans_bold = find_font(["arialbd.ttf", "DejaVuSans-Bold.ttf", "LiberationSans-Bold.ttf"])
-    f_sans_reg = find_font(["arial.ttf", "DejaVuSans.ttf", "LiberationSans-Regular.ttf"])
+f_serif_bold = find_font(["georgiab.ttf", "timesbd.ttf", "DejaVuSerif-Bold.ttf", "LiberationSerif-Bold.ttf"])
+f_serif_reg = find_font(["georgia.ttf", "times.ttf", "DejaVuSerif.ttf", "LiberationSerif-Regular.ttf"])
+f_sans_bold = find_font(["arialbd.ttf", "DejaVuSans-Bold.ttf", "LiberationSans-Bold.ttf"])
+f_sans_reg = find_font(["arial.ttf", "DejaVuSans.ttf", "LiberationSans-Regular.ttf"])
 
-    def load_font(path, size):
-        try:
-            if path and os.path.exists(path):
-                return ImageFont.truetype(path, size)
-        except Exception:
-            pass
-        return ImageFont.load_default()
 
+def load_font(path, size):
+    try:
+        if path and os.path.exists(path):
+            return ImageFont.truetype(path, size)
+    except Exception:
+        pass
+    return ImageFont.load_default()
+
+
+def get_card_fonts():
     return {
         "title": load_font(f_serif_bold, 28),
         "subtitle": load_font(f_serif_bold, 15),
@@ -132,6 +158,7 @@ def get_card_fonts():
         "stamp_sub": load_font(f_sans_bold, 12),
         "auth_id": load_font(f_sans_reg, 12),
     }
+
 
 
 def draw_star(draw, cx, cy, r_outer=15, r_inner=7, fill=(245, 195, 60, 255), outline=(180, 135, 30, 255)):
@@ -293,17 +320,35 @@ async def generate_official_member_card(
         draw.line([(W - 42, H - 43), (W - 42, H - 43 - bracket_len)], fill=gold_dark, width=2)
         draw.ellipse([(W - 42 - dot_dist - 2, H - 43 - dot_dist - 2), (W - 42 - dot_dist + 2, H - 43 - dot_dist + 2)], fill=gold_dark)
 
+        badge_w, badge_h = 220, 38
+        badge_x, badge_y = W - 58 - badge_w, 54
+
         title_text = custom_title or f"KARTU RESMI ANGGOTA • {safe_guild_name.upper()}"
-        draw.text((58, 48), title_text, font=fonts["title"], fill=text_dark)
+        max_title_w = badge_x - 58 - 18
+        title_font = fonts["title"]
+        tb = title_font.getbbox(title_text)
+        tw = tb[2] - tb[0]
+        if tw > max_title_w:
+            for s in [24, 21, 18, 16]:
+                cand_font = load_font(f_serif_bold, s)
+                cb = cand_font.getbbox(title_text)
+                if (cb[2] - cb[0]) <= max_title_w:
+                    title_font = cand_font
+                    break
+            else:
+                while len(title_text) > 15:
+                    title_text = title_text[:-4].strip() + "..."
+                    cb = title_font.getbbox(title_text)
+                    if (cb[2] - cb[0]) <= max_title_w:
+                        break
+
+        draw.text((58, 48), title_text, font=title_font, fill=text_dark)
         draw.text((58, 86), sub_header_str, font=fonts["subtitle"], fill=text_gold)
 
         if rank_pos is not None:
             badge_tier = f"RANK: #{rank_pos} • CLASS-A" if rank_pos > 3 else "RANK: S-CLASS MASTER"
         else:
             badge_tier = "ANGGOTA RESMI VERIFIED"
-
-        badge_w, badge_h = 220, 38
-        badge_x, badge_y = W - 58 - badge_w, 54
         draw.rounded_rectangle([(badge_x, badge_y), (badge_x + badge_w, badge_y + badge_h)], radius=8, fill=(192, 57, 43, 255))
         bw = fonts["badge"].getbbox(badge_tier)
         b_w = bw[2] - bw[0]
@@ -371,15 +416,23 @@ async def generate_official_member_card(
 
         draw.line([(58, 415), (W - 58, 415)], fill=gold_light, width=1)
 
-        quote_text = f"Lisensi resmi ini diterbitkan secara sah atas keaktifan dan keanggotaan terverifikasi di server {safe_guild_name}."
+        display_guild_in_quote = safe_guild_name if len(safe_guild_name) <= 30 else (safe_guild_name[:27] + "...")
+        quote_text = f"Lisensi resmi ini diterbitkan secara sah atas keaktifan dan keanggotaan terverifikasi di server {display_guild_in_quote}."
         q_bbox = fonts["quote"].getbbox(quote_text)
         qw = q_bbox[2] - q_bbox[0]
+        if qw > (W - 116):
+            quote_text = f"Lisensi resmi ini diterbitkan atas keaktifan dan keanggotaan di server {display_guild_in_quote}."
+            q_bbox = fonts["quote"].getbbox(quote_text)
+            qw = q_bbox[2] - q_bbox[0]
         draw.text(((W - qw) // 2, 445), quote_text, font=fonts["quote"], fill=(122, 103, 80, 255))
 
         cx_left = 185
         sw = fonts["sign_name"].getbbox(server_owner_name)[2] - fonts["sign_name"].getbbox(server_owner_name)[0]
         draw.text((cx_left - sw // 2, 482), server_owner_name, font=fonts["sign_name"], fill=text_dark)
         srw = fonts["sign_role"].getbbox(server_owner_role)[2] - fonts["sign_role"].getbbox(server_owner_role)[0]
+        if srw > 260:
+            server_owner_role = f"Owner & Pendiri {safe_guild_name[:12]}..."
+            srw = fonts["sign_role"].getbbox(server_owner_role)[2] - fonts["sign_role"].getbbox(server_owner_role)[0]
         draw.text((cx_left - srw // 2, 510), server_owner_role, font=fonts["sign_role"], fill=text_gold)
 
         draw_star(draw, W // 2 - 36, 498, r_outer=13, r_inner=6)

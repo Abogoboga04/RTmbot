@@ -47,6 +47,18 @@ def rotate_api_key():
 
 configure_genai()
 
+def clean_hyperlink_title(raw_title: str) -> str:
+    if not raw_title:
+        return ""
+    try:
+        import emoji
+        cleaned = emoji.replace_emoji(str(raw_title), replace='')
+    except Exception:
+        cleaned = str(raw_title)
+    cleaned = re.sub(r'[\[\]]', '', cleaned)
+    cleaned = " ".join(cleaned.split())
+    return cleaned
+
 
 class SocialChecker(commands.Cog, name="Social Media Checker"):
     def __init__(self, bot):
@@ -419,7 +431,7 @@ Berikan teks pengumuman kamu sekarang:"""
                             if t_match:
                                 raw_title = t_match.group(1)
                         if raw_title:
-                            meta["title"] = raw_title
+                            meta["title"] = clean_hyperlink_title(raw_title)
                         if data.get("author_name"):
                             meta["creator"] = data["author_name"]
                         if data.get("thumbnail_url"):
@@ -488,7 +500,7 @@ Berikan teks pengumuman kamu sekarang:"""
 
                 results.append({
                     "video_id": vid,
-                    "title": entry.get("title") or f"TikTok Video by @{clean_user}",
+                    "title": clean_hyperlink_title(entry.get("title")) or f"TikTok Video by @{clean_user}",
                     "creator": entry.get("uploader") or clean_user,
                     "url": url,
                     "thumbnail": entry.get("thumbnail"),
@@ -512,7 +524,7 @@ Berikan teks pengumuman kamu sekarang:"""
             if data and data.get("id"):
                 meta = {
                     "video_id": str(data.get("id")),
-                    "title": data.get("title") or "TikTok Video",
+                    "title": clean_hyperlink_title(data.get("title")) or "TikTok Video",
                     "creator": data.get("uploader") or data.get("creator") or "TikTok Creator",
                     "url": data.get("webpage_url") or url,
                     "thumbnail": data.get("thumbnail"),
@@ -604,7 +616,12 @@ Berikan teks pengumuman kamu sekarang:"""
             try:
                 import io
                 timeout = aiohttp.ClientTimeout(total=5)
-                async with aiohttp.ClientSession(timeout=timeout) as session:
+                dl_headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                }
+                if "tiktok" in str(thumbnail):
+                    dl_headers["Referer"] = "https://www.tiktok.com/"
+                async with aiohttp.ClientSession(timeout=timeout, headers=dl_headers) as session:
                     async with session.get(thumbnail) as img_resp:
                         if img_resp.status == 200:
                             img_bytes = await img_resp.read()
@@ -614,8 +631,12 @@ Berikan teks pengumuman kamu sekarang:"""
                 files = None
                 attachment_fn = None
 
+        clean_card_title = clean_hyperlink_title(title)
+        if not clean_card_title:
+            clean_card_title = "Video TikTok" if platform == "tiktok" else "Video YouTube"
+
         card = build_v2_card(
-            title=f"[{title}]({url})",
+            title=f"[{clean_card_title}]({url})",
             description=desc,
             color=None,
             buttons=buttons,

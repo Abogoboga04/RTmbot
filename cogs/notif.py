@@ -219,6 +219,34 @@ def _extract_tiktok_info(url):
     return title, description, thumbnail_url, clean_url, creator
 
 
+def _extract_instagram_info(url):
+    clean_url = url.replace('\\', '').strip()
+    title = None
+    description = ""
+    thumbnail_url = None
+    creator = None
+    try:
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': True,
+            'socket_timeout': 8,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(clean_url, download=False)
+            if info:
+                raw_title = info.get("title") or info.get("description") or ""
+                if raw_title:
+                    title = " ".join(emoji.replace_emoji(raw_title, replace='').split())
+                    description = title
+                creator = info.get("uploader") or info.get("channel") or ""
+                thumbnail_url = info.get("thumbnail")
+    except Exception:
+        pass
+    return title, description, thumbnail_url, clean_url, creator
+
+
+
 def get_config_path(cog, path_id, type_key, field_key=None):
     path_data = cog.config["notification_paths"].get(path_id)
     if not path_data: return None
@@ -791,18 +819,18 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
                 "button_style": discord.ButtonStyle.success.value,
                 "button_color": "#57f287",
                 "embed_color": "#9b59b6",
-                "use_embed": False,
+                "use_embed": True,
                 "embed_thumbnail": True
             },
             "tiktok": {
-                "title": "[📱 {judul}]({url})",
+                "title": "[{judul}]({url})",
                 "description": "Cek video TikTok terbaru!\n\n{url}",
                 "content": "@everyone {ai_hype}",
                 "button_label": "Tonton di TikTok",
                 "button_style": discord.ButtonStyle.primary.value,
                 "button_color": "#000000",
                 "embed_color": "#000000",
-                "use_embed": False,
+                "use_embed": True,
                 "embed_thumbnail": True
             },
             "tiktok_live": {
@@ -813,7 +841,7 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
                 "button_style": discord.ButtonStyle.danger.value,
                 "button_color": "#ed4245",
                 "embed_color": "#e74c3c",
-                "use_embed": False,
+                "use_embed": True,
                 "embed_thumbnail": True
             },
             "instagram": {
@@ -824,7 +852,7 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
                 "button_style": discord.ButtonStyle.primary.value,
                 "button_color": "#E1306C",
                 "embed_color": "#E1306C",
-                "use_embed": False,
+                "use_embed": True,
                 "embed_thumbnail": True
             },
             "instagram_live": {
@@ -835,7 +863,7 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
                 "button_style": discord.ButtonStyle.danger.value,
                 "button_color": "#ed4245",
                 "embed_color": "#e74c3c",
-                "use_embed": False,
+                "use_embed": True,
                 "embed_thumbnail": True
             }
         }
@@ -1169,6 +1197,18 @@ Berikan teks pengumuman kamu sekarang:"""
                     youtube_thumbnail = tt_th
                 if not youtube_channel and tt_c:
                     youtube_channel = tt_c
+        elif link_type in ["instagram", "instagram_live"]:
+            if not youtube_title or not youtube_thumbnail:
+                import asyncio
+                ig_t, ig_d, ig_th, ig_u, ig_c = await asyncio.to_thread(_extract_instagram_info, link_for_send)
+                if not youtube_title and ig_t:
+                    youtube_title = ig_t
+                if not youtube_description and ig_d:
+                    youtube_description = ig_d
+                if not youtube_thumbnail and ig_th:
+                    youtube_thumbnail = ig_th
+                if not youtube_channel and ig_c:
+                    youtube_channel = ig_c
 
         clean_title = youtube_title if youtube_title else None
         if youtube_title:
@@ -1199,10 +1239,7 @@ Berikan teks pengumuman kamu sekarang:"""
                 final_content = config_msg.get('content')
                 final_embed_title = config_msg.get('title')
                 final_embed_description = config_msg.get('description')
-                use_embed = config_msg.get('use_embed', False)
-                
-                if link_type in ["live", "upload", "premier", "tiktok", "tiktok_live"]:
-                    use_embed = True
+                use_embed = config_msg.get('use_embed', True)
 
                 if final_content and "{ai_hype}" in final_content:
                     final_content = final_content.replace("{ai_hype}", ai_hype_text)
@@ -1210,7 +1247,7 @@ Berikan teks pengumuman kamu sekarang:"""
                 if link_type in ["live", "upload", "premier", "tiktok", "tiktok_live"]:
                     default_title_fallback = "Video TikTok" if "tiktok" in link_type else "Video YouTube"
                     clean_title = youtube_title if youtube_title else default_title_fallback
-                    if youtube_title:
+                    if clean_title:
                         date_patterns = [
                             r'\d{4}-\d{2}-\d{2}',
                             r'\d{2}:\d{2}',
@@ -1218,68 +1255,93 @@ Berikan teks pengumuman kamu sekarang:"""
                         ]
                         for pattern in date_patterns:
                             clean_title = re.sub(pattern, '', clean_title).strip()
+                        clean_title = re.sub(r'[\[\]]', '', clean_title)
+                        try:
+                            clean_title = emoji.replace_emoji(clean_title, replace='')
+                        except Exception:
+                            pass
+                        clean_title = " ".join(clean_title.split())
                     
+                    if not final_content or final_content.strip() == "Ada video TikTok baru nih!":
+                        final_content = "{ai_hype}"
+                    if "{ai_hype}" in final_content:
+                        final_content = final_content.replace("{ai_hype}", ai_hype_text)
+
                     if final_content:
                         final_content = final_content.replace("{judul}", clean_title)
                         final_content = final_content.replace("{url}", video_url if self._is_valid_url(video_url) else "")
                     
                     if final_embed_title:
-                        fallback_title = youtube_title if youtube_title else default_title_fallback
+                        fallback_title = clean_title if clean_title else default_title_fallback
                         fallback_channel = youtube_channel if youtube_channel else ("Kreator TikTok" if "tiktok" in link_type else "Channel YouTube")
                         final_embed_title = final_embed_title.replace("{judul}", fallback_title).replace("$judul", fallback_title)
                         final_embed_title = final_embed_title.replace("{channel}", fallback_channel).replace("$channel", fallback_channel)
                         final_embed_title = final_embed_title.replace("{url}", video_url if self._is_valid_url(video_url) else "").replace("$url", video_url if self._is_valid_url(video_url) else "")
                         final_embed_title = final_embed_title.replace("{ai_hype}", ai_hype_text).replace("$ai_hype", ai_hype_text)
+                    else:
+                        final_embed_title = f"[{clean_title}]({video_url})" if self._is_valid_url(video_url) else clean_title
 
                     if final_embed_description:
-                        fallback_title = youtube_title if youtube_title else default_title_fallback
+                        fallback_title = clean_title if clean_title else default_title_fallback
                         fallback_channel = youtube_channel if youtube_channel else ("Kreator TikTok" if "tiktok" in link_type else "Channel YouTube")
                         fallback_desc = youtube_description if youtube_description else ""
-                        
                         desc_sub = fallback_desc[:1900] + ('...' if len(fallback_desc) > 1900 else '')
                         final_embed_description = final_embed_description.replace("{deskripsi}", desc_sub).replace("$deskripsi", desc_sub)
-                            
                         final_embed_description = final_embed_description.replace("{judul}", fallback_title).replace("$judul", fallback_title)
                         final_embed_description = final_embed_description.replace("{channel}", fallback_channel).replace("$channel", fallback_channel)
-                            
                         final_embed_description = final_embed_description.replace("{url}", video_url if self._is_valid_url(video_url) else "").replace("$url", video_url if self._is_valid_url(video_url) else "")
                         final_embed_description = final_embed_description.replace("{ai_hype}", ai_hype_text).replace("$ai_hype", ai_hype_text)
+                    else:
+                        final_embed_description = youtube_description[:1900] if youtube_description else link_for_send
 
                 elif link_type in ["instagram", "instagram_live"]:
                     tipe_str = "Postingan Instagram"
                     if link_type == "instagram_live": tipe_str = "Instagram Live"
+                    clean_title = youtube_title if youtube_title else tipe_str
+                    clean_title = re.sub(r'[\[\]]', '', clean_title)
+                    try:
+                        clean_title = emoji.replace_emoji(clean_title, replace='')
+                    except Exception:
+                        pass
+                    clean_title = " ".join(clean_title.split())
+
+                    if not final_content:
+                        final_content = "{ai_hype}"
+                    if "{ai_hype}" in final_content:
+                        final_content = final_content.replace("{ai_hype}", ai_hype_text)
 
                     if final_content:
-                        final_content = final_content.replace("{judul}", tipe_str)
+                        final_content = final_content.replace("{judul}", clean_title)
                         if self._is_valid_url(link_for_send):
                             final_content = final_content.replace("{url}", link_for_send)
                     
                     if final_embed_title:
-                        final_embed_title = final_embed_title.replace("{judul}", tipe_str)
-                        if self._is_valid_url(link_for_send):
-                            final_embed_title = final_embed_title.replace("{url}", link_for_send)
-                    elif not final_embed_title and use_embed:
-                        icon_str = "📸" if link_type == "instagram" else "🔴"
-                        if self._is_valid_url(link_for_send):
-                            final_embed_title = f"[{icon_str} {tipe_str}]({link_for_send})"
-                        else:
-                            final_embed_title = f"{icon_str} {tipe_str}"
+                        fallback_channel = youtube_channel if youtube_channel else "Akun Instagram"
+                        final_embed_title = final_embed_title.replace("{judul}", clean_title).replace("$judul", clean_title)
+                        final_embed_title = final_embed_title.replace("{channel}", fallback_channel).replace("$channel", fallback_channel)
+                        final_embed_title = final_embed_title.replace("{url}", video_url if self._is_valid_url(video_url) else "").replace("$url", video_url if self._is_valid_url(video_url) else "")
+                        final_embed_title = final_embed_title.replace("{ai_hype}", ai_hype_text).replace("$ai_hype", ai_hype_text)
+                    else:
+                        final_embed_title = f"[{clean_title}]({link_for_send})" if self._is_valid_url(link_for_send) else clean_title
 
                     if final_embed_description:
-                        final_embed_description = final_embed_description.replace("{deskripsi}", "")
-                        if self._is_valid_url(link_for_send):
-                            final_embed_description = final_embed_description.replace("{url}", link_for_send)
-                    elif not final_embed_description and use_embed:
-                        final_embed_description = link_for_send
-
-                message_content = final_content
-                if not use_embed and link_type not in ["live", "upload", "premier", "tiktok", "tiktok_live"]:
-                    if final_content:
-                        message_content = f"{final_content}\n{link_for_send}"
+                        fallback_desc = youtube_description if youtube_description else ""
+                        desc_sub = fallback_desc[:1900] + ('...' if len(fallback_desc) > 1900 else '')
+                        final_embed_description = final_embed_description.replace("{deskripsi}", desc_sub).replace("$deskripsi", desc_sub)
+                        final_embed_description = final_embed_description.replace("{judul}", clean_title).replace("$judul", clean_title)
+                        final_embed_description = final_embed_description.replace("{url}", video_url if self._is_valid_url(video_url) else "").replace("$url", video_url if self._is_valid_url(video_url) else "")
                     else:
+                        final_embed_description = youtube_description[:1900] if youtube_description else link_for_send
+
+                if use_embed:
+                    message_content = final_content if final_content else ai_hype_text
+                else:
+                    if final_content and "{url}" not in final_content:
+                        message_content = f"{final_content}\n{link_for_send}"
+                    elif not final_content:
                         message_content = f"{ai_hype_text}\n{link_for_send}"
-                elif not final_content and link_type in ["live", "upload", "premier", "tiktok", "tiktok_live"]:
-                    message_content = ai_hype_text
+                    else:
+                        message_content = final_content
 
                 button_label = config_msg.get('button_label', 'Tonton Konten')
                 button_style_value = config_msg.get('button_style', discord.ButtonStyle.primary.value)
@@ -1288,7 +1350,7 @@ Berikan teks pengumuman kamu sekarang:"""
                 except ValueError: 
                     button_style = discord.ButtonStyle.primary
 
-                if link_type in ["live", "upload", "premier", "tiktok", "tiktok_live"] and use_embed:
+                if link_type in ["live", "upload", "premier", "tiktok", "tiktok_live", "instagram", "instagram_live"] and use_embed:
                     from cogs.v2_layout import build_v2_card, send_v2_message
                     
                     desc_text = ""
@@ -1299,7 +1361,12 @@ Berikan teks pengumuman kamu sekarang:"""
                     if not desc_text:
                         desc_text = link_for_send
                     
-                    default_btn_label = "Tonton di TikTok" if "tiktok" in link_type else "Tonton Konten"
+                    if "tiktok" in link_type:
+                        default_btn_label = "Tonton di TikTok"
+                    elif "instagram" in link_type:
+                        default_btn_label = "Lihat di Instagram"
+                    else:
+                        default_btn_label = "Tonton di YouTube" if link_type in ["live", "upload", "premier"] else "Tonton Konten"
                     actual_button_label = config_msg.get('button_label') or default_btn_label
 
                     buttons = [{
@@ -1318,13 +1385,21 @@ Berikan teks pengumuman kamu sekarang:"""
                     if youtube_thumbnail and config_msg.get('embed_thumbnail', True):
                         try:
                             import io
-                            timeout = aiohttp.ClientTimeout(total=5)
-                            async with aiohttp.ClientSession(timeout=timeout) as session:
+                            dl_headers = {
+                                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                            }
+                            if "tiktok" in link_type:
+                                dl_headers["Referer"] = "https://www.tiktok.com/"
+                            elif "instagram" in link_type:
+                                dl_headers["Referer"] = "https://www.instagram.com/"
+                            timeout = aiohttp.ClientTimeout(total=10)
+                            async with aiohttp.ClientSession(timeout=timeout, headers=dl_headers) as session:
                                 async with session.get(youtube_thumbnail) as img_resp:
                                     if img_resp.status == 200:
                                         img_bytes = await img_resp.read()
-                                        files = [discord.File(io.BytesIO(img_bytes), filename="thumbnail.jpg")]
-                                        attachment_fn = "thumbnail.jpg"
+                                        if img_bytes:
+                                            files = [discord.File(io.BytesIO(img_bytes), filename="thumbnail.jpg")]
+                                            attachment_fn = "thumbnail.jpg"
                         except Exception:
                             files = None
                             attachment_fn = None
@@ -1338,11 +1413,23 @@ Berikan teks pengumuman kamu sekarang:"""
                         attachment_filename=attachment_fn,
                         media_url=youtube_thumbnail if not attachment_fn else None
                     )
+                    v2_sent = False
                     try:
                         resp = await send_v2_message(self.bot, target_channel.id, [card], files=files, content=message_content)
+                        if resp and not (isinstance(resp, dict) and "error_msg" in resp):
+                            v2_sent = True
                     except Exception as err:
                         with open("notif_v2_error.txt", "a") as f:
                             f.write(f"V2 Error: {err}\n")
+
+                    if not v2_sent:
+                        fallback_view = discord.ui.View()
+                        fallback_btn = discord.ui.Button(label=actual_button_label, style=button_style, url=link_for_send)
+                        fallback_view.add_item(fallback_btn)
+                        send_text = message_content if message_content else ai_hype_text
+                        if link_for_send not in send_text:
+                            send_text = f"{send_text}\n{link_for_send}"
+                        await target_channel.send(content=send_text, view=fallback_view)
                 else:
                     embed = None
                     if use_embed:
