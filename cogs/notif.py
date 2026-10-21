@@ -58,93 +58,109 @@ import pytubefix
 import emoji
 
 def _extract_youtube_info(url, cookiefile_path=None):
+    clean_url = url.replace('\\', '').strip()
+    video_id = _get_youtube_video_id(clean_url)
+    default_thumb = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg" if video_id else None
+
+    title = None
+    description = ""
+    thumbnail_url = default_thumb
+    channel_name = None
+
+    import requests
+    import json
+    import re
+
+    # 1. Direct HTML scrape via ytInitialPlayerResponse (fast, no heavy dependencies, reliable for video/premiere/live)
     try:
-        yt = pytubefix.YouTube(url, client='WEB')
-        
-        raw_title = yt.title if yt.title else ""
-        title = emoji.replace_emoji(raw_title, replace='')
-        title = " ".join(title.split())
-        
-        description = yt.description if yt.description else ""
-        thumbnail_url = yt.thumbnail_url
-        video_url = url
-        channel_name = yt.author if yt.author else ""
-        
-        return title, description, thumbnail_url, video_url, channel_name
-            
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        r_html = requests.get(clean_url, headers=headers, timeout=6)
+        if r_html.status_code == 200:
+            html = r_html.text
+            match = re.search(r'ytInitialPlayerResponse\s*=\s*({.+?});', html)
+            if not match:
+                match = re.search(r'var ytInitialPlayerResponse\s*=\s*({.+?});(?:var|</script>)', html)
+            if match:
+                try:
+                    data = json.loads(match.group(1))
+                    details = data.get('videoDetails', {})
+                    raw_title = details.get('title')
+                    if raw_title:
+                        title = " ".join(emoji.replace_emoji(raw_title, replace='').split())
+                    desc = details.get('shortDescription')
+                    if desc:
+                        description = desc
+                    if details.get('author'):
+                        channel_name = details.get('author')
+                    thumbs = details.get('thumbnail', {}).get('thumbnails', [])
+                    if thumbs:
+                        thumbnail_url = thumbs[-1].get('url', thumbnail_url)
+                except Exception:
+                    pass
     except Exception:
+        pass
+
+    # 2. oEmbed check
+    if not title or not channel_name:
         try:
-            import yt_dlp
+            r = requests.get(f"https://www.youtube.com/oembed?url={clean_url}&format=json", timeout=5)
+            if r.status_code == 200:
+                data = r.json()
+                raw_title = data.get('title', '')
+                if not raw_title and "html" in data:
+                    t_match = re.search(r'title=["\'](.*?)["\']', data["html"])
+                    if t_match:
+                        raw_title = t_match.group(1)
+                if raw_title and not title:
+                    title = " ".join(emoji.replace_emoji(raw_title, replace='').split())
+                if data.get('author_name') and not channel_name:
+                    channel_name = data.get('author_name')
+                if data.get('thumbnail_url') and not thumbnail_url:
+                    thumbnail_url = data.get('thumbnail_url')
+        except Exception:
+            pass
+
+    # 3. pytubefix fallback
+    if not title:
+        try:
+            yt = pytubefix.YouTube(clean_url, client='WEB')
+            raw_title = yt.title if yt.title else ""
+            if raw_title:
+                title = " ".join(emoji.replace_emoji(raw_title, replace='').split())
+            if yt.description and not description:
+                description = yt.description
+            if yt.thumbnail_url and not thumbnail_url:
+                thumbnail_url = yt.thumbnail_url
+            if yt.author and not channel_name:
+                channel_name = yt.author
+        except Exception:
+            pass
+
+    # 4. yt-dlp fallback (flat extraction, without oauth2 username)
+    if not title:
+        try:
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
-                'username': 'oauth2',
-                'password': '',
+                'extract_flat': True,
                 'cachedir': '.yt-dlp-cache',
-                'cookiefile': 'cookies.txt' if __import__('os').path.exists('cookies.txt') else None,
+                'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=False)
-                
+                info = ydl.extract_info(clean_url, download=False)
                 raw_title = info.get('title', '')
-                title = emoji.replace_emoji(raw_title, replace='')
-                title = " ".join(title.split())
-                
-                description = info.get('description', '')
-                thumbnail_url = info.get('thumbnail')
-                channel_name = info.get('uploader', '')
-                
-                if not thumbnail_url:
-                    video_id = _get_youtube_video_id(url)
-                    if video_id:
-                        thumbnail_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
-                        
-                return title, description, thumbnail_url, url, channel_name
-                
-        except Exception as e:
-            print(f"[YTDLP FALLBACK ERROR] {e}")
-            try:
-                import requests
-                import re
-                import json
-                
-                r = requests.get(f"https://www.youtube.com/oembed?url={url}&format=json", timeout=5)
-                if r.status_code == 200:
-                    data = r.json()
-                    
-                    raw_title = data.get('title', '')
-                    title = emoji.replace_emoji(raw_title, replace='')
-                    title = " ".join(title.split())
-                    
-                    channel_name = data.get('author_name', '')
-                    thumbnail_url = data.get('thumbnail_url', '')
-                    
-                    if not thumbnail_url:
-                        video_id = _get_youtube_video_id(url)
-                        if video_id:
-                            thumbnail_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
-                    
-                    description = ""
-                    try:
-                        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-                        r_html = requests.get(url, headers=headers, timeout=5)
-                        match = re.search(r'\"shortDescription\":\"(.*?)\",\"isCrawlable\"', r_html.text)
-                        if match:
-                            desc_raw = '{"d": "' + match.group(1) + '"}'
-                            description = json.loads(desc_raw)['d']
-                    except Exception as e_desc:
-                        print(f"[HTML DESC SCRAPE ERROR] {e_desc}")
-                            
-                    return title, description, thumbnail_url, url, channel_name
-            except Exception as e2:
-                print(f"[OEMBED FALLBACK ERROR] {e2}")
+                if raw_title:
+                    title = " ".join(emoji.replace_emoji(raw_title, replace='').split())
+                if info.get('description') and not description:
+                    description = info.get('description')
+                if info.get('uploader') and not channel_name:
+                    channel_name = info.get('uploader')
+                if info.get('thumbnail') and not thumbnail_url:
+                    thumbnail_url = info.get('thumbnail')
+        except Exception:
+            pass
 
-            video_id = _get_youtube_video_id(url)
-            if video_id:
-                fallback_thumbnail = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
-                return None, None, fallback_thumbnail, url, None
-                
-            return None, None, None, url, None
+    return title, description, thumbnail_url, clean_url, channel_name
 
 
 def get_config_path(cog, path_id, type_key, field_key=None):
@@ -528,7 +544,7 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
         self.daily_reset_task.cancel()
 
     async def _extract_url_from_message(self, message):
-        content_clean = message.content.replace('\\', '')
+        content_clean = message.content.replace('\\', '') if message.content else ''
         
         markdown_url_pattern = r'\[.*?\]\((https?://[^\)]+)\)'
         markdown_match = re.search(markdown_url_pattern, content_clean)
@@ -544,6 +560,20 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
         match2 = youtu_pattern.search(content_clean)
         if match2:
             return "https://" + match2.group(0)
+
+        if message.embeds:
+            for emb in message.embeds:
+                if emb.url:
+                    return emb.url
+                if emb.description:
+                    emb_match = general_url_pattern.search(emb.description)
+                    if emb_match:
+                        return emb_match.group(0).rstrip(').,!')
+                if emb.fields:
+                    for field in emb.fields:
+                        f_match = general_url_pattern.search(field.value or "")
+                        if f_match:
+                            return f_match.group(0).rstrip(').,!')
         
         return None
 
@@ -1039,11 +1069,38 @@ Berikan teks pengumuman kamu sekarang:"""
                 self.config["recent_video_ids"].pop(0)
             self.save_config()
 
-        youtube_title, youtube_description, youtube_thumbnail, video_url, youtube_channel = None, None, None, link_for_send, None
-        
+        source_embed = message.embeds[0] if message.embeds else None
+
+        youtube_title = None
+        youtube_description = None
+        youtube_thumbnail = None
+        video_url = link_for_send
+        youtube_channel = None
+
+        if source_embed:
+            if source_embed.title:
+                youtube_title = source_embed.title
+            if source_embed.description:
+                youtube_description = source_embed.description
+            if source_embed.thumbnail and source_embed.thumbnail.url:
+                youtube_thumbnail = source_embed.thumbnail.url
+            elif source_embed.image and source_embed.image.url:
+                youtube_thumbnail = source_embed.image.url
+            if source_embed.author and source_embed.author.name:
+                youtube_channel = source_embed.author.name
+
         if link_type in ["live", "upload", "premier"]:
-            import asyncio
-            youtube_title, youtube_description, youtube_thumbnail, video_url, youtube_channel = await asyncio.to_thread(_extract_youtube_info, link_for_send)
+            if not youtube_title or not youtube_thumbnail:
+                import asyncio
+                yt_t, yt_d, yt_th, yt_u, yt_c = await asyncio.to_thread(_extract_youtube_info, link_for_send)
+                if not youtube_title and yt_t:
+                    youtube_title = yt_t
+                if not youtube_description and yt_d:
+                    youtube_description = yt_d
+                if not youtube_thumbnail and yt_th:
+                    youtube_thumbnail = yt_th
+                if not youtube_channel and yt_c:
+                    youtube_channel = yt_c
 
         clean_title = youtube_title if youtube_title else None
         if youtube_title:
@@ -1183,20 +1240,36 @@ Berikan teks pengumuman kamu sekarang:"""
                     }]
                     
                     vid_id = _get_youtube_video_id(link_for_send)
-                    youtube_thumbnail = None
-                    if vid_id and config_msg.get('embed_thumbnail', True):
+                    if vid_id and not youtube_thumbnail and config_msg.get('embed_thumbnail', True):
                         youtube_thumbnail = f"https://img.youtube.com/vi/{vid_id}/maxresdefault.jpg"
-                    
+
+                    files = None
+                    attachment_fn = None
+                    if youtube_thumbnail and config_msg.get('embed_thumbnail', True):
+                        try:
+                            import io
+                            timeout = aiohttp.ClientTimeout(total=5)
+                            async with aiohttp.ClientSession(timeout=timeout) as session:
+                                async with session.get(youtube_thumbnail) as img_resp:
+                                    if img_resp.status == 200:
+                                        img_bytes = await img_resp.read()
+                                        files = [discord.File(io.BytesIO(img_bytes), filename="thumbnail.jpg")]
+                                        attachment_fn = "thumbnail.jpg"
+                        except Exception:
+                            files = None
+                            attachment_fn = None
+
                     card = build_v2_card(
                         title=final_embed_title,
                         description=desc_text,
                         fields=None,
                         color=None,
                         buttons=buttons,
-                        media_url=youtube_thumbnail
+                        attachment_filename=attachment_fn,
+                        media_url=youtube_thumbnail if not attachment_fn else None
                     )
                     try:
-                        resp = await send_v2_message(self.bot, target_channel.id, [card], content=message_content)
+                        resp = await send_v2_message(self.bot, target_channel.id, [card], files=files, content=message_content)
                     except Exception as err:
                         with open("notif_v2_error.txt", "a") as f:
                             f.write(f"V2 Error: {err}\n")

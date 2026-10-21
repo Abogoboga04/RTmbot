@@ -76,6 +76,14 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
     def _ensure_mongo(self):
         if not self.mongo_client:
             self.mongo_client = getattr(self.bot, "mongo_client", None)
+        if not self.mongo_client:
+            mongo_uri = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI")
+            if mongo_uri:
+                try:
+                    import pymongo
+                    self.mongo_client = pymongo.MongoClient(mongo_uri)
+                except Exception:
+                    pass
         if self.mongo_client and self.config_col is None:
             try:
                 db = self.mongo_client["reSwan"]
@@ -90,26 +98,55 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
             "targets": [],
         }
         self._ensure_mongo()
+        loaded = None
         if self.config_col is not None:
             try:
                 doc = self.config_col.find_one({"_id": "social_checker_config"})
-                if doc and "data" in doc:
-                    return {**default_config, **doc["data"]}
+                if doc and "data" in doc and doc["data"].get("targets"):
+                    loaded = {**default_config, **doc["data"]}
             except Exception:
                 pass
 
-        if os.path.exists(self.config_file):
+        if not loaded and os.path.exists(self.config_file):
             try:
                 with open(self.config_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    return {**default_config, **data}
+                    if data.get("targets"):
+                        loaded = {**default_config, **data}
             except Exception:
                 pass
 
-        os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
-        with open(self.config_file, "w", encoding="utf-8") as f:
-            json.dump(default_config, f, indent=4)
-        return default_config
+        if not loaded:
+            loaded = default_config
+
+        if not loaded.get("targets") and self.mongo_client:
+            try:
+                db = self.mongo_client["reSwan"]
+                old_doc = db["yt_test_config"].find_one({"_id": "yt_test_config"})
+                if old_doc and "data" in old_doc and "channels" in old_doc["data"]:
+                    migrated_targets = []
+                    for ch in old_doc["data"]["channels"]:
+                        migrated_targets.append({
+                            "id": str(uuid.uuid4())[:8],
+                            "platform": "youtube",
+                            "identifier": ch.get("channel_id"),
+                            "display_name": ch.get("channel_name", "YouTube Channel"),
+                            "target_guild_id": None,
+                            "target_channel_id": ch.get("target_discord_channel_id"),
+                            "mention_role": ch.get("mention_role", "@everyone"),
+                            "message_mode": "ai",
+                            "custom_template": None,
+                            "enabled": ch.get("enabled", True),
+                            "added_at": ch.get("added_at") or datetime.now(timezone.utc).isoformat(),
+                        })
+                    if migrated_targets:
+                        loaded["targets"] = migrated_targets
+                        self.config = loaded
+                        self._save_config()
+            except Exception:
+                pass
+
+        return loaded
 
     def _save_config(self):
         try:
@@ -276,22 +313,6 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
             seen_ids.add(direct_live_id)
             results.append({"video_id": direct_live_id, "is_live": True})
 
-        uu_playlist_id = f"UU{channel_id[2:]}"
-        uu_url = f"https://www.youtube.com/playlist?list={uu_playlist_id}"
-        try:
-            timeout = aiohttp.ClientTimeout(total=8)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(uu_url, headers=self.http_headers) as resp:
-                    if resp.status == 200:
-                        html = await resp.text()
-                        vids = re.findall(r'\"videoId\":\"([a-zA-Z0-9_-]{11})\"', html)
-                        for vid in vids:
-                            if vid not in seen_ids:
-                                seen_ids.add(vid)
-                                results.append({"video_id": vid, "is_live": False})
-        except Exception:
-            pass
-
         rss_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"
         try:
             timeout = aiohttp.ClientTimeout(total=6)
@@ -311,7 +332,7 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
         except Exception:
             pass
 
-        return results[:8]
+        return results[:10]
 
     async def _check_youtube_direct_live(self, channel_id: str):
         url = f"https://www.youtube.com/channel/{channel_id}/live"
@@ -320,14 +341,23 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(url, headers=self.http_headers, allow_redirects=True) as resp:
                     final_url = str(resp.url)
+                    if "/watch?v=" not in final_url:
+                        return None
+
                     vid = self._extract_youtube_id(final_url)
-                    if vid:
-                        return vid
-                    if resp.status == 200:
-                        html = await resp.text()
-                        canon = re.search(r'<link\s+rel=["\']canonical["\']\s+href=["\']https://www\.youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})["\']', html)
-                        if canon:
-                            return canon.group(1)
+                    if not vid:
+                        return None
+
+                    html = await resp.text()
+                    is_live_now = '"isLive":true' in html or '"isLiveNow":true' in html or 'THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE' in html
+                    if not is_live_now:
+                        return None
+
+                    cid_match = re.search(r'\"channelId\":\"(UC[a-zA-Z0-9_-]{22})\"', html)
+                    if cid_match and cid_match.group(1) != channel_id:
+                        return None
+
+                    return vid
         except Exception:
             pass
         return None
@@ -352,8 +382,13 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
                 async with session.get(oembed_url, headers=self.http_headers) as resp:
                     if resp.status == 200:
                         data = await resp.json()
-                        if data.get("title"):
-                            meta["title"] = data["title"]
+                        raw_title = data.get("title", "")
+                        if not raw_title and "html" in data:
+                            t_match = re.search(r'title=["\'](.*?)["\']', data["html"])
+                            if t_match:
+                                raw_title = t_match.group(1)
+                        if raw_title:
+                            meta["title"] = raw_title
                         if data.get("author_name"):
                             meta["creator"] = data["author_name"]
                         if data.get("thumbnail_url"):
@@ -532,17 +567,32 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
             "url": url,
         }]
 
-        desc = f"{content_data.get('description', '')}\n\n[Klik untuk menonton]({url})".strip()
+        files = None
+        attachment_fn = None
+        if thumbnail:
+            try:
+                import io
+                timeout = aiohttp.ClientTimeout(total=5)
+                async with aiohttp.ClientSession(timeout=timeout) as session:
+                    async with session.get(thumbnail) as img_resp:
+                        if img_resp.status == 200:
+                            img_bytes = await img_resp.read()
+                            files = [discord.File(io.BytesIO(img_bytes), filename="thumbnail.jpg")]
+                            attachment_fn = "thumbnail.jpg"
+            except Exception:
+                files = None
+                attachment_fn = None
 
         card = build_v2_card(
             title=f"[{title}]({url})",
             description=desc,
             color=btn_color,
             buttons=buttons,
-            media_url=thumbnail,
+            attachment_filename=attachment_fn,
+            media_url=thumbnail if not attachment_fn else None,
         )
 
-        res = await send_v2_message(self.bot, channel.id, [card], content=intro_text)
+        res = await send_v2_message(self.bot, channel.id, [card], files=files, content=intro_text)
         if isinstance(res, dict) and "error_msg" in res:
             return False
         return True
@@ -638,8 +688,9 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
 
         current_items = await self._fetch_youtube_content(cid)
         for it in current_items:
-            if it["video_id"] not in self.cache["posted_ids"]:
-                self.cache["posted_ids"].append(it["video_id"])
+            if not it.get("is_live"):
+                if it["video_id"] not in self.cache["posted_ids"]:
+                    self.cache["posted_ids"].append(it["video_id"])
         self._save_cache()
 
         await ctx.send(f"Berhasil menambahkan channel **{name}** (`{cid}`) ke pemantauan di {channel_to_use.mention}.", ephemeral=True)

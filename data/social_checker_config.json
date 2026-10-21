@@ -1,0 +1,44 @@
+{
+    "check_interval": 30,
+    "targets": [
+        {
+            "id": "26ff924d",
+            "platform": "youtube",
+            "identifier": "UC1RSjhFf8S47he-tr19JoSQ",
+            "display_name": "RH71",
+            "target_guild_id": null,
+            "target_channel_id": 1417636236356485141,
+            "mention_role": "@everyone",
+            "message_mode": "ai",
+            "custom_template": null,
+            "enabled": true,
+            "added_at": "2026-10-19T15:32:46.417316+00:00"
+        },
+        {
+            "id": "1d473c49",
+            "platform": "youtube",
+            "identifier": "UCW2TTb26sRBrU7jlKpjCHVA",
+            "display_name": "reSwan",
+            "target_guild_id": null,
+            "target_channel_id": 1417636236356485141,
+            "mention_role": "@everyone",
+            "message_mode": "ai",
+            "custom_template": null,
+            "enabled": true,
+            "added_at": "2026-10-19T15:54:35.733656+00:00"
+        },
+        {
+            "id": "e23075cc",
+            "platform": "youtube",
+            "identifier": "UCrEj4d2ynysNsYttTYROXEg",
+            "display_name": "Luthfi Halimawan",
+            "target_guild_id": null,
+            "target_channel_id": 1417636236356485141,
+            "mention_role": "@everyone",
+            "message_mode": "ai",
+            "custom_template": null,
+            "enabled": true,
+            "added_at": "2026-10-19T16:09:54.145683+00:00"
+        }
+    ]
+}
