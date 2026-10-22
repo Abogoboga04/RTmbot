@@ -139,6 +139,7 @@ Rules_Agent.md
 PLAN_*.md
 task.md
 task_*.md
+data/learned_*.json
 
 # Spyder project settings
 .spyderproject

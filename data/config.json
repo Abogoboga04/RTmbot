@@ -1,24 +1,25 @@
 {
     "765138959625486357": {
-        "voice_panel_message_id": 1560325049490214994,
+        "voice_panel_message_id": 1562490661809430572,
         "voice_panel_channel_id": 965586009859452928,
         "voice_records": {
             "longest_session": {
                 "channel_id": 965586009859452928,
                 "channel_name": "\u2615\u2502\ud835\udc02\ud835\udc21\ud835\udc22\ud835\udc25\ud835\udc25\ud835\udc22\ud835\udc27",
-                "duration_seconds": 2597940,
+                "duration_seconds": 3185160,
                 "is_active_now": true,
-                "updated_at": "2026-10-15T17:16:40.567232"
+                "updated_at": "2026-10-22T12:45:38.774583"
             }
         }
     },
     "722619465644113962": {
         "voice_records": {
             "longest_session": {
-                "channel_id": null,
-                "channel_name": null,
-                "duration_seconds": 0,
-                "is_active_now": false
+                "channel_id": 833829116204941363,
+                "channel_name": "\u300a\u2615\u300b\ud835\ude72\ud835\ude77\ud835\ude78\ud835\ude7b\ud835\ude7b\ud835\ude78\ud835\ude7d",
+                "duration_seconds": 120,
+                "is_active_now": false,
+                "updated_at": "2026-10-20T00:19:09.276101"
             }
         }
     },
@@ -37,9 +38,9 @@
             "longest_session": {
                 "channel_id": 1284831265614331904,
                 "channel_name": "\u301a\ud83c\udfa7\u301b\ud835\udc06\ud835\udc1a\ud835\udc26\ud835\udc22\ud835\udc27\ud835\udc20\ud835\udc11\ud835\udc28\ud835\udc28\ud835\udc26",
-                "duration_seconds": 10200,
+                "duration_seconds": 20940,
                 "is_active_now": false,
-                "updated_at": "2026-10-07T21:22:06.451647"
+                "updated_at": "2026-10-17T23:29:12.054276"
             }
         }
     },

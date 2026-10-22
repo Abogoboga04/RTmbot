@@ -7,7 +7,7 @@ echo Memulai RTM Discord Bot
 echo ===================================================
 
 if exist ".venv\Scripts\activate.bat" (
-    echo Mengaktifkan virtual environment (.venv)...
+    echo Mengaktifkan virtual environment .venv...
     call .venv\Scripts\activate.bat
 ) else (
     echo Virtual environment .venv tidak ditemukan, menggunakan Python sistem.
@@ -22,9 +22,9 @@ if not exist ".env" (
 echo Menjalankan main.py...
 python main.py
 
-if %ERRORLEVEL% NEQ 0 (
+if errorlevel 1 (
     echo.
-    echo [ERROR] Bot berhenti dengan kode error: %ERRORLEVEL%
+    echo [ERROR] Bot berhenti dengan error.
 )
 
 echo.

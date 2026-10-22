@@ -1,5 +1,7 @@
 import discord
 from discord.ext import commands, tasks
+from discord import app_commands
+from typing import Optional, Literal
 import json
 import re
 import os
@@ -247,366 +249,336 @@ def _extract_instagram_info(url):
 
 
 
-def get_config_path(cog, path_id, type_key, field_key=None):
-    path_data = cog.config["notification_paths"].get(path_id)
-    if not path_data: return None
-    
-    path = path_data["custom_messages"][type_key]
-    return path.get(field_key, "") if field_key else path
+TYPE_LABELS = {
+    "live": "🔴 Live Streaming YouTube",
+    "upload": "🎬 Video Baru YouTube",
+    "premier": "⭐ Premiere YouTube",
+    "tiktok": "📱 Video TikTok",
+    "tiktok_live": "🔴 TikTok Live",
+    "instagram": "📸 Post / Reel Instagram",
+    "instagram_live": "🔴 Instagram Live",
+}
 
-class TextModal(discord.ui.Modal):
-    def __init__(self, title, label, default_value, parent_view, type_key, field_key, path_id):
-        super().__init__(title=title)
-        self.parent_view = parent_view
-        self.type_key = type_key
-        self.field_key = field_key
-        self.path_id = path_id
-        self.text_input = discord.ui.TextInput(
-            label=label,
-            style=discord.TextStyle.paragraph if field_key == 'description' else discord.TextStyle.short,
-            default=default_value,
-            required=False,
-            max_length=4000 if field_key == 'description' else (256 if field_key == 'title' else 2000)
-        )
-        self.add_item(self.text_input)
-
-    async def on_submit(self, interaction: discord.Interaction):
-        self.parent_view.cog.config["notification_paths"][self.path_id]["custom_messages"][self.type_key][self.field_key] = self.text_input.value
-        self.parent_view.cog.save_config()
-        await interaction.response.edit_message(embed=self.parent_view.build_embed(), view=self.parent_view)
-
-class ButtonLabelModal(discord.ui.Modal, title="Atur Tombol Notifikasi"):
-    def __init__(self, parent_view, type_key, path_id):
+class NotifFormatEditorModal(discord.ui.Modal, title="Format Notifikasi Jalur"):
+    def __init__(self, cog, path_id: str, type_key: str, parent_view):
         super().__init__()
-        self.parent_view = parent_view
-        self.type_key = type_key
+        self.cog = cog
         self.path_id = path_id
-        current_label = get_config_path(parent_view.cog, path_id, type_key, "button_label")
-        self.label_input = discord.ui.TextInput(
-            label="Label Tombol",
-            default=current_label,
+        self.type_key = type_key
+        self.parent_view = parent_view
+
+        path_data = cog.config.get("notification_paths", {}).get(path_id, {})
+        custom_msgs = path_data.get("custom_messages", {})
+        msg_cfg = custom_msgs.get(type_key) or cog.default_messages.get(type_key, {})
+
+        current_content = msg_cfg.get("content") or "@everyone {ai_hype}"
+        current_title = msg_cfg.get("title") or "[{judul}]({url})"
+        current_desc = msg_cfg.get("description") or "{deskripsi} {url}"
+        current_btn = msg_cfg.get("button_label") or "Tonton Konten"
+
+        self.content_input = discord.ui.TextInput(
+            label="Isi Pesan Biasa (Gunakan {ai_hype} untuk AI)",
+            style=discord.TextStyle.paragraph,
+            default=current_content,
+            required=False,
+            max_length=2000
+        )
+        self.title_input = discord.ui.TextInput(
+            label="Judul Utama [{judul}]({url})",
             style=discord.TextStyle.short,
+            default=current_title,
+            required=False,
+            max_length=256
+        )
+        self.desc_input = discord.ui.TextInput(
+            label="Deskripsi Utama ({deskripsi})",
+            style=discord.TextStyle.paragraph,
+            default=current_desc,
+            required=False,
+            max_length=2000
+        )
+        self.btn_input = discord.ui.TextInput(
+            label="Label Tombol Tautan",
+            style=discord.TextStyle.short,
+            default=current_btn,
+            required=False,
             max_length=80
         )
-        self.add_item(self.label_input)
+
+        self.add_item(self.content_input)
+        self.add_item(self.title_input)
+        self.add_item(self.desc_input)
+        self.add_item(self.btn_input)
 
     async def on_submit(self, interaction: discord.Interaction):
-        self.parent_view.cog.config["notification_paths"][self.path_id]["custom_messages"][self.type_key]["button_label"] = self.label_input.value
-        self.parent_view.cog.save_config()
-        await interaction.response.edit_message(embed=self.parent_view.build_embed(), view=self.parent_view.build_color_view())
+        path_data = self.cog.config.get("notification_paths", {}).get(self.path_id)
+        if not path_data:
+            return await interaction.response.send_message("Jalur notifikasi tidak ditemukan.", ephemeral=True)
+        if "custom_messages" not in path_data:
+            path_data["custom_messages"] = {}
+        if self.type_key not in path_data["custom_messages"]:
+            path_data["custom_messages"][self.type_key] = self.cog.default_messages.get(self.type_key, {}).copy()
 
-class ColorInputModal(discord.ui.Modal, title="Atur Warna Custom"):
-    def __init__(self, parent_view, type_key, path_id, color_type):
-        super().__init__()
-        self.parent_view = parent_view
-        self.type_key = type_key
-        self.path_id = path_id
-        self.color_type = color_type
-        
-        current_color = get_config_path(parent_view.cog, path_id, type_key, 
-                                       "embed_color" if color_type == 'embed' else "button_color")
-        
-        self.color_input = discord.ui.TextInput(
-            label=f"Warna HEX {color_type.capitalize()}",
-            default=current_color or "#3498db",
-            style=discord.TextStyle.short,
-            max_length=7,
-            placeholder="#FFFFFF"
-        )
-        self.add_item(self.color_input)
+        cfg = path_data["custom_messages"][self.type_key]
+        cfg["content"] = self.content_input.value.strip() or "@everyone {ai_hype}"
+        cfg["title"] = self.title_input.value.strip() or "[{judul}]({url})"
+        cfg["description"] = self.desc_input.value.strip() or "{deskripsi}"
+        cfg["button_label"] = self.btn_input.value.strip() or "Tonton Konten"
 
-    async def on_submit(self, interaction: discord.Interaction):
-        color_value = self.color_input.value.strip()
-        
-        if not re.match(r'^#[0-9A-Fa-f]{6}$', color_value):
-            await interaction.response.send_message("Format warna HEX tidak valid! Gunakan format: #RRGGBB", ephemeral=True)
-            return
-        
-        if self.color_type == 'embed':
-            self.parent_view.cog.config["notification_paths"][self.path_id]["custom_messages"][self.type_key]["embed_color"] = color_value
-        else:
-            self.parent_view.cog.config["notification_paths"][self.path_id]["custom_messages"][self.type_key]["button_color"] = color_value
-            
-        self.parent_view.cog.save_config()
-        await interaction.response.edit_message(embed=self.parent_view.build_embed(), view=self.parent_view.build_color_view())
-
-class ButtonColorView(discord.ui.View):
-    def __init__(self, parent_view, type_key, path_id):
-        super().__init__(timeout=180)
-        self.parent_view = parent_view
-        self.type_key = type_key
-        self.path_id = path_id
-        self._create_buttons()
-
-    def _create_buttons(self):
-        preset_colors = [
-            ("Biru Primary", discord.ButtonStyle.primary, "#5865f2"),
-            ("Abu Secondary", discord.ButtonStyle.secondary, "#95a5a6"),
-            ("Hijau Success", discord.ButtonStyle.success, "#57f287"),
-            ("Merah Danger", discord.ButtonStyle.danger, "#ed4245")
-        ]
-        
-        embed_colors = [
-            ("Merah Live", "#e74c3c"),
-            ("Hijau Upload", "#2ecc71"),
-            ("Biru Default", "#3498db"),
-            ("Ungu Premium", "#9b59b6"),
-            ("Emas", "#f1c40f"),
-            ("Oranye", "#e67e22"),
-            ("Teal", "#1abc9c"),
-            ("Navy", "#34495e")
-        ]
-        
-        self.add_item(discord.ui.Button(label="WARNA TOMBOL", style=discord.ButtonStyle.grey, disabled=True, row=0))
-        
-        for label, style, hex_color in preset_colors:
-            button = discord.ui.Button(label=label, style=style, row=1)
-            button.callback = partial(self._on_button_color_selected, btn_style_value=style.value, btn_hex=hex_color)
-            self.add_item(button)
-        
-        self.add_item(discord.ui.Button(label="WARNA EMBED", style=discord.ButtonStyle.grey, disabled=True, row=2))
-        
-        for label, hex_color in embed_colors[:4]:
-            button = discord.ui.Button(label=label, style=discord.ButtonStyle.primary, row=3)
-            button.callback = partial(self._on_embed_color_selected, embed_hex=hex_color)
-            self.add_item(button)
-        
-        for label, hex_color in embed_colors[4:]:
-            button = discord.ui.Button(label=label, style=discord.ButtonStyle.primary, row=4)
-            button.callback = partial(self._on_embed_color_selected, embed_hex=hex_color)
-            self.add_item(button)
-        
-        custom_embed_btn = discord.ui.Button(label="Custom Warna Embed", style=discord.ButtonStyle.secondary, row=0)
-        async def custom_embed_callback(interaction: discord.Interaction):
-            await interaction.response.send_modal(ColorInputModal(self.parent_view, self.type_key, self.path_id, 'embed'))
-        custom_embed_btn.callback = custom_embed_callback
-        self.add_item(custom_embed_btn)
-
-        custom_button_btn = discord.ui.Button(label="Custom Warna Tombol", style=discord.ButtonStyle.secondary, row=0)
-        async def custom_button_callback(interaction: discord.Interaction):
-            await interaction.response.send_modal(ColorInputModal(self.parent_view, self.type_key, self.path_id, 'button'))
-        custom_button_btn.callback = custom_button_callback
-        self.add_item(custom_button_btn)
-            
-        cancel_button = discord.ui.Button(label="Batalkan", style=discord.ButtonStyle.red, row=4)
-        async def cancel_callback(interaction: discord.Interaction):
-            await interaction.response.edit_message(embed=self.parent_view.build_embed(), view=self.parent_view)
-            self.stop()
-        cancel_button.callback = cancel_callback
-        self.add_item(cancel_button)
-
-    async def _on_button_color_selected(self, interaction: discord.Interaction, btn_style_value, btn_hex):
-        config_msg = self.parent_view.cog.config["notification_paths"][self.path_id]["custom_messages"][self.type_key]
-        config_msg["button_style"] = btn_style_value
-        config_msg["button_color"] = btn_hex
-        self.parent_view.cog.save_config()
+        self.cog.save_config()
+        self.parent_view._update_items()
         await interaction.response.edit_message(embed=self.parent_view.build_embed(), view=self.parent_view)
-        self.stop()
 
-    async def _on_embed_color_selected(self, interaction: discord.Interaction, embed_hex):
-        config_msg = self.parent_view.cog.config["notification_paths"][self.path_id]["custom_messages"][self.type_key]
-        config_msg["embed_color"] = embed_hex
-        self.parent_view.cog.save_config()
-        await interaction.response.edit_message(embed=self.parent_view.build_embed(), view=self.parent_view)
-        self.stop()
 
-class MessageConfigView(discord.ui.View):
-    def __init__(self, cog, type_key, path_id):
-        super().__init__(timeout=180)
+class ContentRadarStudioView(discord.ui.View):
+    def __init__(self, cog, guild: discord.Guild, author: discord.Member, initial_path_id: Optional[str] = None):
+        super().__init__(timeout=300)
         self.cog = cog
-        self.type_key = type_key
-        self.path_id = path_id
+        self.guild = guild
+        self.author = author
+        self.selected_path_id = initial_path_id
+        self.selected_type_key = "live"
 
-    def build_embed(self):
-        path_data = self.cog.config["notification_paths"][self.path_id]
-        config_msg = path_data["custom_messages"][self.type_key]
-        
-        embed_color_hex = config_msg.get('embed_color', '#3498db') 
-        button_color_hex = config_msg.get('button_color', '#5865f2')
-        
-        try:
-            color_int = int(embed_color_hex.strip("#"), 16)
-            embed_color = discord.Color(color_int)
-        except:
-            embed_color = discord.Color.blue()
-            embed_color_hex = "#3498db"
+        available_paths = self._get_guild_paths()
+        if not self.selected_path_id and available_paths:
+            self.selected_path_id = available_paths[0][0]
 
-        source_id = path_data["source_id"]
-        target_id = path_data["target_id"]
-        
-        source_channel = self.cog.bot.get_channel(source_id)
-        target_channel = self.cog.bot.get_channel(target_id)
-        
-        source_info = f"#{source_channel.name} ({source_channel.guild.name})" if source_channel and source_channel.guild else f"ID: {source_id}"
-        target_info = f"#{target_channel.name} ({target_channel.guild.name})" if target_channel and target_channel.guild else f"ID: {target_id}"
+        self._update_items()
+
+    def _get_guild_paths(self):
+        result = []
+        paths = self.cog.config.get("notification_paths", {})
+        for pid, pdata in paths.items():
+            src = self.cog.bot.get_channel(pdata.get("source_id"))
+            tgt = self.cog.bot.get_channel(pdata.get("target_id"))
+            if src and src.guild.id == self.guild.id:
+                result.append((pid, src, tgt))
+            elif tgt and tgt.guild.id == self.guild.id:
+                result.append((pid, src, tgt))
+        return result
+
+    def _get_current_msg_config(self):
+        if not self.selected_path_id:
+            return self.cog.default_messages.get(self.selected_type_key, {})
+        pdata = self.cog.config.get("notification_paths", {}).get(self.selected_path_id, {})
+        customs = pdata.get("custom_messages", {})
+        return customs.get(self.selected_type_key) or self.cog.default_messages.get(self.selected_type_key, {})
+
+    def build_embed(self) -> discord.Embed:
+        paths = self._get_guild_paths()
+        if not paths:
+            embed = discord.Embed(
+                title="📡 Studio Jalur Notifikasi (Content Radar)",
+                description="Belum ada jalur notifikasi yang terdaftar di server ini.\nGunakan `!addpath <sumber> <tujuan>` untuk membuat jalur baru.",
+                color=0xED4245
+            )
+            return embed
+
+        current_path_tuple = None
+        for p in paths:
+            if p[0] == self.selected_path_id:
+                current_path_tuple = p
+                break
+        if not current_path_tuple:
+            current_path_tuple = paths[0]
+            self.selected_path_id = current_path_tuple[0]
+
+        pid, src_ch, tgt_ch = current_path_tuple
+        src_name = f"<#{src_ch.id}>" if src_ch else f"`ID: {pid}`"
+        tgt_name = f"<#{tgt_ch.id}>" if tgt_ch else "Belum diatur"
+
+        msg_cfg = self._get_current_msg_config()
+        type_name = TYPE_LABELS.get(self.selected_type_key, self.selected_type_key.upper())
+
+        content_val = msg_cfg.get("content") or "@everyone {ai_hype}"
+        title_val = msg_cfg.get("title") or "[{judul}]({url})"
+        desc_val = msg_cfg.get("description") or "{deskripsi}"
+        btn_val = msg_cfg.get("button_label") or "Tonton Konten"
 
         embed = discord.Embed(
-            title=f"Pengaturan Pesan: {self.type_key.upper()}",
-            description=f"**Jalur:** {source_info} $\\rightarrow$ {target_info}\n**ID Jalur:** `{self.path_id}`",
-            color=embed_color
+            title=f"Pengaturan Notifikasi: {type_name}",
+            color=0xED4245
         )
-        
-        embed.add_field(name="Isi Pesan Biasa", value=f"`{config_msg.get('content') or 'Belum diatur'}`\n*(Gunakan: {{ai_hype}} buat teks Jarkasih kalcer)*", inline=False)
-        embed.add_field(name="Judul Utama", value=f"`{config_msg.get('title') or 'Belum diatur'}`\n*(Gunakan: {{judul}}, {{channel}}, {{url}})*", inline=False)
-        embed.add_field(name="Deskripsi Utama", value=f"`{config_msg.get('description') or 'Belum diatur'}`\n*(Gunakan: {{deskripsi}}, {{judul}}, {{channel}}, {{url}})*", inline=False)
-        embed.add_field(name="Label Tombol", value=f"`{config_msg.get('button_label') or 'Belum diatur'}`", inline=False)
-        
-        button_style_value = config_msg.get('button_style', discord.ButtonStyle.primary.value)
-        try:
-            button_style_name = discord.ButtonStyle(button_style_value).name.capitalize().replace('_', ' ')
-        except ValueError:
-            button_style_name = "Primary"
-        
-        use_embed = config_msg.get('use_embed', True)
-        embed_thumb = config_msg.get('embed_thumbnail', True)
-
-        embed.add_field(name="Style Tombol", value=f"`{button_style_name}`", inline=True)
-        embed.add_field(name="Warna Tombol", value=f"`{button_color_hex}`", inline=True)
-        embed.add_field(name="Warna Samping Embed", value=f"`{embed_color_hex}`", inline=True)
-        embed.add_field(name="Status Embed", value=f"**`{'Aktif' if use_embed else 'Mati'}`**", inline=True)
-        embed.add_field(name="Status Thumbnail", value=f"**`{'Aktif' if embed_thumb else 'Mati'}`**", inline=True)
-        
-        color_preview = f"**Preview Warna:**\n"
-        color_preview += f"Embed: ████ `{embed_color_hex}`\n"
-        color_preview += f"Tombol: ████ `{button_color_hex}`"
-        embed.add_field(name="\u200b", value=color_preview, inline=False)
-        
+        embed.description = (
+            f"**ID Jalur:** `{pid}`\n"
+            f"**Kanal Sumber:** {src_name}\n"
+            f"**Kanal Tujuan:** {tgt_name}\n"
+            f"**Gaya Tampilan:** `Kartu Interaktif (Type 17)`\n\n"
+            f"**Isi Pesan Biasa:**\n> {content_val}\n\n"
+            f"**Judul Utama:**\n> {title_val}\n\n"
+            f"**Deskripsi Utama:**\n> {desc_val}\n\n"
+            f"**Label Tombol:** `{btn_val}`\n\n"
+            f"*Gunakan tombol di bawah untuk mengubah setelan atau menguji pengiriman.*"
+        )
         return embed
 
-    def build_color_view(self):
-        return ButtonColorView(self, self.type_key, self.path_id)
+    def _update_items(self):
+        self.clear_items()
+        paths = self._get_guild_paths()
 
-    @discord.ui.button(label="Atur Pesan Biasa", style=discord.ButtonStyle.secondary, row=0)
-    async def set_content_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        current_value = get_config_path(self.cog, self.path_id, self.type_key, "content")
-        await interaction.response.send_modal(TextModal("Atur Pesan Teks Biasa", "Isi Pesan", current_value, self, self.type_key, "content", self.path_id))
-
-    @discord.ui.button(label="Atur Judul Utama", style=discord.ButtonStyle.secondary, row=0)
-    async def set_title_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        current_value = get_config_path(self.cog, self.path_id, self.type_key, "title")
-        await interaction.response.send_modal(TextModal("Atur Judul Utama", "Judul Utama", current_value, self, self.type_key, "title", self.path_id))
-
-    @discord.ui.button(label="Atur Deskripsi Utama", style=discord.ButtonStyle.secondary, row=0)
-    async def set_desc_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        current_value = get_config_path(self.cog, self.path_id, self.type_key, "description")
-        await interaction.response.send_modal(TextModal("Atur Deskripsi Utama", "Deskripsi Utama", current_value, self, self.type_key, "description", self.path_id))
-        
-    @discord.ui.button(label="Atur Tombol & Warna", style=discord.ButtonStyle.secondary, row=1)
-    async def set_button_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(ButtonLabelModal(self, self.type_key, self.path_id))
-        
-    @discord.ui.button(label="Atur Warna Custom", style=discord.ButtonStyle.primary, row=1)
-    async def set_custom_color_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.edit_message(view=self.build_color_view())
-        
-    @discord.ui.button(label="Toggle Status Embed", style=discord.ButtonStyle.secondary, row=2)
-    async def toggle_embed_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        config_msg = self.cog.config["notification_paths"][self.path_id]["custom_messages"][self.type_key]
-        current_state = config_msg.get('use_embed', True)
-        config_msg['use_embed'] = not current_state
-        self.cog.save_config()
-        await interaction.response.edit_message(embed=self.build_embed(), view=self)
-        
-    @discord.ui.button(label="Toggle Status Thumbnail", style=discord.ButtonStyle.secondary, row=2)
-    async def toggle_thumbnail_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        config_msg = self.cog.config["notification_paths"][self.path_id]["custom_messages"][self.type_key]
-        current_state = config_msg.get('embed_thumbnail', True)
-        config_msg['embed_thumbnail'] = not current_state
-        self.cog.save_config()
-        await interaction.response.edit_message(embed=self.build_embed(), view=self)
-        
-    @discord.ui.button(label="← Pilih Tipe Lain", style=discord.ButtonStyle.secondary, row=3)
-    async def back_to_type_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        type_select_view = TypeSelectView(self.cog, interaction.guild.id, self.path_id)
-        await interaction.response.edit_message(content=f"Jalur dipilih: `{self.path_id}`. Pilih Tipe Pesan:", embed=None, view=type_select_view)
-        self.stop()
-
-    @discord.ui.button(label="Selesai", style=discord.ButtonStyle.green, row=3)
-    async def finish_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        type_select_view = TypeSelectView(self.cog, interaction.guild.id, self.path_id)
-        await interaction.response.edit_message(content=f"Pengaturan `{self.type_key}` tersimpan. Jalur: `{self.path_id}`. Pilih Tipe Pesan lain atau tutup pesan ini:", embed=None, view=type_select_view)
-        self.stop()
-
-class PathSelectView(discord.ui.View):
-    def __init__(self, cog, guild_id):
-        super().__init__(timeout=180)
-        self.cog = cog
-        self.guild_id = guild_id
-        self._add_path_select()
-
-    def _get_path_options(self):
-        options = []
-        for path_id, data in self.cog.config["notification_paths"].items():
-            source_id = data['source_id']
-            source_channel = self.cog.bot.get_channel(source_id)
-            if source_channel and source_channel.guild.id != self.guild_id:
-                continue
-                
-            target_id = data['target_id']
-            target_channel = self.cog.bot.get_channel(target_id)
-
-            source_name = f"#{source_channel.name}" if source_channel else f"ID {source_id}"
-            target_name = f"#{target_channel.name}" if target_channel else f"ID {target_id}"
-
-            label = f"{source_name} → {target_name}"
-            options.append(discord.SelectOption(label=label[:100], value=path_id))
-
-        return options
-
-    def _add_path_select(self):
-        options = self._get_path_options()
-        
-        if not options:
-            self.add_item(discord.ui.Button(label="Tidak ada Jalur Notifikasi terdaftar di Server ini", style=discord.ButtonStyle.red, disabled=True))
+        if not paths:
             return
 
+        path_options = []
+        for pid, src, tgt in paths[:25]:
+            s_name = f"#{src.name}" if src else f"ID {pid[:8]}"
+            t_name = f"#{tgt.name}" if tgt else "Target"
+            label = f"{s_name} → {t_name}"
+            is_def = (pid == self.selected_path_id)
+            path_options.append(discord.SelectOption(label=label[:100], value=pid, default=is_def))
+
         path_select = discord.ui.Select(
-            placeholder="Pilih Jalur Notifikasi yang akan dikonfigurasi...",
-            options=options,
-            custom_id="path_select_menu"
+            placeholder="Pilih Jalur Notifikasi...",
+            options=path_options,
+            row=0
         )
 
-        async def callback(interaction: discord.Interaction):
-            selected_path_id = path_select.values[0]
-            type_select_view = TypeSelectView(self.cog, self.guild_id, selected_path_id)
-            await interaction.response.edit_message(content=f"Jalur dipilih: `{selected_path_id}`. Pilih Tipe Pesan:", view=type_select_view)
-            self.stop()
-            
-        path_select.callback = callback
+        async def path_callback(interaction: discord.Interaction):
+            if interaction.user.id != self.author.id:
+                return await interaction.response.send_message("Anda tidak memiliki akses ke panel ini.", ephemeral=True)
+            self.selected_path_id = path_select.values[0]
+            self._update_items()
+            await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+        path_select.callback = path_callback
         self.add_item(path_select)
 
-class TypeSelectView(discord.ui.View):
-    def __init__(self, cog, guild_id, path_id):
-        super().__init__(timeout=180)
-        self.cog = cog
-        self.guild_id = guild_id
-        self.path_id = path_id
-        
-        options = []
-        for key in self.cog.default_messages.keys():
-            options.append(discord.SelectOption(label=key.capitalize().replace('_', ' '), value=key))
-            
+        type_options = []
+        for tkey, tlbl in TYPE_LABELS.items():
+            is_def = (tkey == self.selected_type_key)
+            type_options.append(discord.SelectOption(label=tlbl, value=tkey, default=is_def))
+
         type_select = discord.ui.Select(
-            placeholder="Pilih Tipe Pesan...",
-            options=options,
-            custom_id="type_select_menu"
+            placeholder="Pilih Tipe Konten...",
+            options=type_options,
+            row=1
         )
-        
-        async def callback(interaction: discord.Interaction):
-            selected_type_key = type_select.values[0]
-            message_config_view = MessageConfigView(self.cog, selected_type_key, self.path_id)
-            await interaction.response.edit_message(content=None, embed=message_config_view.build_embed(), view=message_config_view)
-            self.stop()
-        
-        type_select.callback = callback
+
+        async def type_callback(interaction: discord.Interaction):
+            if interaction.user.id != self.author.id:
+                return await interaction.response.send_message("Anda tidak memiliki akses ke panel ini.", ephemeral=True)
+            self.selected_type_key = type_select.values[0]
+            self._update_items()
+            await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+        type_select.callback = type_callback
         self.add_item(type_select)
-        
-        back_button = discord.ui.Button(label="← Ganti Jalur", style=discord.ButtonStyle.secondary, row=1)
-        async def back_callback(interaction: discord.Interaction):
-             await interaction.response.edit_message(content="Pilih Jalur Notifikasi yang akan dikonfigurasi:", view=PathSelectView(self.cog, self.guild_id))
-             self.stop()
-        back_button.callback = back_callback
-        self.add_item(back_button)
+
+        edit_btn = discord.ui.Button(label="Ubah Teks", style=discord.ButtonStyle.primary, row=2)
+        async def edit_callback(interaction: discord.Interaction):
+            if interaction.user.id != self.author.id:
+                return await interaction.response.send_message("Anda tidak memiliki akses.", ephemeral=True)
+            if not self.selected_path_id:
+                return await interaction.response.send_message("Pilih jalur notifikasi terlebih dahulu.", ephemeral=True)
+            await interaction.response.send_modal(NotifFormatEditorModal(self.cog, self.selected_path_id, self.selected_type_key, self))
+        edit_btn.callback = edit_callback
+        self.add_item(edit_btn)
+
+        test_btn = discord.ui.Button(label="Tes Kirim", style=discord.ButtonStyle.success, row=2)
+        async def test_callback(interaction: discord.Interaction):
+            if interaction.user.id != self.author.id:
+                return await interaction.response.send_message("Anda tidak memiliki akses.", ephemeral=True)
+            await self._run_test_send(interaction)
+        test_btn.callback = test_callback
+        self.add_item(test_btn)
+
+        del_btn = discord.ui.Button(label="Hapus Jalur", style=discord.ButtonStyle.danger, row=2)
+        async def del_callback(interaction: discord.Interaction):
+            if interaction.user.id != self.author.id:
+                return await interaction.response.send_message("Anda tidak memiliki akses.", ephemeral=True)
+            if self.selected_path_id in self.cog.config.get("notification_paths", {}):
+                del self.cog.config["notification_paths"][self.selected_path_id]
+                self.cog.save_config()
+                self.selected_path_id = None
+                self._update_items()
+                await interaction.response.edit_message(embed=self.build_embed(), view=self)
+            else:
+                await interaction.response.send_message("Jalur tidak ditemukan.", ephemeral=True)
+        del_btn.callback = del_callback
+        self.add_item(del_btn)
+
+        close_btn = discord.ui.Button(label="Tutup", style=discord.ButtonStyle.secondary, row=2)
+        async def close_callback(interaction: discord.Interaction):
+            if interaction.user.id != self.author.id:
+                return await interaction.response.send_message("Anda tidak memiliki akses.", ephemeral=True)
+            await interaction.response.defer()
+            await interaction.delete_original_response()
+            self.stop()
+        close_btn.callback = close_callback
+        self.add_item(close_btn)
+
+    async def _run_test_send(self, interaction: discord.Interaction):
+        pdata = self.cog.config.get("notification_paths", {}).get(self.selected_path_id)
+        if not pdata:
+            return await interaction.response.send_message("Jalur notifikasi tidak ditemukan.", ephemeral=True)
+
+        target_ch_id = pdata.get("target_id")
+        target_ch = self.cog.bot.get_channel(target_ch_id)
+        if not target_ch:
+            return await interaction.response.send_message(f"Kanal tujuan (ID: {target_ch_id}) tidak ditemukan.", ephemeral=True)
+
+        await interaction.response.defer(ephemeral=True)
+
+        msg_cfg = self._get_current_msg_config()
+        sample_creator = "Luthfi Halimawan"
+        sample_title = "SAFARI TV - UJI COBA LIVE STREAMING"
+        sample_url = "https://www.youtube.com/watch?v=5dv55fcY9JI"
+        sample_desc = "Ini adalah deskripsi uji coba format notifikasi kartu V2 Type 17."
+        sample_thumb = "https://img.youtube.com/vi/5dv55fcY9JI/maxresdefault.jpg"
+
+        intro_template = msg_cfg.get("content") or "@everyone {ai_hype}"
+        if "{ai_hype}" in intro_template:
+            ai_text = await self.cog._generate_jarkasih_hype(self.selected_type_key, channel_name=sample_creator, video_title=sample_title, video_desc=sample_desc)
+            intro = intro_template.replace("{ai_hype}", ai_text)
+        else:
+            intro = intro_template
+
+        intro = intro.replace("{judul}", sample_title).replace("{url}", sample_url).replace("{channel}", sample_creator).strip()
+
+        card_title_template = msg_cfg.get("title") or "[{judul}]({url})"
+        card_desc_template = msg_cfg.get("description") or "{deskripsi}"
+        btn_label = msg_cfg.get("button_label") or "Tonton Konten"
+
+        final_card_title = card_title_template.replace("{judul}", sample_title).replace("{url}", sample_url).replace("{channel}", sample_creator)
+        final_card_desc = card_desc_template.replace("{deskripsi}", sample_desc).replace("{judul}", sample_title).replace("{url}", sample_url).replace("{channel}", sample_creator)
+
+        from cogs.v2_layout import build_v2_card, send_v2_message
+        buttons = [{
+            "style": 5,
+            "label": btn_label,
+            "url": sample_url
+        }]
+
+        files = None
+        attachment_fn = None
+        try:
+            import io
+            dl_headers = {"User-Agent": "Mozilla/5.0"}
+            timeout = aiohttp.ClientTimeout(total=5)
+            async with aiohttp.ClientSession(timeout=timeout, headers=dl_headers) as sess:
+                async with sess.get(sample_thumb) as r:
+                    if r.status == 200:
+                        img_bytes = await r.read()
+                        if img_bytes:
+                            files = [discord.File(io.BytesIO(img_bytes), filename="thumbnail.jpg")]
+                            attachment_fn = "thumbnail.jpg"
+        except Exception:
+            files = None
+            attachment_fn = None
+
+        card = build_v2_card(
+            title=final_card_title,
+            description=final_card_desc,
+            buttons=buttons,
+            attachment_filename=attachment_fn,
+            media_url=sample_thumb if not attachment_fn else None
+        )
+
+        res = await send_v2_message(self.cog.bot, target_ch.id, [card], files=files, content=intro)
+        if res and not (isinstance(res, dict) and "error_msg" in res):
+            await interaction.followup.send(f"✅ Berhasil mengirim notifikasi uji coba kartu Type 17 ke {target_ch.mention}!", ephemeral=True)
+        else:
+            await interaction.followup.send(f"❌ Gagal mengirim kartu uji coba: {res}", ephemeral=True)
 
 class ContentRadar(commands.Cog, name="Content Radar & Feed"):
     def __init__(self, bot):
@@ -1008,14 +980,21 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
         else:
             await ctx.send(f"Jalur notifikasi dengan ID `{path_id}` tidak ditemukan.")
 
+    @commands.hybrid_command(name="notif", aliases=["notifstudio", "contentradar"], description="Buka studio pengaturan jalur notifikasi Discord")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def notif_studio(self, ctx: commands.Context):
+        if not ctx.guild:
+            return await ctx.send("Perintah ini hanya dapat digunakan di server.", ephemeral=True)
+        view = ContentRadarStudioView(self, ctx.guild, ctx.author)
+        await ctx.send(embed=view.build_embed(), view=view, ephemeral=True)
+
     @commands.command(name="config")
     @commands.has_permissions(administrator=True)
     async def start_config(self, ctx):
         if not ctx.guild:
             return await ctx.send("Perintah ini hanya dapat digunakan di dalam server.")
-        
-        view = PathSelectView(self, ctx.guild.id)
-        await ctx.send("Pilih Jalur Notifikasi yang akan dikonfigurasi:", view=view)
+        view = ContentRadarStudioView(self, ctx.guild, ctx.author)
+        await ctx.send(embed=view.build_embed(), view=view)
 
     @commands.command(name="checkcache")
     @commands.has_permissions(administrator=True)

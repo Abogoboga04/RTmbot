@@ -1583,7 +1583,7 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                         is_ai_cmd_without_subcommand = True
                         content_body = " ".join(sub_words) if sub_words else ""
                 
-                if (first_word not in valid_cmds or is_ai_cmd_without_subcommand) and content_body:
+                if is_ai_cmd_without_subcommand and content_body:
                     try:
                         async with message.channel.typing():
                             images = await self.get_images_from_message(message)

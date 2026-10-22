@@ -8,7 +8,9 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 import aiohttp
 import discord
+from discord import app_commands
 from discord.ext import commands, tasks
+from typing import Optional, Literal
 import google.generativeai as genai
 from google.api_core import exceptions as google_exceptions
 import yt_dlp
@@ -58,6 +60,271 @@ def clean_hyperlink_title(raw_title: str) -> str:
     cleaned = re.sub(r'[\[\]]', '', cleaned)
     cleaned = " ".join(cleaned.split())
     return cleaned
+
+
+class SocialFormatEditorModal(discord.ui.Modal, title="Format Notifikasi"):
+    def __init__(self, cog, target: dict, author: discord.Member, parent_view):
+        super().__init__()
+        self.cog = cog
+        self.target = target
+        self.author = author
+        self.parent_view = parent_view
+
+        current_content = target.get("content") or target.get("custom_template") or "@everyone {ai_hype}"
+        current_title = target.get("card_title") or "[{judul}]({url})"
+        current_desc = target.get("card_desc") or "{deskripsi}"
+        current_btn = target.get("button_label") or ""
+
+        self.content_input = discord.ui.TextInput(
+            label="Isi Pesan Biasa",
+            default=current_content,
+            placeholder="Contoh: @everyone {ai_hype} (Gunakan: {ai_hype}, {judul}, {channel}, {url})",
+            style=discord.TextStyle.paragraph,
+            max_length=1500,
+            required=True
+        )
+        self.title_input = discord.ui.TextInput(
+            label="Judul Utama",
+            default=current_title,
+            placeholder="Variabel: {judul}, {channel}, {url}",
+            max_length=256,
+            required=True
+        )
+        self.desc_input = discord.ui.TextInput(
+            label="Deskripsi Utama",
+            default=current_desc,
+            placeholder="Variabel: {deskripsi}, {judul}, {url}",
+            style=discord.TextStyle.paragraph,
+            max_length=1000,
+            required=True
+        )
+        self.btn_input = discord.ui.TextInput(
+            label="Label Tombol",
+            default=current_btn,
+            placeholder="Kosongkan untuk otomatis (cth: Tonton di YouTube)",
+            max_length=80,
+            required=False
+        )
+
+        self.add_item(self.content_input)
+        self.add_item(self.title_input)
+        self.add_item(self.desc_input)
+        self.add_item(self.btn_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        self.target["content"] = self.content_input.value.strip()
+        self.target["custom_template"] = self.target["content"]
+        self.target["card_title"] = self.title_input.value.strip()
+        self.target["card_desc"] = self.desc_input.value.strip()
+        val_btn = self.btn_input.value.strip()
+        self.target["button_label"] = val_btn if val_btn else None
+
+        self.cog._save_config()
+        self.parent_view.update_components()
+        await interaction.response.edit_message(embed=self.parent_view.build_embed(), view=self.parent_view)
+
+
+class SocialCheckerStudioView(discord.ui.View):
+    def __init__(self, cog, guild: discord.Guild, author: discord.Member, platform_filter: Optional[str] = None, initial_target: Optional[dict] = None):
+        super().__init__(timeout=300)
+        self.cog = cog
+        self.guild = guild
+        self.author = author
+        self.platform_filter = platform_filter
+        self.target = initial_target
+        self.update_components()
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author.id:
+            await interaction.response.send_message("Menu ini hanya dapat diakses oleh moderator yang memanggilnya.", ephemeral=True)
+            return False
+        return True
+
+    def get_targets(self) -> list:
+        targets = self.cog.config.get("targets", [])
+        if self.platform_filter:
+            targets = [t for t in targets if t.get("platform") == self.platform_filter]
+        if self.guild:
+            guild_targets = [t for t in targets if t.get("target_guild_id") == self.guild.id]
+            if guild_targets:
+                return guild_targets
+        return targets
+
+    def update_components(self):
+        self.clear_items()
+        targets = self.get_targets()
+
+        if targets:
+            if not self.target or self.target not in targets:
+                self.target = targets[0]
+
+            options = []
+            for t in targets[:25]:
+                p_name = "YouTube" if t.get("platform") == "youtube" else "TikTok"
+                d_name = t.get("display_name", t.get("identifier"))
+                is_selected = (self.target and self.target.get("id") == t.get("id"))
+                options.append(discord.SelectOption(
+                    label=d_name[:80],
+                    description=f"{p_name} ({t.get('identifier')[:40]})",
+                    value=t.get("id", t.get("identifier")),
+                    default=is_selected
+                ))
+
+            target_select = discord.ui.Select(
+                placeholder="Pilih target yang ingin diatur",
+                options=options,
+                row=0
+            )
+            target_select.callback = self.target_select_callback
+            self.add_item(target_select)
+
+        if self.target:
+            channel_select = discord.ui.ChannelSelect(
+                channel_types=[discord.ChannelType.text],
+                placeholder="Pilih kanal tujuan di Discord",
+                min_values=1,
+                max_values=1,
+                row=1
+            )
+            channel_select.callback = self.channel_select_callback
+            self.add_item(channel_select)
+
+            btn_format = discord.ui.Button(label="Ubah Teks", style=discord.ButtonStyle.primary, row=2)
+            btn_format.callback = self.btn_format_callback
+            self.add_item(btn_format)
+
+            use_card = self.target.get("use_card", True)
+            card_lbl = "Gaya: Kartu" if use_card else "Gaya: Teks"
+            btn_card = discord.ui.Button(label=card_lbl, style=discord.ButtonStyle.secondary, row=2)
+            btn_card.callback = self.btn_card_callback
+            self.add_item(btn_card)
+
+            btn_test = discord.ui.Button(label="Tes Kirim", style=discord.ButtonStyle.success, row=2)
+            btn_test.callback = self.btn_test_callback
+            self.add_item(btn_test)
+
+            is_active = self.target.get("enabled", True)
+            status_lbl = "Status: Aktif" if is_active else "Status: Dijeda"
+            btn_status = discord.ui.Button(label=status_lbl, style=discord.ButtonStyle.secondary, row=2)
+            btn_status.callback = self.btn_status_callback
+            self.add_item(btn_status)
+
+            btn_delete = discord.ui.Button(label="Hapus", style=discord.ButtonStyle.danger, row=2)
+            btn_delete.callback = self.btn_delete_callback
+            self.add_item(btn_delete)
+
+    def build_embed(self) -> discord.Embed:
+        if not self.target:
+            embed = discord.Embed(
+                title="Pengaturan Notifikasi Media Sosial",
+                description="Belum ada channel atau akun yang dipantau.\nGunakan `/social add` untuk menambahkan pemantauan baru.",
+                color=0x5865F2
+            )
+            return embed
+
+        platform = self.target.get("platform", "youtube").capitalize()
+        name = self.target.get("display_name", self.target.get("identifier"))
+        ident = self.target.get("identifier")
+        ch_id = self.target.get("target_channel_id")
+        ch_str = f"<#{ch_id}>" if ch_id else "Belum diatur"
+
+        content_val = self.target.get("content") or self.target.get("custom_template") or "@everyone {ai_hype}"
+        title_tmpl = self.target.get("card_title") or "[{judul}]({url})"
+        desc_tmpl = self.target.get("card_desc") or "{deskripsi}"
+        btn_label = self.target.get("button_label") or ("Buka di TikTok" if self.target.get("platform") == "tiktok" else "Tonton di YouTube")
+        use_card = self.target.get("use_card", True)
+        card_status = "Kartu" if use_card else "Teks biasa"
+        is_enabled = self.target.get("enabled", True)
+        status_str = "Aktif" if is_enabled else "Dijeda"
+
+        embed = discord.Embed(
+            title=f"Pengaturan Notifikasi {platform}: {name}",
+            description=(
+                f"**ID Target:** `{ident}`\n"
+                f"**Status:** {status_str}\n"
+                f"**Kanal Tujuan:** {ch_str}\n"
+                f"**Gaya Tampilan:** `{card_status}`\n\n"
+                f"**Isi Pesan Biasa:**\n> {content_val}\n\n"
+                f"**Judul Utama:**\n> `{title_tmpl}`\n"
+                f"**Deskripsi Utama:**\n> `{desc_tmpl}`\n"
+                f"**Label Tombol:** `{btn_label}`"
+            ),
+            color=0x00F2FE if self.target.get("platform") == "tiktok" else 0xFF0000
+        )
+        embed.set_footer(text="Gunakan tombol di bawah untuk mengubah setelan.")
+        return embed
+
+    async def target_select_callback(self, interaction: discord.Interaction):
+        selected_val = interaction.data["values"][0]
+        targets = self.get_targets()
+        found = next((t for t in targets if t.get("id") == selected_val or t.get("identifier") == selected_val), None)
+        if found:
+            self.target = found
+            self.update_components()
+            await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def channel_select_callback(self, interaction: discord.Interaction):
+        selected_channel_id = int(interaction.data["values"][0])
+        self.target["target_channel_id"] = selected_channel_id
+        if interaction.guild:
+            self.target["target_guild_id"] = interaction.guild.id
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_format_callback(self, interaction: discord.Interaction):
+        modal = SocialFormatEditorModal(self.cog, self.target, self.author, self)
+        await interaction.response.send_modal(modal)
+
+    async def btn_card_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("use_card", True)
+        self.target["use_card"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_status_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("enabled", True)
+        self.target["enabled"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_test_callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        ch_id = self.target.get("target_channel_id")
+        ch = interaction.guild.get_channel(ch_id) if ch_id and interaction.guild else None
+        if not ch:
+            return await interaction.followup.send("Kanal tujuan belum diatur atau tidak ditemukan.", ephemeral=True)
+
+        is_tiktok = self.target.get("platform") == "tiktok"
+        d_name = self.target.get("display_name", self.target.get("identifier"))
+        sample_item = {
+            "video_id": "test_sample_" + str(uuid.uuid4())[:6],
+            "title": f"Uji Coba Konten {d_name}",
+            "description": "Pesan uji coba notifikasi otomatis. Pengaturan berhasil disimpan.",
+            "url": "https://www.tiktok.com" if is_tiktok else "https://www.youtube.com",
+            "thumbnail": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800",
+            "published": datetime.now(timezone.utc).isoformat(),
+            "uploader": d_name,
+            "duration": "01:00"
+        }
+
+        success = await self.cog._send_content_card(self.target, sample_item)
+        if success:
+            await interaction.followup.send(f"Notifikasi uji coba berhasil dikirim ke {ch.mention}.", ephemeral=True)
+        else:
+            await interaction.followup.send(f"Gagal mengirim notifikasi uji coba ke {ch.mention}.", ephemeral=True)
+
+    async def btn_delete_callback(self, interaction: discord.Interaction):
+        t_id = self.target.get("id") or self.target.get("identifier")
+        d_name = self.target.get("display_name", self.target.get("identifier"))
+        self.cog.config["targets"] = [t for t in self.cog.config.get("targets", []) if (t.get("id") != t_id and t.get("identifier") != t_id)]
+        self.cog._save_config()
+        self.target = None
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+        await interaction.followup.send(f"Pemantauan untuk {d_name} berhasil dihapus.", ephemeral=True)
 
 
 class SocialChecker(commands.Cog, name="Social Media Checker"):
@@ -187,7 +454,8 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
             try:
                 doc = self.cache_col.find_one({"_id": "social_checker_cache"})
                 if doc and "data" in doc:
-                    return {**default_cache, **doc["data"]}
+                    merged = list(set(default_cache["posted_ids"] + doc["data"].get("posted_ids", [])))
+                    return {"posted_ids": merged}
             except Exception:
                 pass
 
@@ -204,10 +472,46 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
             json.dump(default_cache, f, indent=4)
         return default_cache
 
-    def _save_cache(self):
-        if len(self.cache["posted_ids"]) > 500:
-            self.cache["posted_ids"] = self.cache["posted_ids"][-500:]
+    def _is_id_posted(self, vid: str) -> bool:
+        if not vid:
+            return False
+        if vid in self.cache.get("posted_ids", []):
+            return True
+        self._ensure_mongo()
+        if self.cache_col is not None:
+            try:
+                doc = self.cache_col.find_one({"_id": "social_checker_cache", "data.posted_ids": vid})
+                if doc:
+                    if vid not in self.cache["posted_ids"]:
+                        self.cache["posted_ids"].append(vid)
+                    return True
+            except Exception:
+                pass
+        return False
 
+    def _record_posted_id(self, vid: str):
+        if not vid:
+            return
+        if vid not in self.cache.get("posted_ids", []):
+            self.cache["posted_ids"].append(vid)
+        try:
+            os.makedirs(os.path.dirname(self.cache_file), exist_ok=True)
+            with open(self.cache_file, "w", encoding="utf-8") as f:
+                json.dump(self.cache, f, indent=4)
+        except Exception:
+            pass
+        self._ensure_mongo()
+        if self.cache_col is not None:
+            try:
+                self.cache_col.update_one(
+                    {"_id": "social_checker_cache"},
+                    {"$addToSet": {"data.posted_ids": vid}},
+                    upsert=True
+                )
+            except Exception:
+                pass
+
+    def _save_cache(self):
         try:
             os.makedirs(os.path.dirname(self.cache_file), exist_ok=True)
             with open(self.cache_file, "w", encoding="utf-8") as f:
@@ -218,9 +522,9 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
         self._ensure_mongo()
         if self.cache_col is not None:
             try:
-                self.cache_col.replace_one(
+                self.cache_col.update_one(
                     {"_id": "social_checker_cache"},
-                    {"_id": "social_checker_cache", "data": self.cache},
+                    {"$addToSet": {"data.posted_ids": {"$each": self.cache["posted_ids"]}}},
                     upsert=True,
                 )
             except Exception:
@@ -378,11 +682,17 @@ Berikan teks pengumuman kamu sekarang:"""
         return results[:10]
 
     async def _check_youtube_direct_live(self, channel_id: str):
-        url = f"https://www.youtube.com/channel/{channel_id}/live"
+        ts = int(datetime.now(timezone.utc).timestamp())
+        url = f"https://www.youtube.com/channel/{channel_id}/live?t={ts}"
+        headers = {
+            **self.http_headers,
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache"
+        }
         try:
-            timeout = aiohttp.ClientTimeout(total=6)
+            timeout = aiohttp.ClientTimeout(total=7)
             async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(url, headers=self.http_headers, allow_redirects=True) as resp:
+                async with session.get(url, headers=headers, allow_redirects=True) as resp:
                     final_url = str(resp.url)
                     if "/watch?v=" not in final_url:
                         return None
@@ -565,17 +875,6 @@ Berikan teks pengumuman kamu sekarang:"""
             except Exception:
                 return False
 
-        mention = target.get("mention_role", "@everyone")
-        if mention.lower() in ("none", "null", "off", "disable", ""):
-            mention_str = ""
-        elif mention.startswith("<@") or mention.startswith("@"):
-            mention_str = mention
-        elif mention.isdigit():
-            mention_str = f"<@&{mention}>"
-        else:
-            mention_str = mention
-
-        mode = target.get("message_mode", "ai")
         creator = content_data.get("creator") or target.get("display_name", "Creator")
         title = content_data.get("title", "")
         url = content_data.get("url", "")
@@ -583,26 +882,38 @@ Berikan teks pengumuman kamu sekarang:"""
         is_live = content_data.get("is_live", False)
         thumbnail = content_data.get("thumbnail")
 
-        if mode == "custom" and target.get("custom_template"):
-            intro_text = target["custom_template"].format(
-                creator=creator,
-                judul=title,
-                url=url,
-                mention=mention_str,
-            )
-        elif mode == "ai":
-            hype = await self._generate_ai_hype(creator, title, platform, is_live)
-            intro_text = f"{mention_str} {hype}".strip()
-        else:
-            if platform == "tiktok":
-                intro_text = f"{mention_str} Video TikTok baru dari **{creator}** nih!".strip()
-            elif is_live:
-                intro_text = f"{mention_str} **{creator}** lagi live streaming nih!".strip()
-            else:
-                intro_text = f"{mention_str} Video baru dari **{creator}** nih!".strip()
+        desc = content_data.get("description") or title or url
+        desc = clean_hyperlink_title(desc) if desc else ""
 
-        btn_label = "Tonton di TikTok" if platform == "tiktok" else ("Tonton Live" if is_live else "Tonton Video")
-        btn_color = 0x000000 if platform == "tiktok" else (0xED4245 if is_live else 0xFF0000)
+        clean_card_title = clean_hyperlink_title(title)
+        if not clean_card_title:
+            clean_card_title = "Video TikTok" if platform == "tiktok" else "Video YouTube"
+
+        raw_content = target.get("content") or target.get("custom_template")
+        if not raw_content:
+            raw_content = "@everyone {ai_hype}"
+
+        intro_text = raw_content
+        if "{ai_hype}" in intro_text or "{aihype}" in intro_text:
+            ai_text = await self._generate_ai_hype(creator, clean_card_title, platform, is_live)
+            intro_text = intro_text.replace("{ai_hype}", ai_text).replace("{aihype}", ai_text)
+
+        intro_text = intro_text.replace("{judul}", clean_card_title)
+        intro_text = intro_text.replace("{creator}", creator)
+        intro_text = intro_text.replace("{uploader}", creator)
+        intro_text = intro_text.replace("{channel}", creator)
+        intro_text = intro_text.replace("{url}", url)
+        intro_text = intro_text.strip()
+
+        btn_label = target.get("button_label") or ("Tonton di TikTok" if platform == "tiktok" else ("Tonton Live" if is_live else "Tonton Video"))
+        card_title_template = target.get("card_title") or "[{judul}]({url})"
+        card_desc_template = target.get("card_desc") or "{deskripsi}"
+        use_card = target.get("use_card", True)
+
+        final_card_title = card_title_template.replace("{judul}", clean_card_title).replace("{url}", url).replace("{creator}", creator)
+        final_card_desc = card_desc_template.replace("{deskripsi}", desc if desc else url).replace("{judul}", clean_card_title).replace("{url}", url).replace("{creator}", creator).strip()
+        if not final_card_desc:
+            final_card_desc = url
 
         buttons = [{
             "label": btn_label,
@@ -625,28 +936,33 @@ Berikan teks pengumuman kamu sekarang:"""
                     async with session.get(thumbnail) as img_resp:
                         if img_resp.status == 200:
                             img_bytes = await img_resp.read()
-                            files = [discord.File(io.BytesIO(img_bytes), filename="thumbnail.jpg")]
-                            attachment_fn = "thumbnail.jpg"
+                            if img_bytes:
+                                files = [discord.File(io.BytesIO(img_bytes), filename="thumbnail.jpg")]
+                                attachment_fn = "thumbnail.jpg"
             except Exception:
                 files = None
                 attachment_fn = None
 
-        clean_card_title = clean_hyperlink_title(title)
-        if not clean_card_title:
-            clean_card_title = "Video TikTok" if platform == "tiktok" else "Video YouTube"
+        if use_card:
+            card = build_v2_card(
+                title=final_card_title,
+                description=final_card_desc,
+                color=None,
+                buttons=buttons,
+                attachment_filename=attachment_fn,
+                media_url=thumbnail if not attachment_fn else None,
+            )
+            res = await send_v2_message(self.bot, channel.id, [card], files=files, content=intro_text)
+            if not (isinstance(res, dict) and "error_msg" in res):
+                return True
 
-        card = build_v2_card(
-            title=f"[{clean_card_title}]({url})",
-            description=desc,
-            color=None,
-            buttons=buttons,
-            attachment_filename=attachment_fn,
-            media_url=thumbnail if not attachment_fn else None,
-        )
-
-        res = await send_v2_message(self.bot, channel.id, [card], files=files, content=intro_text)
-        if isinstance(res, dict) and "error_msg" in res:
-            return False
+        fallback_view = discord.ui.View()
+        fallback_btn = discord.ui.Button(label=btn_label, style=discord.ButtonStyle.link, url=url)
+        fallback_view.add_item(fallback_btn)
+        send_content = intro_text
+        if url not in send_content:
+            send_content = f"{send_content}\n{url}"
+        await channel.send(content=send_content, view=fallback_view)
         return True
 
     @tasks.loop(seconds=30)
@@ -667,7 +983,7 @@ Berikan teks pengumuman kamu sekarang:"""
                     items = await self._fetch_youtube_content(identifier)
                     for item in items:
                         vid = item["video_id"]
-                        if vid in self.cache["posted_ids"]:
+                        if self._is_id_posted(vid):
                             continue
 
                         meta = await self._fetch_youtube_metadata(vid, item.get("is_live", False))
@@ -676,21 +992,19 @@ Berikan teks pengumuman kamu sekarang:"""
 
                         success = await self._send_content_card(target, meta)
                         if success:
-                            self.cache["posted_ids"].append(vid)
-                            self._save_cache()
+                            self._record_posted_id(vid)
                             await asyncio.sleep(2)
 
                 elif platform == "tiktok":
                     items = await self._fetch_tiktok_content(identifier)
                     for item in items:
                         vid = item["video_id"]
-                        if vid in self.cache["posted_ids"]:
+                        if self._is_id_posted(vid):
                             continue
 
                         success = await self._send_content_card(target, item)
                         if success:
-                            self.cache["posted_ids"].append(vid)
-                            self._save_cache()
+                            self._record_posted_id(vid)
                             await asyncio.sleep(2)
 
             except Exception:
@@ -699,6 +1013,7 @@ Berikan teks pengumuman kamu sekarang:"""
     @checker_loop.before_loop
     async def before_checker_loop(self):
         await self.bot.wait_until_ready()
+
 
     @commands.hybrid_group(name="yt", description="Manajemen pemantauan YouTube")
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
@@ -729,9 +1044,12 @@ Berikan teks pengumuman kamu sekarang:"""
             "display_name": name,
             "target_guild_id": ctx.guild.id if ctx.guild else None,
             "target_channel_id": channel_to_use.id,
-            "mention_role": "@everyone",
-            "message_mode": "ai",
-            "custom_template": None,
+            "content": "@everyone {ai_hype}",
+            "custom_template": "@everyone {ai_hype}",
+            "card_title": "[{judul}]({url})",
+            "card_desc": "{deskripsi}",
+            "button_label": None,
+            "use_card": True,
             "enabled": True,
             "added_at": datetime.now(timezone.utc).isoformat(),
         }
@@ -760,54 +1078,82 @@ Berikan teks pengumuman kamu sekarang:"""
             return await ctx.send(f"Channel YouTube `{identifier}` berhasil dihapus dari pemantauan.", ephemeral=True)
         await ctx.send(f"Channel `{identifier}` tidak ditemukan di daftar pemantauan.", ephemeral=True)
 
-    @yt_group.command(name="setchannel", description="Ubah channel Discord tujuan notifikasi")
-    @commands.is_owner()
-    async def yt_setchannel(self, ctx: commands.Context, identifier: str, target_channel: discord.TextChannel):
-        for t in self.config["targets"]:
-            if t.get("platform") == "youtube" and (t.get("identifier") == identifier or identifier in t.get("display_name", "")):
-                t["target_channel_id"] = target_channel.id
-                t["target_guild_id"] = target_channel.guild.id
-                self._save_config()
-                return await ctx.send(f"Target notifikasi untuk **{t['display_name']}** diubah ke {target_channel.mention}.", ephemeral=True)
-        await ctx.send(f"Channel `{identifier}` tidak ditemukan.", ephemeral=True)
+    @yt_group.command(name="config", description="Buka panel pengaturan untuk channel YouTube")
+    @app_commands.describe(target="Nama channel atau ID YouTube yang ingin diatur (opsional)")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def yt_config(self, ctx: commands.Context, target: Optional[str] = None):
+        found = None
+        if target:
+            clean = target.strip().lower()
+            for t in self.config.get("targets", []):
+                if t.get("platform") == "youtube" and (t.get("identifier", "").lower() == clean or clean in t.get("display_name", "").lower() or t.get("id") == clean):
+                    found = t
+                    break
+            if not found:
+                return await ctx.send(f"Channel `{target}` tidak ditemukan.", ephemeral=True)
 
-    @yt_group.command(name="setmention", description="Ubah mention role (@everyone, @role, atau none)")
-    @commands.is_owner()
-    async def yt_setmention(self, ctx: commands.Context, identifier: str, role: str):
-        for t in self.config["targets"]:
-            if t.get("platform") == "youtube" and (t.get("identifier") == identifier or identifier in t.get("display_name", "")):
-                t["mention_role"] = role
-                self._save_config()
-                return await ctx.send(f"Mention role untuk **{t['display_name']}** diubah menjadi `{role}`.", ephemeral=True)
-        await ctx.send(f"Channel `{identifier}` tidak ditemukan.", ephemeral=True)
+        view = SocialCheckerStudioView(self, ctx.guild, ctx.author, platform_filter="youtube", initial_target=found)
+        await ctx.send(embed=view.build_embed(), view=view, ephemeral=True)
 
-    @yt_group.command(name="setmode", description="Ubah mode pesan (ai, default, custom)")
-    @commands.is_owner()
-    async def yt_setmode(self, ctx: commands.Context, identifier: str, mode: str, *, custom_text: str = None):
-        valid_modes = ("ai", "default", "custom")
-        clean_mode = mode.lower()
-        if clean_mode not in valid_modes:
-            return await ctx.send(f"Mode tidak valid. Pilihan: `ai`, `default`, `custom`.", ephemeral=True)
+    @yt_group.command(name="edit", description="Ubah pengaturan channel YouTube langsung dalam satu perintah")
+    @app_commands.describe(
+        target="Nama channel atau ID YouTube yang ingin diubah",
+        kanal="Kanal Discord tujuan notifikasi",
+        pesan_biasa="Isi pesan biasa (Gunakan {ai_hype} untuk AI)",
+        judul="Pola judul notifikasi",
+        deskripsi="Pola deskripsi konten",
+        tombol="Teks tombol link",
+        gaya="Gaya tampilan pesan (kartu / teks)"
+    )
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def yt_edit(
+        self,
+        ctx: commands.Context,
+        target: str,
+        kanal: Optional[discord.TextChannel] = None,
+        pesan_biasa: Optional[str] = None,
+        judul: Optional[str] = None,
+        deskripsi: Optional[str] = None,
+        tombol: Optional[str] = None,
+        gaya: Optional[Literal["kartu", "teks"]] = None
+    ):
+        clean = target.strip().lower()
+        found = None
+        for t in self.config.get("targets", []):
+            if t.get("platform") == "youtube" and (t.get("identifier", "").lower() == clean or clean in t.get("display_name", "").lower() or t.get("id") == clean):
+                found = t
+                break
+        if not found:
+            return await ctx.send(f"Channel `{target}` tidak ditemukan.", ephemeral=True)
 
-        for t in self.config["targets"]:
-            if t.get("platform") == "youtube" and (t.get("identifier") == identifier or identifier in t.get("display_name", "")):
-                t["message_mode"] = clean_mode
-                if custom_text:
-                    t["custom_template"] = custom_text
-                self._save_config()
-                return await ctx.send(f"Mode pesan untuk **{t['display_name']}** diubah ke `{clean_mode}`.", ephemeral=True)
-        await ctx.send(f"Channel `{identifier}` tidak ditemukan.", ephemeral=True)
+        changes = []
+        if kanal:
+            found["target_channel_id"] = kanal.id
+            found["target_guild_id"] = kanal.guild.id
+            changes.append(f"Kanal: {kanal.mention}")
+        if pesan_biasa:
+            found["content"] = pesan_biasa.strip()
+            found["custom_template"] = pesan_biasa.strip()
+            changes.append(f"Pesan: `{pesan_biasa.strip()}`")
+        if judul:
+            found["card_title"] = judul.strip()
+            changes.append(f"Judul: `{judul.strip()}`")
+        if deskripsi:
+            found["card_desc"] = deskripsi.strip()
+            changes.append(f"Deskripsi: `{deskripsi.strip()}`")
+        if tombol:
+            found["button_label"] = tombol.strip()
+            changes.append(f"Tombol: `{tombol.strip()}`")
+        if gaya:
+            found["use_card"] = (gaya == "kartu")
+            changes.append(f"Gaya: `{'Kartu' if found['use_card'] else 'Teks'}`")
 
-    @yt_group.command(name="toggle", description="Aktifkan atau nonaktifkan pemantauan channel")
-    @commands.is_owner()
-    async def yt_toggle(self, ctx: commands.Context, identifier: str):
-        for t in self.config["targets"]:
-            if t.get("platform") == "youtube" and (t.get("identifier") == identifier or identifier in t.get("display_name", "")):
-                t["enabled"] = not t.get("enabled", True)
-                status_str = "diaktifkan" if t["enabled"] else "dinonaktifkan"
-                self._save_config()
-                return await ctx.send(f"Pemantauan untuk **{t['display_name']}** telah {status_str}.", ephemeral=True)
-        await ctx.send(f"Channel `{identifier}` tidak ditemukan.", ephemeral=True)
+        if not changes:
+            return await ctx.send("Tidak ada opsi yang diubah. Isi salah satu parameter untuk mengubah pengaturan.", ephemeral=True)
+
+        self._save_config()
+        await ctx.send(f"Pengaturan untuk **{found['display_name']}** diperbarui:\n" + "\n".join(f"- {c}" for c in changes), ephemeral=True)
+
 
     @yt_group.command(name="list", description="Daftar channel YouTube yang dipantau")
     @commands.is_owner()
@@ -833,14 +1179,25 @@ Berikan teks pengumuman kamu sekarang:"""
             return await ctx.send("URL YouTube tidak valid.", ephemeral=True)
 
         meta = await self._fetch_youtube_metadata(vid)
+        existing_target = None
+        cid = meta.get("channel_id")
+        for t in self.config.get("targets", []):
+            if t.get("platform") == "youtube" and (t.get("identifier") == cid or (cid and cid in t.get("identifier"))):
+                existing_target = t
+                break
+
         dummy_target = {
             "platform": "youtube",
             "identifier": meta.get("channel_id") or "test",
             "display_name": meta.get("creator", "Creator"),
             "target_channel_id": target_channel.id,
-            "mention_role": "none",
-            "message_mode": "ai",
-            "custom_template": None,
+            "mention_role": existing_target.get("mention_role", "none") if existing_target else "none",
+            "message_mode": existing_target.get("message_mode", "ai") if existing_target else "ai",
+            "custom_template": existing_target.get("custom_template") if existing_target else None,
+            "card_title": existing_target.get("card_title") if existing_target else None,
+            "card_desc": existing_target.get("card_desc") if existing_target else None,
+            "button_label": existing_target.get("button_label") if existing_target else None,
+            "use_card": existing_target.get("use_card", True) if existing_target else True,
         }
         card_sent = await self._send_content_card(dummy_target, meta)
         embed = discord.Embed(
@@ -870,15 +1227,14 @@ Berikan teks pengumuman kamu sekarang:"""
             items = await self._fetch_youtube_content(t["identifier"])
             for it in items:
                 vid = it["video_id"]
-                if vid in self.cache["posted_ids"]:
+                if self._is_id_posted(vid):
                     continue
                 meta = await self._fetch_youtube_metadata(vid, it.get("is_live", False))
                 if meta.get("channel_id") and meta["channel_id"] != t["identifier"]:
                     continue
                 if await self._send_content_card(t, meta):
-                    self.cache["posted_ids"].append(vid)
+                    self._record_posted_id(vid)
                     found_any += 1
-        self._save_cache()
         await ctx.send(f"Pengecekan selesai. Ditemukan dan dikirim: {found_any} konten baru.", ephemeral=True)
 
     @commands.hybrid_group(name="tt", description="Manajemen pemantauan TikTok")
@@ -907,9 +1263,12 @@ Berikan teks pengumuman kamu sekarang:"""
             "display_name": clean_user,
             "target_guild_id": ctx.guild.id if ctx.guild else None,
             "target_channel_id": channel_to_use.id,
-            "mention_role": "@everyone",
-            "message_mode": "ai",
-            "custom_template": None,
+            "content": "@everyone {ai_hype}",
+            "custom_template": "@everyone {ai_hype}",
+            "card_title": "[{judul}]({url})",
+            "card_desc": "{deskripsi}",
+            "button_label": None,
+            "use_card": True,
             "enabled": True,
             "added_at": datetime.now(timezone.utc).isoformat(),
         }
@@ -938,58 +1297,82 @@ Berikan teks pengumuman kamu sekarang:"""
             return await ctx.send(f"Akun TikTok `@{clean_user}` berhasil dihapus dari pemantauan.", ephemeral=True)
         await ctx.send(f"Akun TikTok `@{clean_user}` tidak ditemukan.", ephemeral=True)
 
-    @tt_group.command(name="setchannel", description="Ubah channel Discord tujuan notifikasi")
-    @commands.is_owner()
-    async def tt_setchannel(self, ctx: commands.Context, username: str, target_channel: discord.TextChannel):
-        clean_user = username.lstrip("@").strip().lower()
-        for t in self.config["targets"]:
-            if t.get("platform") == "tiktok" and t.get("identifier").lower() == clean_user:
-                t["target_channel_id"] = target_channel.id
-                t["target_guild_id"] = target_channel.guild.id
-                self._save_config()
-                return await ctx.send(f"Target notifikasi TikTok **@{t['display_name']}** diubah ke {target_channel.mention}.", ephemeral=True)
-        await ctx.send(f"Akun TikTok `@{clean_user}` tidak ditemukan.", ephemeral=True)
+    @tt_group.command(name="config", description="Buka panel pengaturan untuk akun TikTok")
+    @app_commands.describe(target="Nama pengguna atau ID TikTok yang ingin diatur (opsional)")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def tt_config(self, ctx: commands.Context, target: Optional[str] = None):
+        found = None
+        if target:
+            clean = target.lstrip("@").strip().lower()
+            for t in self.config.get("targets", []):
+                if t.get("platform") == "tiktok" and (t.get("identifier", "").lower() == clean or clean in t.get("display_name", "").lower() or t.get("id") == clean):
+                    found = t
+                    break
+            if not found:
+                return await ctx.send(f"Akun TikTok `@{target}` tidak ditemukan.", ephemeral=True)
 
-    @tt_group.command(name="setmention", description="Ubah mention role (@everyone, @role, atau none)")
-    @commands.is_owner()
-    async def tt_setmention(self, ctx: commands.Context, username: str, role: str):
-        clean_user = username.lstrip("@").strip().lower()
-        for t in self.config["targets"]:
-            if t.get("platform") == "tiktok" and t.get("identifier").lower() == clean_user:
-                t["mention_role"] = role
-                self._save_config()
-                return await ctx.send(f"Mention role untuk TikTok **@{t['display_name']}** diubah menjadi `{role}`.", ephemeral=True)
-        await ctx.send(f"Akun TikTok `@{clean_user}` tidak ditemukan.", ephemeral=True)
+        view = SocialCheckerStudioView(self, ctx.guild, ctx.author, platform_filter="tiktok", initial_target=found)
+        await ctx.send(embed=view.build_embed(), view=view, ephemeral=True)
 
-    @tt_group.command(name="setmode", description="Ubah mode pesan (ai, default, custom)")
-    @commands.is_owner()
-    async def tt_setmode(self, ctx: commands.Context, username: str, mode: str, *, custom_text: str = None):
-        valid_modes = ("ai", "default", "custom")
-        clean_mode = mode.lower()
-        if clean_mode not in valid_modes:
-            return await ctx.send("Mode tidak valid. Pilihan: `ai`, `default`, `custom`.", ephemeral=True)
+    @tt_group.command(name="edit", description="Ubah pengaturan akun TikTok langsung dalam satu perintah")
+    @app_commands.describe(
+        target="Nama pengguna atau ID TikTok yang ingin diubah",
+        kanal="Kanal Discord tujuan notifikasi",
+        pesan_biasa="Isi pesan biasa (Gunakan {ai_hype} untuk AI)",
+        judul="Pola judul notifikasi",
+        deskripsi="Pola deskripsi konten",
+        tombol="Teks tombol link",
+        gaya="Gaya tampilan pesan (kartu / teks)"
+    )
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def tt_edit(
+        self,
+        ctx: commands.Context,
+        target: str,
+        kanal: Optional[discord.TextChannel] = None,
+        pesan_biasa: Optional[str] = None,
+        judul: Optional[str] = None,
+        deskripsi: Optional[str] = None,
+        tombol: Optional[str] = None,
+        gaya: Optional[Literal["kartu", "teks"]] = None
+    ):
+        clean = target.lstrip("@").strip().lower()
+        found = None
+        for t in self.config.get("targets", []):
+            if t.get("platform") == "tiktok" and (t.get("identifier", "").lower() == clean or clean in t.get("display_name", "").lower() or t.get("id") == clean):
+                found = t
+                break
+        if not found:
+            return await ctx.send(f"Akun TikTok `@{target}` tidak ditemukan.", ephemeral=True)
 
-        clean_user = username.lstrip("@").strip().lower()
-        for t in self.config["targets"]:
-            if t.get("platform") == "tiktok" and t.get("identifier").lower() == clean_user:
-                t["message_mode"] = clean_mode
-                if custom_text:
-                    t["custom_template"] = custom_text
-                self._save_config()
-                return await ctx.send(f"Mode pesan untuk TikTok **@{t['display_name']}** diubah ke `{clean_mode}`.", ephemeral=True)
-        await ctx.send(f"Akun TikTok `@{clean_user}` tidak ditemukan.", ephemeral=True)
+        changes = []
+        if kanal:
+            found["target_channel_id"] = kanal.id
+            found["target_guild_id"] = kanal.guild.id
+            changes.append(f"Kanal: {kanal.mention}")
+        if pesan_biasa:
+            found["content"] = pesan_biasa.strip()
+            found["custom_template"] = pesan_biasa.strip()
+            changes.append(f"Pesan: `{pesan_biasa.strip()}`")
+        if judul:
+            found["card_title"] = judul.strip()
+            changes.append(f"Judul: `{judul.strip()}`")
+        if deskripsi:
+            found["card_desc"] = deskripsi.strip()
+            changes.append(f"Deskripsi: `{deskripsi.strip()}`")
+        if tombol:
+            found["button_label"] = tombol.strip()
+            changes.append(f"Tombol: `{tombol.strip()}`")
+        if gaya:
+            found["use_card"] = (gaya == "kartu")
+            changes.append(f"Gaya: `{'Kartu' if found['use_card'] else 'Teks'}`")
 
-    @tt_group.command(name="toggle", description="Aktifkan atau nonaktifkan pemantauan akun TikTok")
-    @commands.is_owner()
-    async def tt_toggle(self, ctx: commands.Context, username: str):
-        clean_user = username.lstrip("@").strip().lower()
-        for t in self.config["targets"]:
-            if t.get("platform") == "tiktok" and t.get("identifier").lower() == clean_user:
-                t["enabled"] = not t.get("enabled", True)
-                status_str = "diaktifkan" if t["enabled"] else "dinonaktifkan"
-                self._save_config()
-                return await ctx.send(f"Pemantauan TikTok **@{t['display_name']}** telah {status_str}.", ephemeral=True)
-        await ctx.send(f"Akun TikTok `@{clean_user}` tidak ditemukan.", ephemeral=True)
+        if not changes:
+            return await ctx.send("Tidak ada opsi yang diubah. Isi salah satu parameter untuk mengubah pengaturan.", ephemeral=True)
+
+        self._save_config()
+        await ctx.send(f"Pengaturan untuk **@{found['display_name']}** diperbarui:\n" + "\n".join(f"- {c}" for c in changes), ephemeral=True)
+
 
     @tt_group.command(name="list", description="Daftar akun TikTok yang dipantau")
     @commands.is_owner()
@@ -1015,14 +1398,25 @@ Berikan teks pengumuman kamu sekarang:"""
             if not meta or not meta.get("video_id"):
                 return await ctx.send("❌ Gagal mengekstrak metadata TikTok. Pastikan URL valid dan video bersifat publik.", ephemeral=True)
 
+            existing_target = None
+            clean_creator = meta["creator"].lower().lstrip("@")
+            for t in self.config.get("targets", []):
+                if t.get("platform") == "tiktok" and t.get("identifier", "").lower() == clean_creator:
+                    existing_target = t
+                    break
+
             dummy_target = {
                 "platform": "tiktok",
                 "identifier": meta["creator"],
                 "display_name": meta["creator"],
                 "target_channel_id": target_channel.id,
-                "mention_role": "none",
-                "message_mode": "ai",
-                "custom_template": None,
+                "mention_role": existing_target.get("mention_role", "none") if existing_target else "none",
+                "message_mode": existing_target.get("message_mode", "ai") if existing_target else "ai",
+                "custom_template": existing_target.get("custom_template") if existing_target else None,
+                "card_title": existing_target.get("card_title") if existing_target else None,
+                "card_desc": existing_target.get("card_desc") if existing_target else None,
+                "button_label": existing_target.get("button_label") if existing_target else None,
+                "use_card": existing_target.get("use_card", True) if existing_target else True,
             }
             card_sent = await self._send_content_card(dummy_target, meta)
 
@@ -1056,13 +1450,89 @@ Berikan teks pengumuman kamu sekarang:"""
             items = await self._fetch_tiktok_content(t["identifier"])
             for it in items:
                 vid = it["video_id"]
-                if vid in self.cache["posted_ids"]:
+                if self._is_id_posted(vid):
                     continue
                 if await self._send_content_card(t, it):
-                    self.cache["posted_ids"].append(vid)
+                    self._record_posted_id(vid)
                     found_any += 1
-        self._save_cache()
         await ctx.send(f"Pengecekan selesai. Ditemukan dan dikirim: {found_any} video TikTok baru.", ephemeral=True)
+
+    @commands.hybrid_command(name="social", aliases=["sosmed", "socialhub", "socialstudio"], description="Buka studio pengaturan notifikasi YouTube dan TikTok")
+    @app_commands.describe(target="Nama channel atau akun yang ingin diatur (opsional)")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def social(self, ctx: commands.Context, target: Optional[str] = None):
+        found = None
+        if target:
+            clean = target.lstrip("@").strip().lower()
+            for t in self.config.get("targets", []):
+                if clean in (t.get("identifier", "").lower(), t.get("display_name", "").lower(), t.get("id")):
+                    found = t
+                    break
+            if not found:
+                return await ctx.send(f"Target `{target}` tidak ditemukan.", ephemeral=True)
+        view = SocialCheckerStudioView(self, ctx.guild, ctx.author, initial_target=found)
+        await ctx.send(embed=view.build_embed(), view=view, ephemeral=True)
+
+    @commands.hybrid_command(name="socialadd", aliases=["addsocial", "tambahsocial"], description="Tambah pemantauan YouTube atau TikTok")
+    @app_commands.describe(
+        platform="Pilih platform (youtube / tiktok)",
+        target="Link channel / ID YouTube atau username TikTok",
+        kanal="Kanal Discord tujuan notifikasi (opsional)"
+    )
+    @commands.is_owner()
+    async def social_add(self, ctx: commands.Context, platform: Literal["youtube", "tiktok"], target: str, kanal: Optional[discord.TextChannel] = None):
+        channel_to_use = kanal or ctx.channel
+        plat = platform.lower()
+        if plat == "youtube":
+            return await self.yt_add(ctx, target, channel_to_use)
+        elif plat == "tiktok":
+            return await self.tt_add(ctx, target, channel_to_use)
+
+    @commands.hybrid_command(name="socialremove", aliases=["rmsocial", "hapussocial"], description="Hapus channel atau akun dari pemantauan")
+    @app_commands.describe(target="Nama atau ID target yang ingin dihapus")
+    @commands.is_owner()
+    async def social_remove(self, ctx: commands.Context, target: str):
+        clean = target.lstrip("@").strip().lower()
+        before_count = len(self.config["targets"])
+        self.config["targets"] = [
+            t for t in self.config["targets"]
+            if not (clean in (t.get("identifier", "").lower(), t.get("display_name", "").lower(), t.get("id")))
+        ]
+        if len(self.config["targets"]) < before_count:
+            self._save_config()
+            return await ctx.send(f"Target `{target}` berhasil dihapus dari pemantauan.", ephemeral=True)
+        await ctx.send(f"Target `{target}` tidak ditemukan.", ephemeral=True)
+
+    @commands.hybrid_command(name="sociallist", aliases=["listsocial"], description="Daftar semua target YouTube & TikTok yang dipantau")
+    @commands.is_owner()
+    async def social_list(self, ctx: commands.Context):
+        targets = self.config.get("targets", [])
+        if not targets:
+            return await ctx.send("Belum ada target yang dipantau.", ephemeral=True)
+
+        lines = ["**Daftar Pemantauan Media Sosial:**"]
+        for idx, t in enumerate(targets, 1):
+            plat = t.get("platform", "").capitalize()
+            status = "AKTIF" if t.get("enabled", True) else "NONAKTIF"
+            ch = f"<#{t['target_channel_id']}>"
+            lines.append(f"{idx}. `[{plat}]` **{t['display_name']}** - {ch} [{status}]")
+        await ctx.send("\n".join(lines), ephemeral=True)
+
+    @commands.hybrid_command(name="socialtest", aliases=["testsocial"], description="Kirim uji coba notifikasi untuk URL YouTube atau TikTok")
+    @app_commands.describe(url="Tautan video YouTube atau TikTok", kanal="Kanal Discord tujuan pengujian (opsional)")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def social_test(self, ctx: commands.Context, url: str, kanal: Optional[discord.TextChannel] = None):
+        target_ch = kanal or ctx.channel
+        clean_url = url.strip()
+        if "tiktok.com" in clean_url:
+            return await self.tt_test(ctx, clean_url, target_ch)
+        else:
+            return await self.yt_test(ctx, clean_url, target_ch)
+
+    @commands.hybrid_command(name="socialcheck", aliases=["checksocial"], description="Paksa cek pembaruan YouTube dan TikTok sekarang")
+    @commands.is_owner()
+    async def social_check(self, ctx: commands.Context):
+        return await self.checker_check(ctx)
 
     @commands.hybrid_group(name="checker", description="Manajemen global checker")
     @commands.is_owner()

@@ -17,6 +17,7 @@ from datetime import datetime, timezone, timedelta
 import re
 import zipfile
 import time 
+import difflib
 
 base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 
@@ -302,13 +303,20 @@ async def on_message(message):
 
 @bot.event
 async def on_ready():
-    log.info(f"😎 Bot {bot.user} is now online and ready!")
+    log.info(f"Bot {bot.user} is now online and ready!")
     log.info(f"Total server: {len(bot.guilds)}")
     try:
+        for g in bot.guilds:
+            try:
+                bot.tree.clear_commands(guild=g)
+                bot.tree.copy_global_to(guild=g)
+                await bot.tree.sync(guild=g)
+            except Exception:
+                pass
         synced = await bot.tree.sync()
-        log.info(f"⚡ [AUTO-SYNC] Berhasil menyinkronkan {len(synced)} Slash Commands ke Discord!")
+        log.info(f"[AUTO-SYNC] Berhasil menyinkronkan {len(synced)} Slash Commands ke Discord!")
     except Exception as e:
-        log.warning(f"⚠️ [AUTO-SYNC] Gagal sinkronisasi command tree: {e}")
+        log.warning(f"[AUTO-SYNC] Gagal sinkronisasi command tree: {e}")
 
 @bot.event
 async def on_guild_join(guild):
@@ -595,6 +603,7 @@ async def sync_commands(ctx: commands.Context, scope: str = "guild"):
             synced = await bot.tree.sync()
             msg = f"🌐 Berhasil menyinkronkan **{len(synced)}** Slash Commands secara global!"
         else:
+            bot.tree.clear_commands(guild=ctx.guild)
             bot.tree.copy_global_to(guild=ctx.guild)
             synced = await bot.tree.sync(guild=ctx.guild)
             msg = f"⚡ Berhasil menyinkronkan **{len(synced)}** Slash Commands secara instan ke server **{ctx.guild.name}**!"
@@ -657,6 +666,29 @@ async def on_command_error(ctx, error):
     error = getattr(error, 'original', error)
 
     if isinstance(error, commands.CommandNotFound):
+        invoked = (ctx.invoked_with or "").lower()
+        if not invoked:
+            return
+        all_cmds = set()
+        for cmd in ctx.bot.commands:
+            if not cmd.hidden:
+                all_cmds.add(cmd.name.lower())
+                for alias in cmd.aliases:
+                    all_cmds.add(alias.lower())
+        matches = difflib.get_close_matches(invoked, list(all_cmds), n=3, cutoff=0.55)
+        embed = discord.Embed(
+            title="🔍 Perintah Tidak Ditemukan",
+            color=discord.Color.orange()
+        )
+        if matches:
+            suggestions = ", ".join(f"`{ctx.prefix}{m}`" for m in matches)
+            embed.description = f"Perintah `{ctx.prefix}{invoked}` tidak terdaftar di sistem.\n\nApakah maksud kamu:\n👉 {suggestions}"
+        else:
+            embed.description = f"Perintah `{ctx.prefix}{invoked}` tidak terdaftar di sistem.\nGunakan `{ctx.prefix}help` untuk melihat daftar perintah yang tersedia."
+        try:
+            await ctx.send(embed=embed, delete_after=15)
+        except Exception:
+            pass
         return
 
     embed = discord.Embed(color=discord.Color.red())

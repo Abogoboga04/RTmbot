@@ -1210,6 +1210,120 @@ class TicketSetupView(discord.ui.View):
 
 
 
+class RolePanelQuickSetupView(discord.ui.View):
+    def __init__(self, cog, guild: discord.Guild, author: discord.Member):
+        super().__init__(timeout=180)
+        self.cog = cog
+        self.guild = guild
+        self.author = author
+        self.target_channel = None
+        self.selected_roles = []
+
+        ch_select = discord.ui.ChannelSelect(
+            channel_types=[discord.ChannelType.text],
+            placeholder="1. Pilih kanal target...",
+            row=0
+        )
+        ch_select.callback = self.on_channel_select
+        self.add_item(ch_select)
+
+        role_select = discord.ui.RoleSelect(
+            placeholder="2. Pilih role-role untuk panel (maks 25)...",
+            min_values=1,
+            max_values=25,
+            row=1
+        )
+        role_select.callback = self.on_roles_select
+        self.add_item(role_select)
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author.id:
+            await interaction.response.send_message("❌ Menu ini hanya dapat diakses oleh moderator yang memanggilnya.", ephemeral=True)
+            return False
+        return True
+
+    async def on_channel_select(self, interaction: discord.Interaction):
+        ch_id = interaction.data.get("values", [None])[0]
+        if ch_id:
+            self.target_channel = self.guild.get_channel(int(ch_id))
+        await interaction.response.defer()
+
+    async def on_roles_select(self, interaction: discord.Interaction):
+        self.selected_roles = interaction.data.get("values", [])
+        await interaction.response.defer()
+
+    @discord.ui.button(label="Pasang Sekarang", style=discord.ButtonStyle.success, emoji="🚀", row=2)
+    async def confirm_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not interaction.response.is_done():
+            await interaction.response.defer(ephemeral=True)
+        if not self.target_channel:
+            return await interaction.followup.send("❌ Mohon pilih kanal target terlebih dahulu pada menu ke-1.", ephemeral=True)
+        if not self.selected_roles:
+            return await interaction.followup.send("❌ Mohon pilih minimal 1 role pada menu ke-2.", ephemeral=True)
+
+        roles_data = {}
+        for r_id_str in self.selected_roles:
+            r = self.guild.get_role(int(r_id_str))
+            if r and r < self.guild.me.top_role and not r.managed:
+                roles_data[str(r.id)] = {
+                    "label": r.name[:50],
+                    "emoji": None,
+                    "description": f"Role akses @{r.name}"[:100]
+                }
+
+        if not roles_data:
+            return await interaction.followup.send("❌ Role yang dipilih berada di atas role bot atau merupakan managed role.", ephemeral=True)
+
+        panel_data = {
+            "channel_id": self.target_channel.id,
+            "mode": "select",
+            "rule_type": "free",
+            "title": "🎭 AMBIL ROLE MANDIRI",
+            "description": "Pilih role yang kamu inginkan untuk membuka akses channel dan notifikasi server:",
+            "placeholder": "✨ Pilih role yang ingin kamu ambil",
+            "roles": roles_data,
+            "roles_data": roles_data
+        }
+
+        card, fallback_embed, initial_view = self.cog._build_role_panel_render(self.guild, panel_data, "temp_id")
+        components = [card, *initial_view.to_components()]
+
+        resp = await send_v2_message(self.cog.bot, self.target_channel.id, components)
+        if not resp or "id" not in resp:
+            msg = await self.target_channel.send(embed=fallback_embed, view=initial_view)
+            msg_id = msg.id
+        else:
+            msg_id = int(resp["id"])
+
+        guild_settings = self.cog.get_guild_settings(self.guild.id)
+        if "role_panels" not in guild_settings:
+            guild_settings["role_panels"] = {}
+        guild_settings["role_panels"][str(msg_id)] = panel_data
+        self.cog.save_settings()
+
+        await self.cog._sync_role_panel_message(self.guild, panel_data, str(msg_id))
+
+        finish_embed = discord.Embed(
+            title="🎉 Setup Kilat Berhasil!",
+            description=(
+                f"Panel role berhasil dipasang di {self.target_channel.mention}!\n\n"
+                f"• **ID Pesan:** `{msg_id}`\n"
+                f"• **Jumlah Role:** `{len(roles_data)}` role\n"
+                f"• **Gaya:** `Dropdown Menu` | **Aturan:** `Bebas`\n\n"
+                "Kamu bisa mengubah judul, gaya tampilan, atau menambah role kapan saja lewat studio `/panelrole`."
+            ),
+            color=0x57F287
+        )
+        finish_view = RolePanelCreatedDoneView(self.cog, self.guild, interaction.user, str(msg_id))
+        await interaction.edit_original_response(embed=finish_embed, view=finish_view)
+
+    @discord.ui.button(label="Kembali", style=discord.ButtonStyle.secondary, emoji="◀️", row=2)
+    async def cancel_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        dash_view = RolePanelDashboardView(self.cog, self.guild, self.author)
+        embed = dash_view.build_dashboard_embed()
+        await interaction.response.edit_message(embed=embed, view=dash_view)
+
+
 class RolePanelDashboardView(discord.ui.View):
     def __init__(self, cog, guild: discord.Guild, author: discord.Member):
         super().__init__(timeout=300)
@@ -1261,7 +1375,22 @@ class RolePanelDashboardView(discord.ui.View):
         embed = manage_view.build_manage_embed()
         await interaction.edit_original_response(embed=embed, view=manage_view)
 
-    @discord.ui.button(label="Buat Panel Baru", style=discord.ButtonStyle.primary, emoji="➕", row=1)
+    @discord.ui.button(label="Setup Kilat (1 Langkah)", style=discord.ButtonStyle.success, emoji="⚡", row=1)
+    async def quick_setup_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
+        quick_view = RolePanelQuickSetupView(self.cog, self.guild, self.author)
+        embed = discord.Embed(
+            title="⚡ Setup Kilat Panel Role",
+            description=(
+                "Pasang panel role langsung jadi hanya dalam **1 langkah**:\n\n"
+                "1. **Pilih Kanal Target** pada menu ke-1 di bawah.\n"
+                "2. **Pilih Role-Role** yang ingin dimasukkan pada menu ke-2.\n"
+                "3. Klik tombol **Pasang Sekarang**!"
+            ),
+            color=0x57F287
+        )
+        await interaction.response.edit_message(embed=embed, view=quick_view)
+
+    @discord.ui.button(label="Buat Panel (Wizard)", style=discord.ButtonStyle.primary, emoji="➕", row=1)
     async def create_new_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
         wizard_view = RolePanelWizardChannelView(self.cog, self.guild, self.author)
         embed = discord.Embed(
@@ -1278,11 +1407,11 @@ class RolePanelDashboardView(discord.ui.View):
 
         desc = (
             "Selamat datang di **Studio Panel Role**!\n\n"
-            "Di sini kamu bisa membuat panel ambil role baru, menambahkan atau menghapus role, "
-            "mengubah teks panduan, serta mengatur aturan seleksi (**Bebas** atau **Ketat/1 Role Saja**).\n\n"
+            "Di sini kamu bisa membuat panel ambil role baru secara instan atau melalui wizard panduan, "
+            "menambahkan atau menghapus role, serta mengatur aturan seleksi (**Bebas** atau **Ketat/1 Role Saja**).\n\n"
         )
         if count == 0:
-            desc += "💡 *Belum ada panel aktif di server ini. Klik tombol **Buat Panel Baru** di bawah untuk memulai!*"
+            desc += "💡 *Belum ada panel aktif di server ini. Klik tombol **Setup Kilat** atau **Buat Panel (Wizard)** di bawah untuk memulai!*"
         else:
             desc += f"📊 Terdeteksi **{count} panel aktif** di server ini. Pilih panel pada menu dropdown di bawah untuk mengeditnya:"
 
@@ -1293,6 +1422,7 @@ class RolePanelDashboardView(discord.ui.View):
         )
         embed.set_footer(text=f"Server: {self.guild.name}")
         return embed
+
 
 
 class RolePanelManageView(discord.ui.View):
@@ -4798,6 +4928,212 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         view = RolePanelDashboardView(self, ctx.guild, ctx.author)
         embed = view.build_dashboard_embed()
         await ctx.send(embed=embed, view=view, ephemeral=True)
+
+    @commands.hybrid_command(name="setuppanelrole", aliases=["panelrolesetup", "quickpanelrole"], description="Setup kilat 1 langkah membuat panel role langsung jadi tanpa wizard")
+    @app_commands.describe(
+        channel="Kanal teks tempat panel akan dipasang",
+        role1="Role pertama (wajib)",
+        role2="Role kedua (opsional)",
+        role3="Role ketiga (opsional)",
+        role4="Role keempat (opsional)",
+        role5="Role kelima (opsional)",
+        judul="Judul panel role",
+        deskripsi="Deskripsi/petunjuk di panel role",
+        mode="Gaya tampilan panel (Dropdown / Tombol)",
+        aturan="Aturan pemilihan (Bebas: bisa pilih banyak / Ketat: pilih 1 saja)"
+    )
+    @commands.has_permissions(manage_roles=True)
+    async def setuppanelrole(
+        self,
+        ctx: commands.Context,
+        channel: discord.TextChannel,
+        role1: discord.Role,
+        role2: Optional[discord.Role] = None,
+        role3: Optional[discord.Role] = None,
+        role4: Optional[discord.Role] = None,
+        role5: Optional[discord.Role] = None,
+        judul: Optional[str] = "🎭 AMBIL ROLE MANDIRI",
+        deskripsi: Optional[str] = "Pilih role yang kamu inginkan di bawah ini:",
+        mode: Literal["select", "button"] = "select",
+        aturan: Literal["free", "exclusive"] = "free"
+    ):
+        if ctx.interaction:
+            await ctx.defer(ephemeral=True)
+
+        raw_roles = [r for r in [role1, role2, role3, role4, role5] if r is not None]
+        valid_roles_data = {}
+        rejected = []
+
+        for r in raw_roles:
+            if r >= ctx.guild.me.top_role or r.managed:
+                rejected.append(r.name)
+                continue
+            valid_roles_data[str(r.id)] = {
+                "label": r.name[:50],
+                "emoji": None,
+                "description": f"Role akses @{r.name}"[:100]
+            }
+
+        if not valid_roles_data:
+            msg = "❌ Semua role yang kamu pilih berada di atas bot atau merupakan managed role."
+            if rejected:
+                msg += f" ({', '.join(rejected)})"
+            return await ctx.send(embed=self._create_embed(description=msg, color=self.color_error), ephemeral=True)
+
+        panel_data = {
+            "channel_id": channel.id,
+            "mode": mode,
+            "rule_type": aturan,
+            "title": judul or "🎭 AMBIL ROLE MANDIRI",
+            "description": deskripsi or "Pilih role yang kamu inginkan di bawah ini:",
+            "placeholder": "✨ Pilih role yang ingin kamu ambil",
+            "roles": valid_roles_data,
+            "roles_data": valid_roles_data
+        }
+
+        card, fallback_embed, initial_view = self._build_role_panel_render(ctx.guild, panel_data, "temp_id")
+        components = [card, *initial_view.to_components()]
+
+        resp = await send_v2_message(self.bot, channel.id, components)
+        if not resp or "id" not in resp:
+            sent_msg = await channel.send(embed=fallback_embed, view=initial_view)
+            msg_id = sent_msg.id
+        else:
+            msg_id = int(resp["id"])
+
+        guild_settings = self.get_guild_settings(ctx.guild.id)
+        if "role_panels" not in guild_settings:
+            guild_settings["role_panels"] = {}
+        guild_settings["role_panels"][str(msg_id)] = panel_data
+        self.save_settings()
+
+        await self._sync_role_panel_message(ctx.guild, panel_data, str(msg_id))
+
+        info_desc = (
+            f"✅ Panel role berhasil dibuat dan terpasang di {channel.mention}!\n\n"
+            f"• **ID Pesan:** `{msg_id}`\n"
+            f"• **Judul:** {judul}\n"
+            f"• **Gaya:** `{mode.upper()}` | **Aturan:** `{'Ketat (1 Role Saja)' if aturan == 'exclusive' else 'Bebas'}`\n"
+            f"• **Jumlah Role:** `{len(valid_roles_data)}` role dimasukkan"
+        )
+        if rejected:
+            info_desc += f"\n⚠️ *Role dilewati karena posisinya di atas bot:* {', '.join(rejected)}"
+
+        embed = self._create_embed(
+            title="🎉 Setup Panel Role Selesai!",
+            description=info_desc,
+            color=self.color_success
+        )
+        await ctx.send(embed=embed, ephemeral=True)
+
+    @commands.hybrid_command(name="addpanelrole", aliases=["tambahpanelrole"], description="Tambah role ke dalam panel role yang sudah ada secara instan")
+    @app_commands.describe(
+        message_id="ID pesan panel role",
+        role="Role yang ingin ditambahkan",
+        label="Teks label tombol/menu (opsional, default: nama role)",
+        emoji="Emoji untuk role (opsional, contoh: 🎭)",
+        deskripsi="Deskripsi singkat role (opsional)"
+    )
+    @commands.has_permissions(manage_roles=True)
+    async def addpanelrole(
+        self,
+        ctx: commands.Context,
+        message_id: str,
+        role: discord.Role,
+        label: Optional[str] = None,
+        emoji: Optional[str] = None,
+        deskripsi: Optional[str] = None
+    ):
+        if ctx.interaction:
+            await ctx.defer(ephemeral=True)
+        if "/" in message_id:
+            message_id = message_id.split("/")[-1].strip()
+        if role >= ctx.guild.me.top_role or role.managed:
+            return await ctx.send(embed=self._create_embed(description="❌ Role ini tidak dapat diatur karena posisinya di atas bot atau merupakan managed role.", color=self.color_error), ephemeral=True)
+
+        settings = self.get_guild_settings(ctx.guild.id)
+        panels = settings.get("role_panels", {})
+        if message_id not in panels:
+            return await ctx.send(embed=self._create_embed(description=f"❌ Panel dengan ID `{message_id}` tidak ditemukan.", color=self.color_error), ephemeral=True)
+
+        panel_data = panels[message_id]
+        roles = panel_data.get("roles") or panel_data.get("roles_data") or {}
+        if len(roles) >= 25:
+            return await ctx.send(embed=self._create_embed(description="❌ Panel ini sudah mencapai batas maksimal 25 role.", color=self.color_error), ephemeral=True)
+
+        roles[str(role.id)] = {
+            "label": (label or role.name)[:50],
+            "emoji": emoji.strip() if emoji else None,
+            "description": (deskripsi or f"Role akses @{role.name}")[:100]
+        }
+        panel_data["roles"] = roles
+        panel_data["roles_data"] = roles
+        self.save_settings()
+
+        await self._sync_role_panel_message(ctx.guild, panel_data, message_id)
+        embed = self._create_embed(
+            title="➕ Role Ditambahkan",
+            description=f"✅ Role {role.mention} berhasil ditambahkan ke panel `{message_id}` dan disinkronisasi ke Discord.",
+            color=self.color_success
+        )
+        await ctx.send(embed=embed, ephemeral=True)
+
+    @commands.hybrid_command(name="removepanelrole", aliases=["hapuspanelrole", "rmpanelrole"], description="Hapus panel role seutuhnya atau hapus role tertentu dari panel")
+    @app_commands.describe(
+        message_id="ID pesan panel role",
+        role="Pilih role yang ingin dihapus (kosongkan jika ingin menghapus seluruh konfigurasi panel)"
+    )
+    @commands.has_permissions(manage_roles=True)
+    async def removepanelrole(self, ctx: commands.Context, message_id: str, role: Optional[discord.Role] = None):
+        if ctx.interaction:
+            await ctx.defer(ephemeral=True)
+        if "/" in message_id:
+            message_id = message_id.split("/")[-1].strip()
+        settings = self.get_guild_settings(ctx.guild.id)
+        panels = settings.get("role_panels", {})
+
+        if message_id not in panels:
+            return await ctx.send(embed=self._create_embed(description=f"❌ Panel role dengan ID `{message_id}` tidak ditemukan.", color=self.color_error), ephemeral=True)
+
+        panel_data = panels[message_id]
+
+        if role is None:
+            deleted_panel = panels.pop(message_id, None)
+            self.save_settings()
+            ch_id = deleted_panel.get("channel_id") if deleted_panel else None
+            ch = ctx.guild.get_channel(ch_id) if ch_id else None
+            if ch:
+                try:
+                    msg = await ch.fetch_message(int(message_id))
+                    await msg.delete()
+                except Exception:
+                    pass
+            embed = self._create_embed(
+                title="🗑️ Panel Role Dihapus",
+                description=f"✅ Seluruh konfigurasi panel role `{message_id}` dan pesannya di Discord berhasil dihapus murni.",
+                color=self.color_success
+            )
+            return await ctx.send(embed=embed, ephemeral=True)
+
+        roles = panel_data.get("roles") or panel_data.get("roles_data") or {}
+        role_id_str = str(role.id)
+
+        if role_id_str not in roles:
+            return await ctx.send(embed=self._create_embed(description=f"❌ Role {role.mention} tidak terdaftar di dalam panel ini.", color=self.color_error), ephemeral=True)
+
+        roles.pop(role_id_str, None)
+        panel_data["roles"] = roles
+        panel_data["roles_data"] = roles
+        self.save_settings()
+
+        await self._sync_role_panel_message(ctx.guild, panel_data, message_id)
+        embed = self._create_embed(
+            title="✅ Role Berhasil Dihapus",
+            description=f"Role {role.mention} berhasil dihapus dari panel `{message_id}`.",
+            color=self.color_success
+        )
+        await ctx.send(embed=embed, ephemeral=True)
+
 
     @commands.hybrid_command(name="ticket", aliases=["tiket", "setupticket"], description="Buka panel konfigurasi atau pasang panel tiket bantuan")
     @commands.has_permissions(manage_guild=True)

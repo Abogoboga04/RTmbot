@@ -1,17 +1,19 @@
 {
-  "timestamp": 1792343969,
+  "timestamp": 1792658965,
   "guilds": {
     "765138959625486357": {
       "id": "765138959625486357",
       "name": "Njan Discord",
-      "member_count": 3018,
-      "approximate_presence_count": 420
+      "member_count": 3020,
+      "approximate_presence_count": null,
+      "icon_url": "https://cdn.discordapp.com/icons/765138959625486357/769327e411cd0ff99abce97ad4795e23.png?size=1024"
     },
     "722619465644113962": {
       "id": "722619465644113962",
       "name": "Rumah IkyLini",
-      "member_count": 2862,
-      "approximate_presence_count": 310
+      "member_count": 2858,
+      "approximate_presence_count": null,
+      "icon_url": "https://cdn.discordapp.com/icons/722619465644113962/ce3ef489a9699b1cc3c03460c195fe11.png?size=1024"
     }
   }
 }
