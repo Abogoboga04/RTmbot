@@ -32,6 +32,16 @@ class WebhookHandler(logging.Handler):
         self.webhook_url = webhook_url
 
     def emit(self, record):
+        msg = record.getMessage()
+        if "Attempting a reconnect" in msg or "WSServerHandshakeError" in msg:
+            return
+        if record.exc_info and record.exc_info[1]:
+            exc = record.exc_info[1]
+            if isinstance(exc, aiohttp.WSServerHandshakeError):
+                return
+            exc_str = str(exc)
+            if "WSServerHandshakeError" in exc_str or ("503" in exc_str and "gateway" in exc_str):
+                return
         try:
             loop = asyncio.get_running_loop()
             loop.create_task(self.send_log(record))
@@ -61,6 +71,31 @@ class WebhookHandler(logging.Handler):
                         print(f"Gagal mengirim log ke webhook: Status {response.status}")
             except Exception as e:
                 print(f"Terjadi error saat mengirim log (di WebhookHandler): {e}")
+
+class GatewayReconnectFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        if "Attempting a reconnect" in record.getMessage():
+            record.levelno = logging.WARNING
+            record.levelname = "WARNING"
+        return True
+
+logging.getLogger("discord.client").addFilter(GatewayReconnectFilter())
+
+_orig_ws_connect = discord.http.HTTPClient.ws_connect
+
+async def _resilient_ws_connect(self, url: str, **kwargs):
+    try:
+        return await _orig_ws_connect(self, url, **kwargs)
+    except aiohttp.WSServerHandshakeError as e:
+        if e.status in (502, 503, 504) and "gateway-" in url:
+            fallback_url = re.sub(r"wss://gateway-[^/]+", "wss://gateway.discord.gg", url)
+            logging.getLogger("discord.gateway").warning(
+                f"Gateway resume node gagal (HTTP {e.status}). Mengalihkan ke default gateway: {fallback_url}"
+            )
+            return await _orig_ws_connect(self, fallback_url, **kwargs)
+        raise
+
+discord.http.HTTPClient.ws_connect = _resilient_ws_connect
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
