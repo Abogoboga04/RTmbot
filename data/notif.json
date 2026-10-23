@@ -52,40 +52,40 @@
                     "button_style": 1,
                     "button_color": "#000000",
                     "embed_color": "#000000",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": false
                 },
                 "tiktok_live": {
-                    "title": "[\u00f0\u0178\u201d\u00b4 TikTok Live]({url})",
+                    "title": "[TikTok Live]({url})",
                     "description": "Ada yang lagi live di TikTok nih!\n\n{url}",
                     "content": "{ai_hype}",
                     "button_label": "Tonton Live TikTok",
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": false
                 },
                 "instagram": {
-                    "title": "[\u00f0\u0178\u201c\u00b8 Instagram Post]({url})",
+                    "title": "[Instagram Post]({url})",
                     "description": "Ada postingan atau Reels baru di Instagram!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Buka Instagram",
                     "button_style": 1,
                     "button_color": "#E1306C",
                     "embed_color": "#E1306C",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 },
                 "instagram_live": {
-                    "title": "[\u00f0\u0178\u201d\u00b4 Instagram Live]({url})",
+                    "title": "[Instagram Live]({url})",
                     "description": "Yuk join Instagram Live sekarang!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Tonton IG Live",
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 }
             }
@@ -136,46 +136,46 @@
                 },
                 "tiktok": {
                     "title": "[{judul}]({url})",
-                    "description": "Cek video TikTok terbaru!\n\n{url}",
-                    "content": "Ada video TikTok baru nih!",
-                    "button_label": "Tonton di TikTok",
+                    "description": "{deskripsi}",
+                    "content": "@everyone {ai_hype}",
+                    "button_label": "Tonton Konten",
                     "button_style": 1,
                     "button_color": "#000000",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": false
                 },
                 "tiktok_live": {
-                    "title": "[\u00f0\u0178\u201d\u00b4 TikTok Live]({url})",
+                    "title": "[TikTok Live]({url})",
                     "description": "Ada yang lagi live di TikTok nih!\n\n{url}",
                     "content": "{ai_hype}",
                     "button_label": "Tonton Live TikTok",
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 },
                 "instagram": {
-                    "title": "[\u00f0\u0178\u201c\u00b8 Instagram Post]({url})",
+                    "title": "[Instagram Post]({url})",
                     "description": "Ada postingan atau Reels baru di Instagram!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Buka Instagram",
                     "button_style": 1,
                     "button_color": "#E1306C",
                     "embed_color": "#E1306C",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 },
                 "instagram_live": {
-                    "title": "[\u00f0\u0178\u201d\u00b4 Instagram Live]({url})",
+                    "title": "[Instagram Live]({url})",
                     "description": "Yuk join Instagram Live sekarang!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Tonton IG Live",
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 }
             }
@@ -232,7 +232,7 @@
                     "button_style": 1,
                     "button_color": "#000000",
                     "embed_color": "#000000",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": false
                 },
                 "tiktok_live": {
@@ -243,29 +243,29 @@
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": false
                 },
                 "instagram": {
-                    "title": "[\u00f0\u0178\u201c\u00b8 Instagram Post]({url})",
+                    "title": "[Instagram Post]({url})",
                     "description": "Ada postingan atau Reels baru di Instagram!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Buka Instagram",
                     "button_style": 1,
                     "button_color": "#E1306C",
                     "embed_color": "#E1306C",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 },
                 "instagram_live": {
-                    "title": "[\u00f0\u0178\u201d\u00b4 Instagram Live]({url})",
+                    "title": "[Instagram Live]({url})",
                     "description": "Yuk join Instagram Live sekarang!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Tonton IG Live",
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 }
             }
@@ -322,7 +322,7 @@
                     "button_style": 1,
                     "button_color": "#000000",
                     "embed_color": "#000000",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": false
                 },
                 "tiktok_live": {
@@ -333,29 +333,29 @@
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": false
                 },
                 "instagram": {
-                    "title": "[\u00f0\u0178\u201c\u00b8 Instagram Post]({url})",
+                    "title": "[Instagram Post]({url})",
                     "description": "Ada postingan atau Reels baru di Instagram!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Buka Instagram",
                     "button_style": 1,
                     "button_color": "#E1306C",
                     "embed_color": "#E1306C",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 },
                 "instagram_live": {
-                    "title": "[\u00f0\u0178\u201d\u00b4 Instagram Live]({url})",
+                    "title": "[Instagram Live]({url})",
                     "description": "Yuk join Instagram Live sekarang!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Tonton IG Live",
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 }
             }
@@ -407,47 +407,47 @@
                     "embed_thumbnail": true
                 },
                 "tiktok": {
-                    "title": "[\u00f0\u0178\u201c\u00b1 {judul}]({url})",
+                    "title": "[{judul}]({url})",
                     "description": "Cek video TikTok terbaru!\n\n{url}",
                     "content": "{ai_hype}",
                     "button_label": "Tonton di TikTok",
                     "button_style": 1,
                     "button_color": "#000000",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": false
                 },
                 "tiktok_live": {
-                    "title": "[\u00f0\u0178\u201d\u00b4 TikTok Live]({url})",
+                    "title": "[TikTok Live]({url})",
                     "description": "Ada yang lagi live di TikTok nih!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Tonton Live TikTok",
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 },
                 "instagram": {
-                    "title": "[\u00f0\u0178\u201c\u00b8 Instagram Post]({url})",
+                    "title": "[Instagram Post]({url})",
                     "description": "Ada postingan atau Reels baru di Instagram!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Buka Instagram",
                     "button_style": 1,
                     "button_color": "#E1306C",
                     "embed_color": "#E1306C",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 },
                 "instagram_live": {
-                    "title": "[\u00f0\u0178\u201d\u00b4 Instagram Live]({url})",
+                    "title": "[Instagram Live]({url})",
                     "description": "Yuk join Instagram Live sekarang!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Tonton IG Live",
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 }
             }
@@ -497,40 +497,40 @@
                     "button_style": 1,
                     "button_color": "#000000",
                     "embed_color": "#000000",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": false
                 },
                 "tiktok_live": {
-                    "title": "[TikTok Live]({url})",
+                    "title": "[{judul}]({url})",
                     "description": "Ada yang lagi live di TikTok nih!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Tonton Live TikTok",
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": false
                 },
                 "instagram": {
-                    "title": "[\u00f0\u0178\u201c\u00b8 Instagram Post]({url})",
+                    "title": "[Instagram Post]({url})",
                     "description": "Ada postingan atau Reels baru di Instagram!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Buka Instagram",
                     "button_style": 1,
                     "button_color": "#E1306C",
                     "embed_color": "#E1306C",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 },
                 "instagram_live": {
-                    "title": "[\u00f0\u0178\u201d\u00b4 Instagram Live]({url})",
+                    "title": "[Instagram Live]({url})",
                     "description": "Yuk join Instagram Live sekarang!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Tonton IG Live",
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 }
             }
@@ -580,7 +580,7 @@
                     "button_style": 1,
                     "button_color": "#000000",
                     "embed_color": "#000000",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": false
                 },
                 "tiktok_live": {
@@ -591,7 +591,7 @@
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": false
                 },
                 "instagram": {
@@ -602,7 +602,7 @@
                     "button_style": 1,
                     "button_color": "#E1306C",
                     "embed_color": "#E1306C",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 },
                 "instagram_live": {
@@ -613,7 +613,7 @@
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 }
             }
@@ -656,52 +656,52 @@
                     "embed_thumbnail": true
                 },
                 "tiktok": {
-                    "title": "[\ud83d\udcf1 {judul}]({url})",
+                    "title": "[{judul}]({url})",
                     "description": "Cek video TikTok terbaru!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Tonton di TikTok",
                     "button_style": 1,
                     "button_color": "#000000",
                     "embed_color": "#000000",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 },
                 "tiktok_live": {
-                    "title": "[\ud83d\udd34 TikTok Live]({url})",
+                    "title": "[TikTok Live]({url})",
                     "description": "Ada yang lagi live di TikTok nih!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Tonton Live TikTok",
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 },
                 "instagram": {
-                    "title": "[\ud83d\udcf8 Instagram Post]({url})",
+                    "title": "[Instagram Post]({url})",
                     "description": "Ada postingan atau Reels baru di Instagram!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Buka Instagram",
                     "button_style": 1,
                     "button_color": "#E1306C",
                     "embed_color": "#E1306C",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 },
                 "instagram_live": {
-                    "title": "[\ud83d\udd34 Instagram Live]({url})",
+                    "title": "[Instagram Live]({url})",
                     "description": "Yuk join Instagram Live sekarang!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Tonton IG Live",
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": false,
+                    "use_embed": true,
                     "embed_thumbnail": true
                 }
             }
         },
-        "38fd202a-8a4d-4bc1-b6d0-ea3ddd19d22c": {
+        "1ab73a56-0d8d-4c4b-9469-2737ade8ec2c": {
             "source_id": 1562748905001848832,
             "target_id": 1562748945178824764,
             "custom_messages": {
@@ -735,7 +735,7 @@
                     "button_style": 3,
                     "button_color": "#57f287",
                     "embed_color": "#9b59b6",
-                    "use_embed": true,
+                    "use_embed": false,
                     "embed_thumbnail": true
                 },
                 "tiktok": {
@@ -750,7 +750,7 @@
                     "embed_thumbnail": true
                 },
                 "tiktok_live": {
-                    "title": "[\ud83d\udd34 TikTok Live]({url})",
+                    "title": "[TikTok Live]({url})",
                     "description": "Ada yang lagi live di TikTok nih!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Tonton Live TikTok",
@@ -761,7 +761,7 @@
                     "embed_thumbnail": true
                 },
                 "instagram": {
-                    "title": "[\ud83d\udcf8 Instagram Post]({url})",
+                    "title": "[Instagram Post]({url})",
                     "description": "Ada postingan atau Reels baru di Instagram!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Buka Instagram",
@@ -772,7 +772,7 @@
                     "embed_thumbnail": true
                 },
                 "instagram_live": {
-                    "title": "[\ud83d\udd34 Instagram Live]({url})",
+                    "title": "[Instagram Live]({url})",
                     "description": "Yuk join Instagram Live sekarang!\n\n{url}",
                     "content": "@everyone {ai_hype}",
                     "button_label": "Tonton IG Live",
@@ -785,10 +785,8 @@
             }
         }
     },
-    "recent_video_ids": [
-        "tk_7699546551051504914"
-    ],
-    "next_daily_reset_timestamp": "2026-10-23T15:34:55.021239+00:00",
+    "recent_video_ids": [],
+    "next_daily_reset_timestamp": "2026-10-24T15:34:55.026634+00:00",
     "recent_links": [
         "live https://www.youtube.com/watch?v=XCm2kEG5S_A",
         "premier https://www.youtube.com/watch?v=XCm2kEG5S_A !",

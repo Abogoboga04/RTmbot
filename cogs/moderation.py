@@ -21,7 +21,7 @@ except ImportError:
     generate_official_member_card = None
     get_or_create_member_serial_id = None
 
-from cogs.v2_layout import build_v2_card, send_v2_message, send_v2_interaction, register_view
+from cogs.v2_layout import build_v2_card, send_v2_message, send_v2_interaction, register_view, edit_v2_message
 
 
 
@@ -637,59 +637,115 @@ class DynamicRoleSelect(discord.ui.Select):
         if not interaction.response.is_done():
             await interaction.response.defer(ephemeral=True)
         guild = interaction.guild
+        if not guild:
+            return await interaction.followup.send("❌ Interaksi ini hanya dapat digunakan di server.", ephemeral=True)
+
         member = interaction.user
+        if not isinstance(member, discord.Member):
+            member = guild.get_member(interaction.user.id)
+            if not member:
+                try:
+                    member = await guild.fetch_member(interaction.user.id)
+                except Exception:
+                    member = interaction.user
+
+        bot_member = guild.me or guild.get_member(interaction.client.user.id)
+        if bot_member and not bot_member.guild_permissions.manage_roles:
+            return await interaction.followup.send(
+                embed=discord.Embed(
+                    title="❌ Izin Bot Kurang",
+                    description="Bot tidak memiliki izin **Manage Roles** di server ini. Hubungi administrator server.",
+                    color=0xED4245
+                ),
+                ephemeral=True
+            )
 
         panel_role_ids = [int(r_id) for r_id in self.view.roles_data.keys()]
         selected_role_ids = [int(v) for v in self.values]
 
         if self.rule_type == "exclusive":
-            if not selected_role_ids:
-                to_remove = [guild.get_role(r_id) for r_id in panel_role_ids if guild.get_role(r_id) and guild.get_role(r_id) in member.roles]
-                if to_remove:
-                    await member.remove_roles(*to_remove, reason="Role Panel Copot Role")
-                    result_embed = discord.Embed(
-                        description="➖ Role kamu dari panel ini berhasil dilepas.",
-                        color=0xFEE75C
-                    )
-                else:
-                    result_embed = discord.Embed(
-                        description="ℹ️ Tidak ada perubahan role.",
-                        color=0x5865F2
-                    )
-            else:
-                chosen_id = selected_role_ids[0]
-                chosen_role = guild.get_role(chosen_id)
-                if not chosen_role:
-                    return await interaction.followup.send(
-                        embed=discord.Embed(description="❌ Role tidak ditemukan di server.", color=0xED4245),
-                        ephemeral=True
-                    )
-                if chosen_role in member.roles:
-                    await member.remove_roles(chosen_role, reason="Role Panel Copot Role")
-                    result_embed = discord.Embed(
-                        description=f"➖ Role **{chosen_role.name}** berhasil dilepas.",
-                        color=0xFEE75C
-                    )
-                else:
-                    other_roles = [guild.get_role(r_id) for r_id in panel_role_ids if r_id != chosen_id and guild.get_role(r_id) and guild.get_role(r_id) in member.roles]
-                    if other_roles:
-                        await member.remove_roles(*other_roles, reason="Role Panel Switch (Eksklusif)")
-                    await member.add_roles(chosen_role, reason="Role Panel Self-Assign (Eksklusif)")
-                    if other_roles:
-                        old_names = ", ".join(f"`{r.name}`" for r in other_roles)
+            try:
+                if not selected_role_ids:
+                    to_remove = [guild.get_role(r_id) for r_id in panel_role_ids if guild.get_role(r_id) and guild.get_role(r_id) in member.roles]
+                    if to_remove:
+                        await member.remove_roles(*to_remove, reason="Role Panel Copot Role")
                         result_embed = discord.Embed(
-                            title="✅ Role Berhasil Dipasang",
-                            description=f"➕ Role sekarang: **{chosen_role.name}**\n\n*(Role sebelumnya {old_names} otomatis dilepas sesuai aturan panel)*",
-                            color=0x57F287
+                            title="➖ Role Dilepas",
+                            description="Role kamu dari panel ini berhasil dilepas.",
+                            color=0xFEE75C
                         )
                     else:
                         result_embed = discord.Embed(
-                            title="✅ Role Berhasil Dipasang",
-                            description=f"➕ Role sekarang: **{chosen_role.name}**",
-                            color=0x57F287
+                            title="ℹ️ Tidak Ada Perubahan",
+                            description="Tidak ada role yang diubah pada akunmu.",
+                            color=0x5865F2
                         )
-            result_embed.set_footer(text=f"Diperbarui untuk {member.display_name}")
-            return await interaction.followup.send(embed=result_embed, ephemeral=True)
+                else:
+                    chosen_id = selected_role_ids[0]
+                    chosen_role = guild.get_role(chosen_id)
+                    if not chosen_role:
+                        return await interaction.followup.send(
+                            embed=discord.Embed(
+                                title="❌ Role Tidak Ditemukan",
+                                description="Role yang dipilih tidak ditemukan di server.",
+                                color=0xED4245
+                            ),
+                            ephemeral=True
+                        )
+                    if bot_member and chosen_role.position >= bot_member.top_role.position:
+                        return await interaction.followup.send(
+                            embed=discord.Embed(
+                                title="❌ Posisi Role Terlalu Tinggi",
+                                description=f"Role **{chosen_role.name}** berada di atas atau sejajar dengan role tertinggi bot. Silakan posisikan role bot di atas role tersebut pada Server Settings.",
+                                color=0xED4245
+                            ),
+                            ephemeral=True
+                        )
+                    if chosen_role in member.roles:
+                        await member.remove_roles(chosen_role, reason="Role Panel Copot Role")
+                        result_embed = discord.Embed(
+                            title="➖ Role Dilepas",
+                            description=f"Role **{chosen_role.name}** berhasil dilepas dari akunmu.",
+                            color=0xFEE75C
+                        )
+                    else:
+                        other_roles = [guild.get_role(r_id) for r_id in panel_role_ids if r_id != chosen_id and guild.get_role(r_id) and guild.get_role(r_id) in member.roles]
+                        if other_roles:
+                            await member.remove_roles(*other_roles, reason="Role Panel Switch (Eksklusif)")
+                        await member.add_roles(chosen_role, reason="Role Panel Self-Assign (Eksklusif)")
+                        if other_roles:
+                            old_names = ", ".join(f"`{r.name}`" for r in other_roles)
+                            result_embed = discord.Embed(
+                                title="✅ Role Berhasil Ditambahkan",
+                                description=f"Role kamu sekarang: **{chosen_role.name}**\n\n*(Role sebelumnya {old_names} otomatis dilepas sesuai aturan eksklusif)*",
+                                color=0x57F287
+                            )
+                        else:
+                            result_embed = discord.Embed(
+                                title="✅ Role Berhasil Ditambahkan",
+                                description=f"Role **{chosen_role.name}** berhasil ditambahkan ke akunmu!",
+                                color=0x57F287
+                            )
+                result_embed.set_footer(text=f"Diperbarui untuk {member.display_name}")
+                return await interaction.followup.send(embed=result_embed, ephemeral=True)
+            except discord.Forbidden:
+                return await interaction.followup.send(
+                    embed=discord.Embed(
+                        title="❌ Izin Kurang",
+                        description="Bot tidak memiliki izin untuk mengatur role ini. Pastikan posisi role bot berada di atas role tersebut.",
+                        color=0xED4245
+                    ),
+                    ephemeral=True
+                )
+            except Exception as e:
+                return await interaction.followup.send(
+                    embed=discord.Embed(
+                        title="❌ Terjadi Kesalahan",
+                        description=f"Gagal memproses role: {e}",
+                        color=0xED4245
+                    ),
+                    ephemeral=True
+                )
 
         added_roles = []
         removed_roles = []
@@ -697,7 +753,8 @@ class DynamicRoleSelect(discord.ui.Select):
 
         if not selected_role_ids:
             result_embed = discord.Embed(
-                description="ℹ️ Pilih salah satu atau beberapa role dari menu untuk memasang atau melepas.",
+                title="ℹ️ Pilihan Kosong",
+                description="Pilih salah satu atau beberapa role dari menu untuk memasang atau melepas.",
                 color=0x5865F2
             )
             result_embed.set_footer(text=f"Diperbarui untuk {member.display_name}")
@@ -707,6 +764,9 @@ class DynamicRoleSelect(discord.ui.Select):
             role = guild.get_role(role_id)
             if not role:
                 continue
+            if bot_member and role.position >= bot_member.top_role.position:
+                failed_roles.append(f"{role.name} (posisi role bot lebih rendah)")
+                continue
             try:
                 if role in member.roles:
                     await member.remove_roles(role, reason="Role Panel Self-Remove")
@@ -715,21 +775,24 @@ class DynamicRoleSelect(discord.ui.Select):
                     await member.add_roles(role, reason="Role Panel Self-Assign")
                     added_roles.append(role.name)
             except discord.Forbidden:
-                failed_roles.append(role.name)
+                failed_roles.append(f"{role.name} (izin bot kurang)")
+            except Exception as e:
+                failed_roles.append(f"{role.name} ({e})")
 
         if not added_roles and not removed_roles and not failed_roles:
             result_embed = discord.Embed(
-                description="ℹ️ Tidak ada perubahan role.",
+                title="ℹ️ Tidak Ada Perubahan",
+                description="Tidak ada role yang diubah pada akunmu.",
                 color=0x5865F2
             )
         else:
             lines = []
             if added_roles:
-                lines.append(f"**➕ Berhasil Dipasang**\n" + "\n".join(f"> `{r}`" for r in added_roles))
+                lines.append("**➕ Berhasil Ditambahkan**\n" + "\n".join(f"> `{r}`" for r in added_roles))
             if removed_roles:
-                lines.append(f"**➖ Berhasil Dilepas**\n" + "\n".join(f"> `{r}`" for r in removed_roles))
+                lines.append("**➖ Berhasil Dilepas**\n" + "\n".join(f"> `{r}`" for r in removed_roles))
             if failed_roles:
-                lines.append(f"**❌ Gagal (izin bot kurang tinggi)**\n" + "\n".join(f"> `{r}`" for r in failed_roles))
+                lines.append("**❌ Gagal Diproses**\n" + "\n".join(f"> `{r}`" for r in failed_roles))
 
             result_embed = discord.Embed(
                 title="✨ Pembaruan Role Selesai",
@@ -755,21 +818,59 @@ class DynamicRoleButton(discord.ui.Button):
     async def callback(self, interaction: discord.Interaction):
         if not interaction.response.is_done():
             await interaction.response.defer(ephemeral=True)
-        role = interaction.guild.get_role(self.role_id)
+        guild = interaction.guild
+        if not guild:
+            return await interaction.followup.send("❌ Interaksi ini hanya dapat digunakan di server.", ephemeral=True)
+
+        member = interaction.user
+        if not isinstance(member, discord.Member):
+            member = guild.get_member(interaction.user.id)
+            if not member:
+                try:
+                    member = await guild.fetch_member(interaction.user.id)
+                except Exception:
+                    member = interaction.user
+
+        role = guild.get_role(self.role_id)
         if not role:
             return await interaction.followup.send(
-                embed=discord.Embed(description="❌ Role tidak ditemukan di server.", color=0xED4245),
+                embed=discord.Embed(
+                    title="❌ Role Tidak Ditemukan",
+                    description="Role tidak ditemukan di server.",
+                    color=0xED4245
+                ),
                 ephemeral=True
             )
-        guild = interaction.guild
-        member = interaction.user
+
+        bot_member = guild.me or guild.get_member(interaction.client.user.id)
+        if bot_member and not bot_member.guild_permissions.manage_roles:
+            return await interaction.followup.send(
+                embed=discord.Embed(
+                    title="❌ Izin Bot Kurang",
+                    description="Bot tidak memiliki izin **Manage Roles** di server ini. Hubungi administrator server.",
+                    color=0xED4245
+                ),
+                ephemeral=True
+            )
+
+        if bot_member and role.position >= bot_member.top_role.position:
+            return await interaction.followup.send(
+                embed=discord.Embed(
+                    title="❌ Posisi Role Terlalu Tinggi",
+                    description=f"Role **{role.name}** berada di atas atau sejajar dengan role tertinggi bot. Silakan posisikan role bot di atas role tersebut pada Server Settings.",
+                    color=0xED4245
+                ),
+                ephemeral=True
+            )
+
         panel_role_ids = [int(r_id) for r_id in self.view.roles_data.keys()]
         try:
             if self.rule_type == "exclusive":
                 if role in member.roles:
                     await member.remove_roles(role, reason="Role Panel Copot Role")
                     embed = discord.Embed(
-                        description=f"➖ Role **{role.name}** berhasil dilepas.",
+                        title="➖ Role Dilepas",
+                        description=f"Role **{role.name}** berhasil dilepas dari akunmu.",
                         color=0xFEE75C
                     )
                 else:
@@ -780,34 +881,49 @@ class DynamicRoleButton(discord.ui.Button):
                     if other_roles:
                         old_names = ", ".join(f"`{r.name}`" for r in other_roles)
                         embed = discord.Embed(
-                            title="✅ Role Berhasil Dipasang",
-                            description=f"➕ Role sekarang: **{role.name}**\n\n*(Role sebelumnya {old_names} otomatis dilepas sesuai aturan panel)*",
+                            title="✅ Role Berhasil Ditambahkan",
+                            description=f"Role kamu sekarang: **{role.name}**\n\n*(Role sebelumnya {old_names} otomatis dilepas sesuai aturan eksklusif)*",
                             color=0x57F287
                         )
                     else:
                         embed = discord.Embed(
-                            title="✅ Role Berhasil Dipasang",
-                            description=f"➕ Role sekarang: **{role.name}**",
+                            title="✅ Role Berhasil Ditambahkan",
+                            description=f"Role **{role.name}** berhasil ditambahkan ke akunmu!",
                             color=0x57F287
                         )
             else:
                 if role in member.roles:
                     await member.remove_roles(role, reason="Role Panel Self-Remove")
                     embed = discord.Embed(
-                        description=f"➖ Role **{role.name}** berhasil dilepas.",
+                        title="➖ Role Dilepas",
+                        description=f"Role **{role.name}** berhasil dilepas dari akunmu.",
                         color=0xFEE75C
                     )
                 else:
                     await member.add_roles(role, reason="Role Panel Self-Assign")
                     embed = discord.Embed(
-                        description=f"➕ Role **{role.name}** berhasil diberikan.",
+                        title="✅ Role Berhasil Ditambahkan",
+                        description=f"Role **{role.name}** berhasil ditambahkan ke akunmu!",
                         color=0x57F287
                     )
             embed.set_footer(text=f"Diperbarui untuk {member.display_name}")
             await interaction.followup.send(embed=embed, ephemeral=True)
         except discord.Forbidden:
             await interaction.followup.send(
-                embed=discord.Embed(description="❌ Bot tidak memiliki izin untuk mengatur role ini. Pastikan posisi role bot berada di atas role tersebut.", color=0xED4245),
+                embed=discord.Embed(
+                    title="❌ Izin Kurang",
+                    description=f"Bot tidak memiliki izin untuk memberikan/mencabut role **{role.name}**. Pastikan posisi role bot berada di atas role tersebut.",
+                    color=0xED4245
+                ),
+                ephemeral=True
+            )
+        except Exception as e:
+            await interaction.followup.send(
+                embed=discord.Embed(
+                    title="❌ Terjadi Kesalahan",
+                    description=f"Gagal memproses role: {e}",
+                    color=0xED4245
+                ),
                 ephemeral=True
             )
 
@@ -3150,11 +3266,20 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
     async def _sync_role_panel_message(self, guild: discord.Guild, panel_data: dict, message_id_str: str) -> bool:
         channel_id = panel_data.get("channel_id")
         channel = guild.get_channel(channel_id) if channel_id else None
+        if not channel and channel_id:
+            try:
+                channel = await guild.fetch_channel(channel_id)
+            except Exception:
+                channel = None
         if not channel:
             return False
         card, embed, view = self._build_role_panel_render(guild, panel_data, message_id_str)
         components = [card, *view.to_components()]
-        edit_resp = await edit_v2_message(self.bot, channel.id, int(message_id_str), components)
+        edit_resp = None
+        try:
+            edit_resp = await edit_v2_message(self.bot, channel.id, int(message_id_str), components)
+        except Exception:
+            edit_resp = None
         if not edit_resp:
             try:
                 msg = await channel.fetch_message(int(message_id_str))

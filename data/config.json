@@ -1,14 +1,14 @@
 {
     "765138959625486357": {
-        "voice_panel_message_id": 1562490661809430572,
+        "voice_panel_message_id": 1563162879136501793,
         "voice_panel_channel_id": 965586009859452928,
         "voice_records": {
             "longest_session": {
                 "channel_id": 965586009859452928,
                 "channel_name": "\u2615\u2502\ud835\udc02\ud835\udc21\ud835\udc22\ud835\udc25\ud835\udc25\ud835\udc22\ud835\udc27",
-                "duration_seconds": 3185160,
+                "duration_seconds": 3268080,
                 "is_active_now": true,
-                "updated_at": "2026-10-22T12:45:38.774583"
+                "updated_at": "2026-10-23T15:05:33.341591"
             }
         }
     },

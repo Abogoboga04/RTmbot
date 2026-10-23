@@ -6,6 +6,12 @@ import logging
 import json
 from datetime import datetime
 
+try:
+    from cogs.v2_layout import build_v2_card, send_v2_message
+except ImportError:
+    build_v2_card = None
+    send_v2_message = None
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
 
@@ -142,7 +148,10 @@ class VCControlView(discord.ui.View):
         if not await self._check_owner(interaction): return
         vc = interaction.user.voice.channel
         try:
-            await vc.set_permissions(interaction.guild.default_role, connect=False, reason=f"User {interaction.user.display_name} locked VC via UI.")
+            current_ov = vc.overwrites_for(interaction.guild.default_role)
+            current_ov.connect = False
+            current_ov.speak = True
+            await vc.set_permissions(interaction.guild.default_role, overwrite=current_ov, reason=f"User {interaction.user.display_name} locked VC via UI.")
             await interaction.response.send_message(f"🔐 Pintu ruangan digembok! Orang luar tidak bisa masuk lagi.", ephemeral=True)
         except discord.Forbidden:
             await interaction.response.send_message("❌ Tidak memiliki izin untuk mengunci channel ini.", ephemeral=True)
@@ -152,7 +161,10 @@ class VCControlView(discord.ui.View):
         if not await self._check_owner(interaction): return
         vc = interaction.user.voice.channel
         try:
-            await vc.set_permissions(interaction.guild.default_role, connect=True, reason=f"User {interaction.user.display_name} unlocked VC via UI.")
+            current_ov = vc.overwrites_for(interaction.guild.default_role)
+            current_ov.connect = True
+            current_ov.speak = True
+            await vc.set_permissions(interaction.guild.default_role, overwrite=current_ov, reason=f"User {interaction.user.display_name} unlocked VC via UI.")
             await interaction.response.send_message(f"🔓 Gembok dibuka! Sekarang siapa saja bisa masuk.", ephemeral=True)
         except discord.Forbidden:
             await interaction.response.send_message("❌ Tidak memiliki izin untuk membuka kunci channel ini.", ephemeral=True)
@@ -380,7 +392,7 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
             try:
                 everyone_role = guild.default_role
                 overwrites = {
-                    everyone_role: discord.PermissionOverwrite(connect=False, speak=False, view_channel=True),
+                    everyone_role: discord.PermissionOverwrite(connect=False, speak=True, view_channel=True),
                     guild.me: discord.PermissionOverwrite(connect=True, speak=True, send_messages=True, view_channel=True, read_message_history=True),
                     member: discord.PermissionOverwrite(
                         connect=True, speak=True, send_messages=True, view_channel=True,
@@ -406,30 +418,63 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
                 self.active_temp_channels[str(new_vc.id)] = {"owner_id": str(member.id), "guild_id": guild_id_str}
                 save_temp_channels(self.active_temp_channels)
                 
-                try:
-                    from cogs.v2_layout import build_v2_card, send_v2_message
-                    buttons = [
-                        {"label": "Tambah Kursi", "emoji": "🪑", "style": 2, "custom_id": "vc:limit_plus"},
-                        {"label": "Kurangi Kursi", "emoji": "🪑", "style": 2, "custom_id": "vc:limit_minus"},
-                        {"label": "Ganti Papan Nama", "emoji": "🏷️", "style": 2, "custom_id": "vc:rename"},
-                        {"label": "Gembok Ruangan", "emoji": "🔐", "style": 2, "custom_id": "vc:lock"},
-                        {"label": "Buka Gembok", "emoji": "🔓", "style": 2, "custom_id": "vc:unlock"},
-                        {"label": "Mode Siluman", "emoji": "👻", "style": 2, "custom_id": "vc:toggle_visibility"},
-                        {"label": "Buat Undangan", "emoji": "🔗", "style": 2, "custom_id": "vc:invite"},
-                        {"label": "Tutup Ruangan", "emoji": "🛑", "style": 4, "custom_id": "vc:delete"},
-                        {"label": "Usir Penyusup", "emoji": "👢", "style": 4, "custom_id": "vc:kick"},
-                        {"label": "Klaim Ruangan", "emoji": "👑", "style": 1, "custom_id": "vc:claim"}
-                    ]
-                    
-                    card_json = build_v2_card(
-                        title="🎙️ Ruang Pribadimu Siap!",
-                        description=f"Selamat datang di {new_vc.name}, <@{member.id}>!\nRuangan ini sepenuhnya milikmu.\nBitrate: **{bitrate_kbps} kbps** | Region: **{TARGET_REGION.upper()}**\n\n**📖 Panduan Tombol Ruangan:**\n🪑 **Kursi**: Menambah atau mengurangi batas maksimal orang yang bisa masuk.\n🏷️ **Ganti Papan Nama**: Mengubah nama ruanganmu sesuka hati.\n🔐 **Gembok & Buka Gembok**: Mengunci pintu agar orang luar tidak bisa masuk (dan sebaliknya).\n👻 **Mode Siluman**: Menyembunyikan ruanganmu dari pandangan orang lain di server.\n🔗 **Buat Undangan**: Membuat link khusus untuk mengajak teman bergabung.\n👢 **Usir Penyusup**: Menendang orang yang masuk tanpa izin.\n👑 **Klaim Ruangan**: Mengambil alih hak milik jika si pembuat ruangan pergi.\n🛑 **Tutup Ruangan**: Membongkar dan menghapus ruangan ini seketika.\n\n*Ruangan akan otomatis hilang sendiri jika semua orang sudah keluar.*",
-                        color=0x2ecc71,
-                        buttons=buttons
-                    )
-                    await send_v2_message(self.bot, new_vc.id, components=card_json.get("components", []))
-                except Exception as e:
-                    print(f"[V2 CARD ERROR] {e}")
+                sent_panel = False
+                if build_v2_card and send_v2_message:
+                    try:
+                        buttons = [
+                            {"label": "Tambah Kursi", "emoji": "➕", "style": 2, "custom_id": "vc:limit_plus"},
+                            {"label": "Kurangi Kursi", "emoji": "➖", "style": 2, "custom_id": "vc:limit_minus"},
+                            {"label": "Ganti Papan Nama", "emoji": "🏷️", "style": 2, "custom_id": "vc:rename"},
+                            {"label": "Gembok Ruangan", "emoji": "🔐", "style": 2, "custom_id": "vc:lock"},
+                            {"label": "Buka Gembok", "emoji": "🔓", "style": 2, "custom_id": "vc:unlock"},
+                            {"label": "Mode Siluman", "emoji": "👻", "style": 2, "custom_id": "vc:toggle_visibility"},
+                            {"label": "Buat Undangan", "emoji": "🔗", "style": 2, "custom_id": "vc:invite"},
+                            {"label": "Tutup Ruangan", "emoji": "🛑", "style": 4, "custom_id": "vc:delete"},
+                            {"label": "Usir Penyusup", "emoji": "👢", "style": 4, "custom_id": "vc:kick"},
+                            {"label": "Klaim Ruangan", "emoji": "👑", "style": 1, "custom_id": "vc:claim"}
+                        ]
+
+                        donation_file_path = 'data/donation_buttons.json'
+                        if os.path.exists(donation_file_path):
+                            try:
+                                with open(donation_file_path, 'r', encoding='utf-8') as f:
+                                    donation_data = json.load(f)
+                                    for button_data in donation_data:
+                                        buttons.append({
+                                            "label": button_data['label'],
+                                            "style": 5,
+                                            "url": button_data['url']
+                                        })
+                            except Exception:
+                                pass
+
+                        card_json = build_v2_card(
+                            title="🎙️ Ruang Pribadimu Siap!",
+                            description=(
+                                f"Selamat datang di {new_vc.name}, <@{member.id}>!\n"
+                                f"Ruangan ini sepenuhnya milikmu.\n"
+                                f"Bitrate: **{bitrate_kbps} kbps** | Region: **{TARGET_REGION.upper()}**\n\n"
+                                f"**📖 Panduan Tombol Ruangan:**\n"
+                                f"➕ / ➖ **Kursi**: Menambah atau mengurangi batas maksimal orang di ruangan.\n"
+                                f"🏷️ **Ganti Papan Nama**: Mengubah nama ruanganmu sesuka hati.\n"
+                                f"🔐 **Gembok & Buka Gembok**: Mengatur perizinan masuk ruangan.\n"
+                                f"👻 **Mode Siluman**: Menyembunyikan ruanganmu dari pandangan umum.\n"
+                                f"🔗 **Buat Undangan**: Membuat tautan akses khusus teman.\n"
+                                f"👢 **Usir Penyusup**: Mengeluarkan pengguna lain dari ruangan.\n"
+                                f"👑 **Klaim Ruangan**: Mengambil alih kepemilikan jika pemilik sebelumnya keluar.\n"
+                                f"🛑 **Tutup Ruangan**: Menutup dan menghapus ruangan ini seketika.\n\n"
+                                f"*Ruangan akan otomatis dihapus jika sudah kosong.*"
+                            ),
+                            color=0x2ecc71,
+                            buttons=buttons
+                        )
+                        resp = await send_v2_message(self.bot, new_vc.id, components=[card_json])
+                        if resp and not (isinstance(resp, dict) and "error_msg" in resp):
+                            sent_panel = True
+                    except Exception:
+                        sent_panel = False
+
+                if not sent_panel:
                     embed = discord.Embed(
                         title="Channel Pribadimu Dibuat!",
                         description=f"Selamat datang di {new_vc.name}, {member.mention}! Kamu adalah pemilik channel ini.\nBitrate diatur maksimal ({bitrate_kbps} kbps) dan Region diatur ke {TARGET_REGION.upper()}.\n\nGunakan tombol di bawah untuk mengelola channelmu tanpa perintah teks.\nChannel ini akan otomatis dihapus jika tidak ada user di dalamnya.",
@@ -541,7 +586,10 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
     async def vc_lock(self, ctx):
         try:
             vc = ctx.author.voice.channel
-            await vc.set_permissions(ctx.guild.default_role, connect=False, reason=f"User {ctx.author.display_name} locked VC.")
+            current_ov = vc.overwrites_for(ctx.guild.default_role)
+            current_ov.connect = False
+            current_ov.speak = True
+            await vc.set_permissions(ctx.guild.default_role, overwrite=current_ov, reason=f"User {ctx.author.display_name} locked VC.")
             await ctx.send(f"🔐 Pintu ruangan {vc.name} telah digembok.", ephemeral=True)
         except Exception as e:
             await ctx.send(f"Bot: Terjadi kesalahan: {e}", ephemeral=True)
@@ -551,7 +599,10 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
     async def vc_unlock(self, ctx):
         try:
             vc = ctx.author.voice.channel
-            await vc.set_permissions(ctx.guild.default_role, connect=True, reason=f"User {ctx.author.display_name} unlocked VC.")
+            current_ov = vc.overwrites_for(ctx.guild.default_role)
+            current_ov.connect = True
+            current_ov.speak = True
+            await vc.set_permissions(ctx.guild.default_role, overwrite=current_ov, reason=f"User {ctx.author.display_name} unlocked VC.")
             await ctx.send(f"🔓 Gembok ruangan {vc.name} telah dibuka.", ephemeral=True)
         except Exception as e:
             await ctx.send(f"Bot: Terjadi kesalahan: {e}", ephemeral=True)
@@ -601,7 +652,7 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
         if member.bot: return
         try:
             vc = ctx.author.voice.channel
-            await vc.set_permissions(member, connect=True, reason=f"VC owner {ctx.author.display_name} granted access.")
+            await vc.set_permissions(member, connect=True, speak=True, reason=f"VC owner {ctx.author.display_name} granted access.")
             await ctx.send(f"✅ {member.display_name} sekarang diizinkan bergabung ke ruangan.", ephemeral=True)
         except Exception as e:
             await ctx.send(f"Bot: Terjadi kesalahan: {e}", ephemeral=True)

@@ -495,6 +495,7 @@ class ContentRadarStudioView(discord.ui.View):
                 pdata["custom_messages"][self.selected_type_key] = self.cog.default_messages.get(self.selected_type_key, {}).copy()
             curr = pdata["custom_messages"][self.selected_type_key].get("use_embed", True)
             pdata["custom_messages"][self.selected_type_key]["use_embed"] = not curr
+            pdata["custom_messages"][self.selected_type_key]["_format_explicitly_set"] = True
             self.cog.save_config()
             self._update_items()
             await interaction.response.edit_message(embed=self.build_embed(), view=self)
@@ -547,11 +548,34 @@ class ContentRadarStudioView(discord.ui.View):
         await interaction.response.defer(ephemeral=True)
 
         msg_cfg = self._get_current_msg_config()
-        sample_creator = "Luthfi Halimawan"
-        sample_title = "SAFARI TV - UJI COBA LIVE STREAMING"
-        sample_url = "https://www.youtube.com/watch?v=5dv55fcY9JI"
-        sample_desc = "Ini adalah deskripsi uji coba format notifikasi."
-        sample_thumb = "https://img.youtube.com/vi/5dv55fcY9JI/maxresdefault.jpg"
+        if "tiktok" in self.selected_type_key:
+            sample_creator = "TikTok Creator"
+            if self.selected_type_key == "tiktok_live":
+                sample_title = "Live Streaming TikTok - Sesi Ngobrol & Mabar"
+                sample_url = "https://www.tiktok.com/@tiktok/live"
+                sample_desc = "Sedang siaran langsung di TikTok! Yuk tonton keseruannya sekarang!"
+            else:
+                sample_title = "Video TikTok Terbaru Hari Ini"
+                sample_url = "https://www.tiktok.com/@tiktok"
+                sample_desc = "Cek video TikTok terbaru dan jangan lewatkan keseruannya!"
+            sample_thumb = "https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=800"
+        elif "instagram" in self.selected_type_key:
+            sample_creator = "Instagram Creator"
+            if self.selected_type_key == "instagram_live":
+                sample_title = "Live Streaming Instagram"
+                sample_url = "https://www.instagram.com"
+                sample_desc = "Yuk join Instagram Live sekarang juga!"
+            else:
+                sample_title = "Postingan & Reels Terbaru Instagram"
+                sample_url = "https://www.instagram.com"
+                sample_desc = "Ada postingan atau Reels baru di Instagram, cek sekarang!"
+            sample_thumb = "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=800"
+        else:
+            sample_creator = "Luthfi Halimawan"
+            sample_title = "SAFARI TV - UJI COBA LIVE STREAMING"
+            sample_url = "https://www.youtube.com/watch?v=5dv55fcY9JI"
+            sample_desc = "Ini adalah deskripsi uji coba format notifikasi."
+            sample_thumb = "https://img.youtube.com/vi/5dv55fcY9JI/maxresdefault.jpg"
 
         intro_template = msg_cfg.get("content") or "@everyone {ai_hype}"
         if "{ai_hype}" in intro_template:
@@ -923,10 +947,19 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
                     else:
                         m_cfg = path_data["custom_messages"][message_type]
                         if "title" in m_cfg and isinstance(m_cfg["title"], str):
-                            m_cfg["title"] = emoji.replace_emoji(m_cfg["title"], replace="").strip()
-                            m_cfg["title"] = re.sub(r"\[\s+", "[", m_cfg["title"])
-                            m_cfg["title"] = re.sub(r"\s+\]", "]", m_cfg["title"])
+                            clean_t = m_cfg["title"]
+                            try:
+                                if any(c in clean_t for c in ['\u00f0', '\u0178', '\u201d', '\u00b4']):
+                                    clean_t = clean_t.encode('cp1252', errors='ignore').decode('utf-8', errors='ignore')
+                            except Exception:
+                                pass
+                            clean_t = emoji.replace_emoji(clean_t, replace="").strip()
+                            clean_t = re.sub(r"\[\s+", "[", clean_t)
+                            clean_t = re.sub(r"\s+\]", "]", clean_t)
+                            m_cfg["title"] = clean_t
                         if "use_embed" not in m_cfg:
+                            m_cfg["use_embed"] = True
+                        elif message_type in ["tiktok", "tiktok_live", "instagram", "instagram_live"] and not m_cfg.get("_format_explicitly_set", False):
                             m_cfg["use_embed"] = True
 
         try:

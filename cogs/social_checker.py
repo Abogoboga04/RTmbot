@@ -61,6 +61,23 @@ def clean_hyperlink_title(raw_title: str) -> str:
     cleaned = " ".join(cleaned.split())
     return cleaned
 
+def normalize_tiktok_username(raw: str) -> str:
+    if not raw:
+        return ""
+    text = str(raw).strip()
+    if "tiktok.com" in text:
+        m = re.search(r'@([a-zA-Z0-9_.-]+)', text)
+        if m:
+            return m.group(1).lower()
+        parts = text.rstrip("/").split("/")
+        if parts:
+            candidate = parts[-1].split("?")[0].lstrip("@")
+            if candidate:
+                return candidate.lower()
+    clean = text.lstrip("@").strip().lower()
+    clean = clean.split("?")[0].split("/")[0]
+    return clean
+
 
 class SocialFormatEditorModal(discord.ui.Modal, title="Format Notifikasi"):
     def __init__(self, cog, target: dict, author: discord.Member, parent_view):
@@ -299,15 +316,19 @@ class SocialCheckerStudioView(discord.ui.View):
 
         is_tiktok = self.target.get("platform") == "tiktok"
         d_name = self.target.get("display_name", self.target.get("identifier"))
+        target_ident = normalize_tiktok_username(self.target.get("identifier")) if is_tiktok else self.target.get("identifier")
+        sample_url = f"https://www.tiktok.com/@{target_ident}" if is_tiktok else "https://www.youtube.com"
+        sample_thumb = "https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=800" if is_tiktok else "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800"
         sample_item = {
             "video_id": "test_sample_" + str(uuid.uuid4())[:6],
             "title": f"Uji Coba Konten {d_name}",
             "description": "Pesan uji coba notifikasi otomatis. Pengaturan berhasil disimpan.",
-            "url": "https://www.tiktok.com" if is_tiktok else "https://www.youtube.com",
-            "thumbnail": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800",
+            "url": sample_url,
+            "thumbnail": sample_thumb,
             "published": datetime.now(timezone.utc).isoformat(),
             "uploader": d_name,
-            "duration": "01:00"
+            "duration": "01:00",
+            "is_live": False
         }
 
         success = await self.cog._send_content_card(self.target, sample_item)
@@ -585,6 +606,8 @@ Berikan teks pengumuman kamu sekarang:"""
 
     def _fallback_hype(self, creator: str, platform: str, is_live: bool) -> str:
         if platform == "tiktok":
+            if is_live:
+                return f"**{creator}** sedang live streaming di TikTok sekarang! Yuk tonton keseruannya!"
             return f"Video TikTok terbaru dari **{creator}** sudah tayang!"
         if is_live:
             return f"**{creator}** sedang melangsungkan live streaming sekarang!"
@@ -771,72 +794,258 @@ Berikan teks pengumuman kamu sekarang:"""
 
         return meta
 
-    def _sync_tiktok_profile(self, username: str):
-        clean_user = username.lstrip("@").strip()
-        url = f"https://www.tiktok.com/@{clean_user}"
-        ydl_opts = {
-            "extract_flat": True,
-            "quiet": True,
-            "no_warnings": True,
-            "playlist_items": "1:3",
-            "socket_timeout": 10,
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            return ydl.extract_info(url, download=False)
-
-    async def _fetch_tiktok_content(self, username: str):
-        clean_user = username.lstrip("@").strip()
+    def _sync_tiktok_live(self, username: str):
+        clean_user = normalize_tiktok_username(username)
+        if not clean_user:
+            return None
+        url = f"https://www.tiktok.com/@{clean_user}/"
         try:
-            data = await asyncio.to_thread(self._sync_tiktok_profile, clean_user)
-            if not data or "entries" not in data:
+            from curl_cffi import requests as cffi_requests
+            s = cffi_requests.Session(impersonate="chrome")
+            s.headers.update({
+                "Referer": "https://www.tiktok.com/",
+                "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8",
+            })
+            r = s.get(url, timeout=10)
+            if r.status_code == 200:
+                text = r.text
+                idx = text.find("__UNIVERSAL_DATA_FOR_REHYDRATION__")
+                if idx != -1:
+                    c_start = text.find(">", idx) + 1
+                    c_end = text.find("</script>", c_start)
+                    if c_start > 0 and c_end != -1:
+                        data = json.loads(text[c_start:c_end])
+                        scope = data.get("__DEFAULT_SCOPE__", {})
+                        user_detail = scope.get("webapp.user-detail", {})
+                        u_info = user_detail.get("userInfo", {})
+                        user = u_info.get("user", {})
+                        room_id = str(user.get("roomId") or "").strip()
+                        if room_id and room_id != "0":
+                            display_name = user.get("nickname") or clean_user
+                            avatar = user.get("avatarLarger") or user.get("avatarMedium") or user.get("avatarThumb")
+                            signature = user.get("signature") or f"Sedang live streaming di TikTok: @{clean_user}"
+                            return {
+                                "video_id": f"live_{clean_user}_{room_id}",
+                                "title": f"Live Streaming TikTok - @{clean_user}",
+                                "creator": display_name,
+                                "url": f"https://www.tiktok.com/@{clean_user}/live",
+                                "thumbnail": avatar,
+                                "description": clean_hyperlink_title(signature) or f"Sedang siaran langsung di TikTok: @{clean_user}",
+                                "is_live": True,
+                            }
+        except Exception:
+            pass
+
+        try:
+            live_url = f"https://www.tiktok.com/@{clean_user}/live"
+            ydl_opts = {
+                "extract_flat": True,
+                "quiet": True,
+                "no_warnings": True,
+                "socket_timeout": 8,
+            }
+            try:
+                from yt_dlp.networking.impersonate import ImpersonateTarget
+                ydl_opts["impersonate"] = ImpersonateTarget.from_str("chrome")
+            except Exception:
+                pass
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(live_url, download=False)
+                if info and info.get("is_live"):
+                    room_id = str(info.get("id") or "active")
+                    display_name = info.get("creator") or info.get("uploader") or clean_user
+                    title = clean_hyperlink_title(info.get("title")) or f"Live Streaming TikTok - @{clean_user}"
+                    return {
+                        "video_id": f"live_{clean_user}_{room_id}",
+                        "title": title,
+                        "creator": display_name,
+                        "url": live_url,
+                        "thumbnail": info.get("thumbnail"),
+                        "description": title,
+                        "is_live": True,
+                    }
+        except Exception:
+            pass
+        return None
+
+    def _sync_tiktok_embed(self, username: str):
+        clean_user = normalize_tiktok_username(username)
+        if not clean_user:
+            return []
+        url = f"https://www.tiktok.com/embed/@{clean_user}/"
+        try:
+            from curl_cffi import requests as cffi_requests
+            s = cffi_requests.Session(impersonate="chrome")
+            s.headers.update({
+                "Referer": "https://www.tiktok.com/",
+                "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8",
+            })
+            r = s.get(url, timeout=10)
+            text = r.text
+            idx = text.find("__FRONTITY_CONNECT_STATE__")
+            if idx == -1:
                 return []
-
+            content_start = text.find(">", idx) + 1
+            content_end = text.find("</script>", content_start)
+            if content_start == 0 or content_end == -1:
+                return []
+            raw_json = text[content_start:content_end]
+            data = json.loads(raw_json)
+            src = data.get("source", {}).get("data", {})
             results = []
-            now_ts = datetime.now(timezone.utc).timestamp()
-            for entry in data.get("entries", []):
-                if not entry:
-                    continue
-                vid = str(entry.get("id"))
-                if not vid:
-                    continue
-
-                ts = entry.get("timestamp")
-                if ts and (now_ts - float(ts)) > (6 * 3600):
-                    continue
-
-                url = entry.get("url")
-                if not url or not url.startswith("http"):
-                    url = f"https://www.tiktok.com/@{clean_user}/video/{vid}"
-
-                results.append({
-                    "video_id": vid,
-                    "title": clean_hyperlink_title(entry.get("title")) or f"TikTok Video by @{clean_user}",
-                    "creator": entry.get("uploader") or clean_user,
-                    "url": url,
-                    "thumbnail": entry.get("thumbnail"),
-                    "description": entry.get("title") or "",
-                    "is_live": False,
-                })
+            for k, v in src.items():
+                if isinstance(v, dict) and "videoList" in v:
+                    u_info = v.get("userInfo") or {}
+                    display_name = u_info.get("nickname") or clean_user
+                    for item in v.get("videoList", []):
+                        vid = str(item.get("id") or "")
+                        if not vid:
+                            continue
+                        desc = item.get("desc") or ""
+                        cover = item.get("coverUrl") or item.get("originCoverUrl") or item.get("dynamicCoverUrl")
+                        results.append({
+                            "video_id": vid,
+                            "title": clean_hyperlink_title(desc) or f"TikTok Video by @{clean_user}",
+                            "creator": display_name,
+                            "url": f"https://www.tiktok.com/@{clean_user}/video/{vid}",
+                            "thumbnail": cover,
+                            "description": desc,
+                            "is_live": False,
+                        })
+            results.sort(key=lambda x: int(x["video_id"]) if x["video_id"].isdigit() else 0, reverse=True)
             return results
         except Exception:
             return []
 
+    def _sync_tiktok_profile(self, username: str):
+        clean_user = normalize_tiktok_username(username)
+        if not clean_user:
+            return None
+        url = f"https://www.tiktok.com/@{clean_user}/"
+
+        class _SilentYDLLogger:
+            def debug(self, msg):
+                pass
+            def info(self, msg):
+                pass
+            def warning(self, msg):
+                pass
+            def error(self, msg):
+                pass
+
+        ydl_opts = {
+            "extract_flat": True,
+            "quiet": True,
+            "no_warnings": True,
+            "playlist_items": "1:5",
+            "socket_timeout": 10,
+            "logger": _SilentYDLLogger(),
+        }
+        try:
+            from yt_dlp.networking.impersonate import ImpersonateTarget
+            ydl_opts["impersonate"] = ImpersonateTarget.from_str("chrome")
+        except Exception:
+            pass
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                return ydl.extract_info(url, download=False)
+        except Exception:
+            return None
+
+    async def _fetch_tiktok_content(self, username: str):
+        clean_user = normalize_tiktok_username(username)
+        if not clean_user:
+            return []
+
+        results = []
+        try:
+            live_item = await asyncio.to_thread(self._sync_tiktok_live, clean_user)
+            if live_item:
+                results.append(live_item)
+        except Exception:
+            pass
+
+        try:
+            embed_results = await asyncio.to_thread(self._sync_tiktok_embed, clean_user)
+            if embed_results:
+                results.extend(embed_results)
+                return results
+        except Exception:
+            pass
+
+        try:
+            data = await asyncio.to_thread(self._sync_tiktok_profile, clean_user)
+            if data and "entries" in data:
+                for entry in data.get("entries", []):
+                    if not entry:
+                        continue
+                    vid = str(entry.get("id"))
+                    if not vid:
+                        continue
+
+                    url = entry.get("url")
+                    if not url or not url.startswith("http"):
+                        url = f"https://www.tiktok.com/@{clean_user}/video/{vid}"
+
+                    results.append({
+                        "video_id": vid,
+                        "title": clean_hyperlink_title(entry.get("title")) or f"TikTok Video by @{clean_user}",
+                        "creator": entry.get("uploader") or clean_user,
+                        "url": url,
+                        "thumbnail": entry.get("thumbnail"),
+                        "description": entry.get("title") or "",
+                        "is_live": False,
+                    })
+        except Exception:
+            pass
+
+        return results
+
     async def _fetch_single_tiktok_metadata(self, url: str) -> dict:
         meta = None
+        canonical_url = url.strip()
+        if "vt.tiktok.com" in canonical_url or "vm.tiktok.com" in canonical_url or "/t/" in canonical_url:
+            try:
+                dl_headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                }
+                async with aiohttp.ClientSession(headers=dl_headers) as s:
+                    async with s.get(canonical_url, allow_redirects=True, timeout=aiohttp.ClientTimeout(total=8)) as r:
+                        canonical_url = str(r.url)
+            except Exception:
+                canonical_url = url
+
+        class _SilentYDLLogger:
+            def debug(self, msg):
+                pass
+            def info(self, msg):
+                pass
+            def warning(self, msg):
+                pass
+            def error(self, msg):
+                pass
+
         ydl_opts = {
             "extract_flat": True,
             "quiet": True,
             "no_warnings": True,
             "socket_timeout": 10,
+            "logger": _SilentYDLLogger(),
         }
         try:
-            data = await asyncio.to_thread(lambda: yt_dlp.YoutubeDL(ydl_opts).extract_info(url, download=False))
+            from yt_dlp.networking.impersonate import ImpersonateTarget
+            ydl_opts["impersonate"] = ImpersonateTarget.from_str("chrome")
+        except Exception:
+            pass
+
+        try:
+            data = await asyncio.to_thread(lambda: yt_dlp.YoutubeDL(ydl_opts).extract_info(canonical_url, download=False))
             if data and data.get("id"):
                 meta = {
                     "video_id": str(data.get("id")),
                     "title": clean_hyperlink_title(data.get("title")) or "TikTok Video",
                     "creator": data.get("uploader") or data.get("creator") or "TikTok Creator",
-                    "url": data.get("webpage_url") or url,
+                    "url": data.get("webpage_url") or canonical_url,
                     "thumbnail": data.get("thumbnail"),
                     "description": data.get("title") or "",
                     "is_live": False,
@@ -846,8 +1055,12 @@ Berikan teks pengumuman kamu sekarang:"""
 
         if not meta or not meta.get("thumbnail"):
             try:
-                clean_url = urllib.parse.quote(url, safe="")
-                async with aiohttp.ClientSession() as session:
+                clean_url = urllib.parse.quote(canonical_url, safe="")
+                tikwm_headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Referer": "https://www.tiktok.com/"
+                }
+                async with aiohttp.ClientSession(headers=tikwm_headers) as session:
                     async with session.get(f"https://www.tikwm.com/api/?url={clean_url}", timeout=aiohttp.ClientTimeout(total=10)) as resp:
                         if resp.status == 200:
                             res_json = await resp.json()
@@ -857,7 +1070,7 @@ Berikan teks pengumuman kamu sekarang:"""
                                     "video_id": str(d.get("id") or (meta.get("video_id") if meta else "")),
                                     "title": d.get("title") or (meta.get("title") if meta else "TikTok Video"),
                                     "creator": d.get("author", {}).get("unique_id") or d.get("author", {}).get("nickname") or (meta.get("creator") if meta else "TikTok Creator"),
-                                    "url": url,
+                                    "url": canonical_url,
                                     "thumbnail": d.get("cover") or d.get("origin_cover") or (meta.get("thumbnail") if meta else None),
                                     "description": d.get("title") or "",
                                     "is_live": False,
@@ -905,7 +1118,11 @@ Berikan teks pengumuman kamu sekarang:"""
         intro_text = intro_text.replace("{url}", url)
         intro_text = intro_text.strip()
 
-        btn_label = target.get("button_label") or ("Tonton di TikTok" if platform == "tiktok" else ("Tonton Live" if is_live else "Tonton Video"))
+        if platform == "tiktok":
+            default_btn = "Tonton Live TikTok" if is_live else "Tonton di TikTok"
+        else:
+            default_btn = "Tonton Live" if is_live else "Tonton Video"
+        btn_label = target.get("button_label") or default_btn
         card_title_template = target.get("card_title") or "[{judul}]({url})"
         card_desc_template = target.get("card_desc") or "{deskripsi}"
         use_card = target.get("use_card", True)
@@ -1247,7 +1464,9 @@ Berikan teks pengumuman kamu sekarang:"""
     @commands.is_owner()
     async def tt_add(self, ctx: commands.Context, username: str, target_channel: discord.TextChannel = None):
         channel_to_use = target_channel or ctx.channel
-        clean_user = username.lstrip("@").strip()
+        clean_user = normalize_tiktok_username(username)
+        if not clean_user:
+            return await ctx.send("Nama pengguna atau tautan akun TikTok tidak valid.", ephemeral=True)
 
         for t in self.config["targets"]:
             if t.get("platform") == "tiktok" and t.get("identifier").lower() == clean_user.lower():
@@ -1286,7 +1505,7 @@ Berikan teks pengumuman kamu sekarang:"""
     @tt_group.command(name="remove", description="Hapus akun TikTok dari pemantauan")
     @commands.is_owner()
     async def tt_remove(self, ctx: commands.Context, username: str):
-        clean_user = username.lstrip("@").strip().lower()
+        clean_user = normalize_tiktok_username(username)
         before_count = len(self.config["targets"])
         self.config["targets"] = [
             t for t in self.config["targets"]
@@ -1303,7 +1522,7 @@ Berikan teks pengumuman kamu sekarang:"""
     async def tt_config(self, ctx: commands.Context, target: Optional[str] = None):
         found = None
         if target:
-            clean = target.lstrip("@").strip().lower()
+            clean = normalize_tiktok_username(target)
             for t in self.config.get("targets", []):
                 if t.get("platform") == "tiktok" and (t.get("identifier", "").lower() == clean or clean in t.get("display_name", "").lower() or t.get("id") == clean):
                     found = t
@@ -1336,7 +1555,7 @@ Berikan teks pengumuman kamu sekarang:"""
         tombol: Optional[str] = None,
         gaya: Optional[Literal["kartu", "teks"]] = None
     ):
-        clean = target.lstrip("@").strip().lower()
+        clean = normalize_tiktok_username(target)
         found = None
         for t in self.config.get("targets", []):
             if t.get("platform") == "tiktok" and (t.get("identifier", "").lower() == clean or clean in t.get("display_name", "").lower() or t.get("id") == clean):
@@ -1399,7 +1618,7 @@ Berikan teks pengumuman kamu sekarang:"""
                 return await ctx.send("❌ Gagal mengekstrak metadata TikTok. Pastikan URL valid dan video bersifat publik.", ephemeral=True)
 
             existing_target = None
-            clean_creator = meta["creator"].lower().lstrip("@")
+            clean_creator = normalize_tiktok_username(meta["creator"]) or meta["creator"].lower().lstrip("@")
             for t in self.config.get("targets", []):
                 if t.get("platform") == "tiktok" and t.get("identifier", "").lower() == clean_creator:
                     existing_target = t
@@ -1407,7 +1626,7 @@ Berikan teks pengumuman kamu sekarang:"""
 
             dummy_target = {
                 "platform": "tiktok",
-                "identifier": meta["creator"],
+                "identifier": clean_creator,
                 "display_name": meta["creator"],
                 "target_channel_id": target_channel.id,
                 "mention_role": existing_target.get("mention_role", "none") if existing_target else "none",
@@ -1458,9 +1677,8 @@ Berikan teks pengumuman kamu sekarang:"""
         await ctx.send(f"Pengecekan selesai. Ditemukan dan dikirim: {found_any} video TikTok baru.", ephemeral=True)
 
     @commands.hybrid_command(name="social", aliases=["sosmed", "socialhub", "socialstudio"], description="Buka studio pengaturan notifikasi YouTube dan TikTok")
-    @app_commands.describe(target="Nama channel atau akun yang ingin diatur (opsional)")
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
-    async def social(self, ctx: commands.Context, target: Optional[str] = None):
+    async def social_studio(self, ctx: commands.Context, target: Optional[str] = None):
         found = None
         if target:
             clean = target.lstrip("@").strip().lower()
@@ -1492,11 +1710,12 @@ Berikan teks pengumuman kamu sekarang:"""
     @app_commands.describe(target="Nama atau ID target yang ingin dihapus")
     @commands.is_owner()
     async def social_remove(self, ctx: commands.Context, target: str):
-        clean = target.lstrip("@").strip().lower()
+        clean_user = normalize_tiktok_username(target)
+        raw_clean = target.lstrip("@").strip().lower()
         before_count = len(self.config["targets"])
         self.config["targets"] = [
             t for t in self.config["targets"]
-            if not (clean in (t.get("identifier", "").lower(), t.get("display_name", "").lower(), t.get("id")))
+            if not (clean_user in (t.get("identifier", "").lower(), t.get("display_name", "").lower(), t.get("id")) or raw_clean in (t.get("identifier", "").lower(), t.get("display_name", "").lower(), t.get("id")))
         ]
         if len(self.config["targets"]) < before_count:
             self._save_config()
@@ -1610,6 +1829,6 @@ Berikan teks pengumuman kamu sekarang:"""
         self._save_cache()
         await ctx.send("Cache riwayat ID berhasil dikosongkan.", ephemeral=True)
 
-
 async def setup(bot):
     await bot.add_cog(SocialChecker(bot))
+
