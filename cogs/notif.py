@@ -250,13 +250,13 @@ def _extract_instagram_info(url):
 
 
 TYPE_LABELS = {
-    "live": "🔴 Live Streaming YouTube",
-    "upload": "🎬 Video Baru YouTube",
-    "premier": "⭐ Premiere YouTube",
-    "tiktok": "📱 Video TikTok",
-    "tiktok_live": "🔴 TikTok Live",
-    "instagram": "📸 Post / Reel Instagram",
-    "instagram_live": "🔴 Instagram Live",
+    "live": "Live Streaming YouTube",
+    "upload": "Video Baru YouTube",
+    "premier": "Premiere YouTube",
+    "tiktok": "Video TikTok",
+    "tiktok_live": "TikTok Live",
+    "instagram": "Post atau Reels Instagram",
+    "instagram_live": "Instagram Live",
 }
 
 class NotifFormatEditorModal(discord.ui.Modal, title="Format Notifikasi Jalur"):
@@ -321,7 +321,13 @@ class NotifFormatEditorModal(discord.ui.Modal, title="Format Notifikasi Jalur"):
 
         cfg = path_data["custom_messages"][self.type_key]
         cfg["content"] = self.content_input.value.strip() or "@everyone {ai_hype}"
-        cfg["title"] = self.title_input.value.strip() or "[{judul}]({url})"
+
+        raw_title = self.title_input.value.strip() or "[{judul}]({url})"
+        clean_title = emoji.replace_emoji(raw_title, replace="").strip()
+        clean_title = re.sub(r"\[\s+", "[", clean_title)
+        clean_title = re.sub(r"\s+\]", "]", clean_title)
+        cfg["title"] = clean_title
+
         cfg["description"] = self.desc_input.value.strip() or "{deskripsi}"
         cfg["button_label"] = self.btn_input.value.strip() or "Tonton Konten"
 
@@ -368,8 +374,8 @@ class ContentRadarStudioView(discord.ui.View):
         paths = self._get_guild_paths()
         if not paths:
             embed = discord.Embed(
-                title="📡 Studio Jalur Notifikasi (Content Radar)",
-                description="Belum ada jalur notifikasi yang terdaftar di server ini.\nGunakan `!addpath <sumber> <tujuan>` untuk membuat jalur baru.",
+                title="Studio Jalur Notifikasi",
+                description="Belum ada jalur notifikasi yang terdaftar di server ini.\nGunakan perintah `!addpath <sumber> <tujuan>` untuk membuat jalur baru.",
                 color=0xED4245
             )
             return embed
@@ -394,6 +400,8 @@ class ContentRadarStudioView(discord.ui.View):
         title_val = msg_cfg.get("title") or "[{judul}]({url})"
         desc_val = msg_cfg.get("description") or "{deskripsi}"
         btn_val = msg_cfg.get("button_label") or "Tonton Konten"
+        use_card = msg_cfg.get("use_embed", True)
+        format_str = "Kartu Visual" if use_card else "Pesan Teks"
 
         embed = discord.Embed(
             title=f"Pengaturan Notifikasi: {type_name}",
@@ -403,7 +411,7 @@ class ContentRadarStudioView(discord.ui.View):
             f"**ID Jalur:** `{pid}`\n"
             f"**Kanal Sumber:** {src_name}\n"
             f"**Kanal Tujuan:** {tgt_name}\n"
-            f"**Gaya Tampilan:** `Kartu Interaktif (Type 17)`\n\n"
+            f"**Format Tampilan:** `{format_str}`\n\n"
             f"**Isi Pesan Biasa:**\n> {content_val}\n\n"
             f"**Judul Utama:**\n> {title_val}\n\n"
             f"**Deskripsi Utama:**\n> {desc_val}\n\n"
@@ -474,6 +482,25 @@ class ContentRadarStudioView(discord.ui.View):
         edit_btn.callback = edit_callback
         self.add_item(edit_btn)
 
+        format_btn = discord.ui.Button(label="Ganti Format", style=discord.ButtonStyle.secondary, row=2)
+        async def format_callback(interaction: discord.Interaction):
+            if interaction.user.id != self.author.id:
+                return await interaction.response.send_message("Anda tidak memiliki akses.", ephemeral=True)
+            if not self.selected_path_id:
+                return await interaction.response.send_message("Pilih jalur notifikasi terlebih dahulu.", ephemeral=True)
+            pdata = self.cog.config.get("notification_paths", {}).get(self.selected_path_id, {})
+            if "custom_messages" not in pdata:
+                pdata["custom_messages"] = self.cog.default_messages.copy()
+            if self.selected_type_key not in pdata["custom_messages"]:
+                pdata["custom_messages"][self.selected_type_key] = self.cog.default_messages.get(self.selected_type_key, {}).copy()
+            curr = pdata["custom_messages"][self.selected_type_key].get("use_embed", True)
+            pdata["custom_messages"][self.selected_type_key]["use_embed"] = not curr
+            self.cog.save_config()
+            self._update_items()
+            await interaction.response.edit_message(embed=self.build_embed(), view=self)
+        format_btn.callback = format_callback
+        self.add_item(format_btn)
+
         test_btn = discord.ui.Button(label="Tes Kirim", style=discord.ButtonStyle.success, row=2)
         async def test_callback(interaction: discord.Interaction):
             if interaction.user.id != self.author.id:
@@ -523,7 +550,7 @@ class ContentRadarStudioView(discord.ui.View):
         sample_creator = "Luthfi Halimawan"
         sample_title = "SAFARI TV - UJI COBA LIVE STREAMING"
         sample_url = "https://www.youtube.com/watch?v=5dv55fcY9JI"
-        sample_desc = "Ini adalah deskripsi uji coba format notifikasi kartu V2 Type 17."
+        sample_desc = "Ini adalah deskripsi uji coba format notifikasi."
         sample_thumb = "https://img.youtube.com/vi/5dv55fcY9JI/maxresdefault.jpg"
 
         intro_template = msg_cfg.get("content") or "@everyone {ai_hype}"
@@ -538,9 +565,28 @@ class ContentRadarStudioView(discord.ui.View):
         card_title_template = msg_cfg.get("title") or "[{judul}]({url})"
         card_desc_template = msg_cfg.get("description") or "{deskripsi}"
         btn_label = msg_cfg.get("button_label") or "Tonton Konten"
+        use_card = msg_cfg.get("use_embed", True)
 
         final_card_title = card_title_template.replace("{judul}", sample_title).replace("{url}", sample_url).replace("{channel}", sample_creator)
+        try:
+            final_card_title = emoji.replace_emoji(final_card_title, replace="").strip()
+            final_card_title = re.sub(r"\[\s+", "[", final_card_title)
+            final_card_title = re.sub(r"\s+\]", "]", final_card_title)
+        except Exception:
+            pass
+
         final_card_desc = card_desc_template.replace("{deskripsi}", sample_desc).replace("{judul}", sample_title).replace("{url}", sample_url).replace("{channel}", sample_creator)
+
+        if not use_card:
+            fallback_view = discord.ui.View()
+            fallback_btn = discord.ui.Button(label=btn_label, style=discord.ButtonStyle.primary, url=sample_url)
+            fallback_view.add_item(fallback_btn)
+            text_to_send = f"{intro}\n{sample_url}" if sample_url not in intro else intro
+            try:
+                await target_ch.send(content=text_to_send, view=fallback_view)
+                return await interaction.followup.send(f"Berhasil mengirim uji coba notifikasi teks biasa ke {target_ch.mention}.", ephemeral=True)
+            except Exception as e:
+                return await interaction.followup.send(f"Gagal mengirim notifikasi teks: {e}", ephemeral=True)
 
         from cogs.v2_layout import build_v2_card, send_v2_message
         buttons = [{
@@ -576,9 +622,9 @@ class ContentRadarStudioView(discord.ui.View):
 
         res = await send_v2_message(self.cog.bot, target_ch.id, [card], files=files, content=intro)
         if res and not (isinstance(res, dict) and "error_msg" in res):
-            await interaction.followup.send(f"✅ Berhasil mengirim notifikasi uji coba kartu Type 17 ke {target_ch.mention}!", ephemeral=True)
+            await interaction.followup.send(f"Berhasil mengirim uji coba notifikasi kartu ke {target_ch.mention}.", ephemeral=True)
         else:
-            await interaction.followup.send(f"❌ Gagal mengirim kartu uji coba: {res}", ephemeral=True)
+            await interaction.followup.send(f"Gagal mengirim kartu uji coba: {res}", ephemeral=True)
 
 class ContentRadar(commands.Cog, name="Content Radar & Feed"):
     def __init__(self, bot):
@@ -769,7 +815,7 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
                 "button_style": discord.ButtonStyle.danger.value,
                 "button_color": "#ed4245",
                 "embed_color": "#e74c3c",
-                "use_embed": False,
+                "use_embed": True,
                 "embed_thumbnail": True
             },
             "upload": {
@@ -780,7 +826,7 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
                 "button_style": discord.ButtonStyle.primary.value,
                 "button_color": "#5865f2",
                 "embed_color": "#2ecc71",
-                "use_embed": False,
+                "use_embed": True,
                 "embed_thumbnail": True
             },
             "premier": {
@@ -806,7 +852,7 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
                 "embed_thumbnail": True
             },
             "tiktok_live": {
-                "title": "[🔴 TikTok Live]({url})",
+                "title": "[TikTok Live]({url})",
                 "description": "Ada yang lagi live di TikTok nih!\n\n{url}",
                 "content": "@everyone {ai_hype}",
                 "button_label": "Tonton Live TikTok",
@@ -817,7 +863,7 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
                 "embed_thumbnail": True
             },
             "instagram": {
-                "title": "[📸 Instagram Post]({url})",
+                "title": "[Instagram Post]({url})",
                 "description": "Ada postingan atau Reels baru di Instagram!\n\n{url}",
                 "content": "@everyone {ai_hype}",
                 "button_label": "Buka Instagram",
@@ -828,7 +874,7 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
                 "embed_thumbnail": True
             },
             "instagram_live": {
-                "title": "[🔴 Instagram Live]({url})",
+                "title": "[Instagram Live]({url})",
                 "description": "Yuk join Instagram Live sekarang!\n\n{url}",
                 "content": "@everyone {ai_hype}",
                 "button_label": "Tonton IG Live",
@@ -874,6 +920,14 @@ class ContentRadar(commands.Cog, name="Content Radar & Feed"):
                 for message_type in self.default_messages.keys():
                     if message_type not in path_data["custom_messages"]:
                         path_data["custom_messages"][message_type] = self.default_messages[message_type].copy()
+                    else:
+                        m_cfg = path_data["custom_messages"][message_type]
+                        if "title" in m_cfg and isinstance(m_cfg["title"], str):
+                            m_cfg["title"] = emoji.replace_emoji(m_cfg["title"], replace="").strip()
+                            m_cfg["title"] = re.sub(r"\[\s+", "[", m_cfg["title"])
+                            m_cfg["title"] = re.sub(r"\s+\]", "]", m_cfg["title"])
+                        if "use_embed" not in m_cfg:
+                            m_cfg["use_embed"] = True
 
         try:
             os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
@@ -1382,6 +1436,13 @@ Berikan teks pengumuman kamu sekarang:"""
                         except Exception:
                             files = None
                             attachment_fn = None
+
+                    try:
+                        final_embed_title = emoji.replace_emoji(final_embed_title, replace="").strip()
+                        final_embed_title = re.sub(r"\[\s+", "[", final_embed_title)
+                        final_embed_title = re.sub(r"\s+\]", "]", final_embed_title)
+                    except Exception:
+                        pass
 
                     card = build_v2_card(
                         title=final_embed_title,
