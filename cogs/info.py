@@ -694,7 +694,7 @@ class InsightHub(commands.Cog, name="Community Insights & Utility"):
         if not self.has_gender_role(member, guild_id):
             now = time.time()
             last_warn = self.gender_warning_cooldown.get(member.id, 0)
-            if now - last_warn < 600:  # Cooldown 10 menit per user agar tidak spam channel
+            if now - last_warn < 600:
                 return
             self.gender_warning_cooldown[member.id] = now
 

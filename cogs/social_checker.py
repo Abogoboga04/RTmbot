@@ -17,6 +17,21 @@ import yt_dlp
 from dotenv import load_dotenv
 from cogs.v2_layout import build_v2_card, send_v2_message
 
+
+class _SilentYDLLogger:
+    def debug(self, msg):
+        pass
+
+    def info(self, msg):
+        pass
+
+    def warning(self, msg):
+        pass
+
+    def error(self, msg):
+        pass
+
+
 load_dotenv()
 
 API_KEYS = []
@@ -843,6 +858,7 @@ Berikan teks pengumuman kamu sekarang:"""
                 "quiet": True,
                 "no_warnings": True,
                 "socket_timeout": 8,
+                "logger": _SilentYDLLogger(),
             }
             try:
                 from yt_dlp.networking.impersonate import ImpersonateTarget
@@ -922,16 +938,6 @@ Berikan teks pengumuman kamu sekarang:"""
         if not clean_user:
             return None
         url = f"https://www.tiktok.com/@{clean_user}/"
-
-        class _SilentYDLLogger:
-            def debug(self, msg):
-                pass
-            def info(self, msg):
-                pass
-            def warning(self, msg):
-                pass
-            def error(self, msg):
-                pass
 
         ydl_opts = {
             "extract_flat": True,
@@ -1691,12 +1697,7 @@ Berikan teks pengumuman kamu sekarang:"""
         view = SocialCheckerStudioView(self, ctx.guild, ctx.author, initial_target=found)
         await ctx.send(embed=view.build_embed(), view=view, ephemeral=True)
 
-    @commands.hybrid_command(name="socialadd", aliases=["addsocial", "tambahsocial"], description="Tambah pemantauan YouTube atau TikTok")
-    @app_commands.describe(
-        platform="Pilih platform (youtube / tiktok)",
-        target="Link channel / ID YouTube atau username TikTok",
-        kanal="Kanal Discord tujuan notifikasi (opsional)"
-    )
+    @commands.command(name="socialadd", aliases=["addsocial", "tambahsocial"])
     @commands.is_owner()
     async def social_add(self, ctx: commands.Context, platform: Literal["youtube", "tiktok"], target: str, kanal: Optional[discord.TextChannel] = None):
         channel_to_use = kanal or ctx.channel
@@ -1706,8 +1707,7 @@ Berikan teks pengumuman kamu sekarang:"""
         elif plat == "tiktok":
             return await self.tt_add(ctx, target, channel_to_use)
 
-    @commands.hybrid_command(name="socialremove", aliases=["rmsocial", "hapussocial"], description="Hapus channel atau akun dari pemantauan")
-    @app_commands.describe(target="Nama atau ID target yang ingin dihapus")
+    @commands.command(name="socialremove", aliases=["rmsocial", "hapussocial"])
     @commands.is_owner()
     async def social_remove(self, ctx: commands.Context, target: str):
         clean_user = normalize_tiktok_username(target)
@@ -1722,7 +1722,7 @@ Berikan teks pengumuman kamu sekarang:"""
             return await ctx.send(f"Target `{target}` berhasil dihapus dari pemantauan.", ephemeral=True)
         await ctx.send(f"Target `{target}` tidak ditemukan.", ephemeral=True)
 
-    @commands.hybrid_command(name="sociallist", aliases=["listsocial"], description="Daftar semua target YouTube & TikTok yang dipantau")
+    @commands.command(name="sociallist", aliases=["listsocial"])
     @commands.is_owner()
     async def social_list(self, ctx: commands.Context):
         targets = self.config.get("targets", [])
@@ -1737,8 +1737,7 @@ Berikan teks pengumuman kamu sekarang:"""
             lines.append(f"{idx}. `[{plat}]` **{t['display_name']}** - {ch} [{status}]")
         await ctx.send("\n".join(lines), ephemeral=True)
 
-    @commands.hybrid_command(name="socialtest", aliases=["testsocial"], description="Kirim uji coba notifikasi untuk URL YouTube atau TikTok")
-    @app_commands.describe(url="Tautan video YouTube atau TikTok", kanal="Kanal Discord tujuan pengujian (opsional)")
+    @commands.command(name="socialtest", aliases=["testsocial"])
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
     async def social_test(self, ctx: commands.Context, url: str, kanal: Optional[discord.TextChannel] = None):
         target_ch = kanal or ctx.channel
@@ -1748,18 +1747,18 @@ Berikan teks pengumuman kamu sekarang:"""
         else:
             return await self.yt_test(ctx, clean_url, target_ch)
 
-    @commands.hybrid_command(name="socialcheck", aliases=["checksocial"], description="Paksa cek pembaruan YouTube dan TikTok sekarang")
+    @commands.command(name="socialcheck", aliases=["checksocial"])
     @commands.is_owner()
     async def social_check(self, ctx: commands.Context):
         return await self.checker_check(ctx)
 
-    @commands.hybrid_group(name="checker", description="Manajemen global checker")
+    @commands.group(name="checker")
     @commands.is_owner()
     async def checker_group(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
-            await ctx.send("Gunakan `/checker list`, `/checker check`, `/checker interval`, `/checker cache`, `/checker resetcache`.", ephemeral=True)
+            await ctx.send("Gunakan `!checker list`, `!checker check`, `!checker interval`, `!checker cache`, `!checker resetcache`.", ephemeral=True)
 
-    @checker_group.command(name="list", description="Daftar semua target YouTube & TikTok")
+    @checker_group.command(name="list")
     @commands.is_owner()
     async def checker_list(self, ctx: commands.Context):
         targets = self.config.get("targets", [])

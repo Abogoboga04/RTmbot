@@ -2628,5 +2628,410 @@
         "word": "Indonesia Raya",
         "category": "Lagu Wajib",
         "clue": "Kisi-kisi: Lagu kebangsaan Republik Indonesia."
+    },
+    {
+        "word": "Babirusa",
+        "category": "Satwa",
+        "clue": "Kisi-kisi: Satwa liar endemik Sulawesi dengan taring atas melengkung menembus moncong."
+    },
+    {
+        "word": "Penyu Hijau",
+        "category": "Satwa",
+        "clue": "Kisi-kisi: Reptil laut penjelajah samudra yang mendarat di pantai untuk bertelur."
+    },
+    {
+        "word": "Paus Biru",
+        "category": "Satwa",
+        "clue": "Kisi-kisi: Mamalia laut raksasa, makhluk hidup terbesar yang pernah ada di bumi."
+    },
+    {
+        "word": "Koreografer",
+        "category": "Profesi",
+        "clue": "Kisi-kisi: Seniman perancang dan penata gerakan tarian pertunjukan panggung."
+    },
+    {
+        "word": "Sutradara",
+        "category": "Profesi",
+        "clue": "Kisi-kisi: Pemimpin artistik dan pengarah seluruh aspek pembuatan film bioskop."
+    },
+    {
+        "word": "Nakhoda",
+        "category": "Profesi",
+        "clue": "Kisi-kisi: Perwira laut tertinggi yang memimpin pelayaran kapal komersial atau tanker."
+    },
+    {
+        "word": "Paramedis",
+        "category": "Profesi",
+        "clue": "Kisi-kisi: Tenaga medis pertolongan pertama yang bertugas di dalam ambulans darurat."
+    },
+    {
+        "word": "Rendang",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Masakan daging sapi bercita rasa rempah dan santan gurih khas Minangkabau."
+    },
+    {
+        "word": "Gudeg",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Makanan khas Yogyakarta berbahan nangka muda manis disajikan dengan krecek."
+    },
+    {
+        "word": "Pempek",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Olahan daging ikan dan sagu kenyal khas Palembang dengan kuah cuko pedas."
+    },
+    {
+        "word": "Rawon",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Sup daging sapi berkuah hitam pekat rempah kluwek khas Jawa Timur."
+    },
+    {
+        "word": "Soto Betawi",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Olahan kuah daging sapi berpadu susu dan santan gurih khas Jakarta."
+    },
+    {
+        "word": "Bika Ambon",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Kue kuning bersarang kenyal harum pandan khas kota Medan."
+    },
+    {
+        "word": "Papeda",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Bubur sagu kenyal khas Maluku dan Papua disantap dengan ikan kuah kuning."
+    },
+    {
+        "word": "Coto Makassar",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Sup jeroan sapi berkuah rempah kacang tanah gurih khas Sulawesi Selatan."
+    },
+    {
+        "word": "Ayam Betutu",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Olahan ayam utuh berbumbu rempah wangi pedas khas pulau Bali."
+    },
+    {
+        "word": "Kerak Telor",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Camilan gurih ketan dan telur bebek dengan taburan serundeng khas Betawi."
+    },
+    {
+        "word": "Harmonika",
+        "category": "Alat Musik",
+        "clue": "Kisi-kisi: Alat musik tiup kecil berbentuk persegi panjang dengan celah lubang nada."
+    },
+    {
+        "word": "Saxophone",
+        "category": "Alat Musik",
+        "clue": "Kisi-kisi: Alat musik tiup tiup logam kuningan bersuara jazzy berlidah tunggal reed."
+    },
+    {
+        "word": "Terompet",
+        "category": "Alat Musik",
+        "clue": "Kisi-kisi: Alat musik tiup logam penghasil suara nyaring dengan tiga katup piston."
+    },
+    {
+        "word": "Akordeon",
+        "category": "Alat Musik",
+        "clue": "Kisi-kisi: Alat musik berlipat-lipat seperti pompa udara yang ditekan sambil memainkan tuts."
+    },
+    {
+        "word": "Gitar Bass",
+        "category": "Alat Musik",
+        "clue": "Kisi-kisi: Alat musik dawai senar tebal penghasil nada rendah pemandu ritme ketukan band."
+    },
+    {
+        "word": "Prambanan",
+        "category": "Tempat Wisata",
+        "clue": "Kisi-kisi: Kompleks candi Hindu terindah di Indonesia yang dipersembahkan untuk Trimurti."
+    },
+    {
+        "word": "Gunung Bromo",
+        "category": "Tempat Wisata",
+        "clue": "Kisi-kisi: Gunung berapi aktif di Jawa Timur yang terkenal dengan lautan pasir berbisik."
+    },
+    {
+        "word": "Labuan Bajo",
+        "category": "Tempat Wisata",
+        "clue": "Kisi-kisi: Kota pelabuhan gerbang masuk menuju habitat kadal komodo di NTT."
+    },
+    {
+        "word": "Bunaken",
+        "category": "Tempat Wisata",
+        "clue": "Kisi-kisi: Taman nasional bawah laut terumbu karang terkenal di Teluk Manado."
+    },
+    {
+        "word": "Wakatobi",
+        "category": "Tempat Wisata",
+        "clue": "Kisi-kisi: Kawasan cagar biosfer laut spektakuler di Sulawesi Tenggara."
+    },
+    {
+        "word": "Kawah Ijen",
+        "category": "Tempat Wisata",
+        "clue": "Kisi-kisi: Gunung di Banyuwangi dengan kawah danau asam dan api biru menakjubkan."
+    },
+    {
+        "word": "Nusa Penida",
+        "category": "Tempat Wisata",
+        "clue": "Kisi-kisi: Pulau tebing karang eksotis berbentuk kepala T-Rex di tenggara Bali."
+    },
+    {
+        "word": "Badminton",
+        "category": "Olahraga",
+        "clue": "Kisi-kisi: Olahraga tepok bulu angsa menggunakan raket di lapangan berjarring."
+    },
+    {
+        "word": "Voli Pantai",
+        "category": "Olahraga",
+        "clue": "Kisi-kisi: Cabang bola voli dua lawan dua yang dimainkan di atas hamparan pasir."
+    },
+    {
+        "word": "Taekwondo",
+        "category": "Olahraga",
+        "clue": "Kisi-kisi: Seni bela diri asal Korea Selatan yang mengutamakan tendangan kaki tinggi melayang."
+    },
+    {
+        "word": "Smartphone",
+        "category": "Teknologi",
+        "clue": "Kisi-kisi: Telepon genggam pintar layar sentuh serbaguna penunjang aktivitas harian modern."
+    },
+    {
+        "word": "Mikrokontroler",
+        "category": "Teknologi",
+        "clue": "Kisi-kisi: Komputer sirkuit tunggal kecil pengontrol perangkat otomatis seperti Arduino."
+    },
+    {
+        "word": "Kecerdasan Buatan",
+        "category": "Teknologi",
+        "clue": "Kisi-kisi: Simulasi kecerdasan manusia yang dimodelkan pada mesin komputer pintar (AI)."
+    },
+    {
+        "word": "Satelit",
+        "category": "Teknologi",
+        "clue": "Kisi-kisi: Wahana buatan yang mengorbit bumi untuk telekomunikasi dan pemantauan cuaca."
+    },
+    {
+        "word": "Headphone",
+        "category": "Teknologi",
+        "clue": "Kisi-kisi: Perangkat audio sepasang pengeras suara yang dipasang melingkari kepala."
+    },
+    {
+        "word": "Proyektor",
+        "category": "Teknologi",
+        "clue": "Kisi-kisi: Alat optik yang memproyeksikan gambar atau video ke layar kain atau dinding besar."
+    },
+    {
+        "word": "Drone",
+        "category": "Teknologi",
+        "clue": "Kisi-kisi: Pesawat tanpa awak berpenggerak baling-baling yang dikendalikan dari jarak jauh."
+    },
+    {
+        "word": "Flashdisk",
+        "category": "Teknologi",
+        "clue": "Kisi-kisi: Alat penyimpanan data portabel ringkas yang dihubungkan melalui port USB."
+    },
+    {
+        "word": "Printer Tiga Dimensi",
+        "category": "Teknologi",
+        "clue": "Kisi-kisi: Mesin pencetak benda fisik lapis demi lapis dari bahan filamen polimer plastik."
+    },
+    {
+        "word": "Kamera Mirrorless",
+        "category": "Teknologi",
+        "clue": "Kisi-kisi: Kamera digital lensa lepas-tukar dengan bodi ringkas tanpa mekanisme cermin refleks."
+    },
+    {
+        "word": "Teleskop Hubble",
+        "category": "Astronomi",
+        "clue": "Kisi-kisi: Teleskop luar angkasa legendaris yang mengorbit bumi sejak tahun 1990 memotret galaksi jauh."
+    },
+    {
+        "word": "Lubang Hitam",
+        "category": "Astronomi",
+        "clue": "Kisi-kisi: Kawasan ruang-waktu dengan tarikan gravitasi super kuat sehingga cahaya pun tak bisa lolos."
+    },
+    {
+        "word": "Tahun Cahaya",
+        "category": "Astronomi",
+        "clue": "Kisi-kisi: Satuan jarak yang ditempuh radiasi sinar cahaya selama satu tahun waktu bumi."
+    },
+    {
+        "word": "Sungai Amazon",
+        "category": "Geografi",
+        "clue": "Kisi-kisi: Sungai dengan debit aliran air terbesar di dunia yang membelah hutan hujan Amerika Selatan."
+    },
+    {
+        "word": "Pegunungan Himalaya",
+        "category": "Geografi",
+        "clue": "Kisi-kisi: Rangkaian pegunungan megah di Asia atap dunia rumah bagi puncak Gunung Everest."
+    },
+    {
+        "word": "Palung Mariana",
+        "category": "Geografi",
+        "clue": "Kisi-kisi: Titik terdalam kerak samudra bumi yang berada di bawah Samudra Pasifik barat."
+    },
+    {
+        "word": "Kutub Selatan",
+        "category": "Geografi",
+        "clue": "Kisi-kisi: Titik paling selatan bumi di benua Antartika yang diselimuti lapisan es abadi."
+    },
+    {
+        "word": "Gunung Kilimanjaro",
+        "category": "Geografi",
+        "clue": "Kisi-kisi: Gunung berapi tertidur tertinggi di Afrika dengan puncak bersalju di Tanzania."
+    },
+    {
+        "word": "Air Terjun Niagara",
+        "category": "Geografi",
+        "clue": "Kisi-kisi: Air terjun raksasa berdebit deras di perbatasan Amerika Serikat dan Kanada."
+    },
+    {
+        "word": "Greenland",
+        "category": "Geografi",
+        "clue": "Kisi-kisi: Pulau terbesar di dunia yang bukan merupakan benua, wilayah otonom Denmark."
+    },
+    {
+        "word": "Kucing Persia",
+        "category": "Hewan Peliharaan",
+        "clue": "Kisi-kisi: Ras kucing berbulu lebat panjang dengan hidung pesek dan wajah bulat."
+    },
+    {
+        "word": "Landak Mini",
+        "category": "Hewan Peliharaan",
+        "clue": "Kisi-kisi: Mamalia kerdil berduri halus di punggungnya yang suka menggulung diri."
+    },
+    {
+        "word": "Ikan Cupang",
+        "category": "Hewan Peliharaan",
+        "clue": "Kisi-kisi: Ikan hias air tawar berkarakter petarung dengan ekor dan sirip warna-warni megah."
+    },
+    {
+        "word": "Kura-Kura",
+        "category": "Satwa Reptil",
+        "clue": "Kisi-kisi: Hewan bercangkang tempurung keras yang bergerak sangat lambat."
+    },
+    {
+        "word": "Bunglon",
+        "category": "Satwa Reptil",
+        "clue": "Kisi-kisi: Reptil yang lihai mengubah warna kulitnya sesuai emosi dan suhu lingkungan."
+    },
+    {
+        "word": "Belalang Sembah",
+        "category": "Serangga",
+        "clue": "Kisi-kisi: Serangga predator berkaki depan seperti tangan yang sedang berdoa."
+    },
+    {
+        "word": "Lebah Madu",
+        "category": "Serangga",
+        "clue": "Kisi-kisi: Serangga pekerja penghasil cairan manis madu dan lilin sarang heksagonal."
+    },
+    {
+        "word": "Kunang-Kunang",
+        "category": "Serangga",
+        "clue": "Kisi-kisi: Serangga malam yang menghasilkan cahaya kelap-kelip bioluminesensi dari perutnya."
+    },
+    {
+        "word": "Capung",
+        "category": "Serangga",
+        "clue": "Kisi-kisi: Serangga bersayap transparan empat helai dengan manuver terbang akrobatik tinggi."
+    },
+    {
+        "word": "Es Cendol",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Minuman manis dingin berisi butiran tepung hijau beras, santan, dan gula merah cair."
+    },
+    {
+        "word": "Es Doger",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Minuman es serut merah muda isi ketan hitam, tape singkong, alpukat, dan kelapa muda."
+    },
+    {
+        "word": "Kue Klepon",
+        "category": "Jajanan Pasar",
+        "clue": "Kisi-kisi: Bola-bola ketan hijau kenyal isi gula merah meletus dengan taburan kelapa parut."
+    },
+    {
+        "word": "Kue Cubit",
+        "category": "Jajanan Pasar",
+        "clue": "Kisi-kisi: Kue manis mini yang dipanggang setengah matang dengan aneka topping keju meses."
+    },
+    {
+        "word": "Kue Lupis",
+        "category": "Jajanan Pasar",
+        "clue": "Kisi-kisi: Olahan ketan berbentuk segitiga berbalut kelapa parut dan kucuran saus kinca gula merah."
+    },
+    {
+        "word": "Martabak Telur",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Gorengan adonan kulit gurih renyah isi telur, daun bawang, dan cincangan daging sapi."
+    },
+    {
+        "word": "Kue Putu",
+        "category": "Jajanan Pasar",
+        "clue": "Kisi-kisi: Jajanan kukus dalam tabung bambu yang mengeluarkan suara uap siulan khas."
+    },
+    {
+        "word": "Lontong Sayur",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Potongan beras bungkus daun pisang disiram kuah santan labu siam dan kerupuk."
+    },
+    {
+        "word": "Tahu Gejrot",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Camilan tahu pong goreng khas Cirebon dengan kuah asam manis pedas cabai rawit."
+    },
+    {
+        "word": "Keripik Singkong",
+        "category": "Camilan Tradisional",
+        "clue": "Kisi-kisi: Irisan umbi renyah gurih asin atau pedas balado khas teman nongkrong."
+    },
+    {
+        "word": "Semanggi Surabaya",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Makanan khas daun semanggi kukus dengan bumbu sambal ubi manis gurih."
+    },
+    {
+        "word": "Kue Lapis Legit",
+        "category": "Kue Tradisional",
+        "clue": "Kisi-kisi: Kue basah kaya mentega dan rempah spekuk dengan lapisan bertingkat-tingkat halus."
+    },
+    {
+        "word": "Doclang",
+        "category": "Kuliner Tradisional",
+        "clue": "Kisi-kisi: Makanan sarapan khas Bogor berisi pesor lontong, kentang, tahu, disiram bumbu kacang."
+    },
+    {
+        "word": "Seblak Kencur",
+        "category": "Kuliner Pedas",
+        "clue": "Kisi-kisi: Masakan kuah pedas gurih aroma kencur berisi kerupuk basah, sosis, dan makaroni."
+    },
+    {
+        "word": "Nasi Tiwul",
+        "category": "Kuliner Tradisional",
+        "clue": "Kisi-kisi: Olahan tepung singkong gaplek pengganti nasi khas masyarakat Wonogiri dan Gunungkidul."
+    },
+    {
+        "word": "Nasi Ulam",
+        "category": "Kuliner Tradisional",
+        "clue": "Kisi-kisi: Nasi khas Betawi yang diaduk dengan rempah serundeng kelapa sangrai dan kacang tumbuk."
+    },
+    {
+        "word": "Es Podeng",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Es puter tradisional gurih santan dengan topping roti tawar, agar-agar, dan kacang tanah."
+    },
+    {
+        "word": "Kue Dadar Gulung",
+        "category": "Jajanan Pasar",
+        "clue": "Kisi-kisi: Panekuk tipis hijau daun suji yang digulung dengan isian kelapa parut manis gula merah."
+    },
+    {
+        "word": "Sate Lilit",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Cincangan daging ikan atau ayam berbumbu kelapa yang dililitkan pada batang serai khas Bali."
+    },
+    {
+        "word": "Ayam Taliwang",
+        "category": "Kuliner Nusantara",
+        "clue": "Kisi-kisi: Olahan ayam bakar berlumur bumbu pedas cabai dan terasi khas Lombok NTB."
     }
 ]

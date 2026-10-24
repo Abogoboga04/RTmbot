@@ -44,11 +44,9 @@ def get_or_create_member_serial_id(guild: discord.Guild, member: discord.Member)
     if "counter" not in guild_data:
         guild_data["counter"] = max(getattr(guild, "member_count", 1) or 1, 1)
         
-    # Jika member sudah terdaftar sebelumnya, kembalikan serial ID yang sudah ada (tidak pernah berubah)
     if user_id in guild_data["members"]:
         return guild_data["members"][user_id]
         
-    # Jika member baru, naikkan counter dan simpan permanen
     current_count = getattr(guild, "member_count", 1) or 1
     new_serial = max(guild_data["counter"] + 1, current_count)
     guild_data["counter"] = new_serial
@@ -64,27 +62,38 @@ def get_or_create_member_serial_id(guild: discord.Guild, member: discord.Member)
     return new_serial
 
 def is_safe_printable_char(ch: str) -> bool:
-    """Filter ketat untuk mencegah karakter box kosong (□)."""
+    """Filter karakter untuk mencegah box kosong (□) sembari mendukung huruf internasional."""
     code = ord(ch)
-    # ASCII standar yang dapat dicetak (huruf, angka, tanda baca dasar)
-    if 32 <= code <= 126:
+    if code in (0x200B, 0x200C, 0x200D, 0x200E, 0x200F, 0xFEFF, 0x00AD):
+        return False
+    if 0xFE00 <= code <= 0xFE0F or 0xE0000 <= code <= 0xE007F:
+        return False
+    if 32 <= code <= 591:
         return True
-    # Latin-1 Suplemen & Latin Extended A/B (aksen & huruf Eropa umum)
-    if 160 <= code <= 591:
+    if 0x0400 <= code <= 0x04FF:
         return True
-    # Simbol tipografi aman (kutip melengkung, bullet, dash)
-    if code in (0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014):
+    if 0x0600 <= code <= 0x06FF:
+        return True
+    if 0x3040 <= code <= 0x30FF:
+        return True
+    if 0x4E00 <= code <= 0x9FFF:
+        return True
+    if 0xAC00 <= code <= 0xD7AF:
+        return True
+    if 0xFF01 <= code <= 0xFFEE:
+        return True
+    if code in (0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014, 0x2026, 0x2500, 0x2502, 0x2605, 0x2606):
         return True
     return False
 
-def clean_display_text(text: str) -> str:
+def clean_display_text(text: str, fallback: str = "MEMBER") -> str:
     """Bersihkan teks dari unicode tak kasat mata, plane 14 selectors, dan kontrol."""
     if not text:
-        return "MEMBER"
+        return fallback
     text = unicodedata.normalize('NFKC', str(text))
     cleaned = ''.join(ch for ch in text if is_safe_printable_char(ch)).strip()
     cleaned = re.sub(r'\s+', ' ', cleaned).strip()
-    return cleaned if cleaned else "MEMBER"
+    return cleaned if cleaned else fallback
 
 def get_card_fonts():
     """Load font tipografi elegan lintas platform (Windows & Linux Railway)."""
@@ -102,10 +111,10 @@ def get_card_fonts():
     ]
     
     def find_font(filenames):
-        for d in search_dirs:
-            if not os.path.exists(d):
-                continue
-            for fn in filenames:
+        for fn in filenames:
+            for d in search_dirs:
+                if not os.path.exists(d):
+                    continue
                 p = os.path.join(d, fn)
                 if os.path.isfile(p):
                     return p
@@ -176,7 +185,6 @@ def draw_luxury_wax_seal(draw, cx, cy, radius=78, stamp_title="• RESMI •", s
     draw.ellipse([(cx - radius + 4, cy - radius + 4), (cx + radius - 4, cy + radius - 4)], 
                  fill=(185, 38, 38, 255), outline=(218, 165, 32, 255), width=2)
     
-    # Cincin manik-manik emas (30 dots)
     dot_r = radius - 11
     for i in range(30):
         angle = i * 2 * math.pi / 30
@@ -187,20 +195,16 @@ def draw_luxury_wax_seal(draw, cx, cy, radius=78, stamp_title="• RESMI •", s
     draw.ellipse([(cx - radius + 16, cy - radius + 16), (cx + radius - 16, cy + radius - 16)], 
                  outline=(218, 165, 32, 200), width=1)
     
-    # Lambang sakura di bagian atas seal
     draw_sakura(draw, cx, cy - 35, r_petal=5, fill=(255, 190, 210, 255), outline=(200, 70, 90, 255))
     
-    # Teks label RESMI
     b1 = fonts["stamp_title"].getbbox(stamp_title)
     w1 = b1[2] - b1[0]
     draw.text((cx - w1 // 2, cy - 18), stamp_title, font=fonts["stamp_title"], fill=(255, 245, 220, 255))
     
-    # Teks tanggal
     b2 = fonts["stamp_date"].getbbox(stamp_date)
     w2 = b2[2] - b2[0]
     draw.text((cx - w2 // 2, cy + 2), stamp_date, font=fonts["stamp_date"], fill=(255, 255, 255, 255))
     
-    # Teks tahun
     b3 = fonts["stamp_sub"].getbbox(stamp_year)
     w3 = b3[2] - b3[0]
     draw.text((cx - w3 // 2, cy + 25), stamp_year, font=fonts["stamp_sub"], fill=(255, 230, 230, 255))
@@ -219,34 +223,28 @@ async def generate_official_member_card(
     Menghasilkan file gambar Kartu Resmi Anggota (Sertifikat Eksklusif 1050x660 PNG)
     yang digunakan untuk command /rank dan banner pesan sambutan (welcome).
     """
-    # Resolusi Nomor Urut Permanen jika rank_pos tidak disertakan
     if rank_pos is None and guild and target:
         try:
             rank_pos = get_or_create_member_serial_id(guild, target)
         except Exception:
             pass
 
-    # Unduh Avatar Target
     avatar_bytes = None
     try:
         avatar_bytes = await target.display_avatar.replace(size=256, format="png").read()
     except Exception:
         pass
 
-    # Sanitasi Teks
     safe_user_name = clean_display_text(target.display_name)
     safe_guild_name = clean_display_text(guild.name)
 
-    # Role Tertinggi
     user_roles = [r for r in target.roles if r.name != "@everyone"]
     highest_role_name = clean_display_text(user_roles[-1].name.upper() if user_roles else "ANGGOTA RESMI")
 
-    # Nama Owner Server
     server_owner = guild.owner
     server_owner_name = clean_display_text(server_owner.display_name if server_owner else "Owner Server")
     server_owner_role = f"Owner & Pendiri {safe_guild_name[:18]}"
 
-    # Nama Owner Bot & Nama Bot Dinamis
     try:
         app_info = await bot.application_info()
         bot_owner = app_info.owner
@@ -257,7 +255,6 @@ async def generate_official_member_card(
     bot_display_name = clean_display_text(bot.user.name if bot.user else "RTMBOT")
     bot_owner_role = f"Pengembang & Owner Bot {bot_display_name}"
 
-    # Format Tanggal Bergabung
     months_id = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"]
     months_full_id = [
         "JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI",
@@ -293,39 +290,31 @@ async def generate_official_member_card(
         text_dark = (44, 34, 30, 255)
         text_gold = (140, 115, 85, 255)
 
-        # 1. Outer Border & Inner Border
         draw.rectangle([(20, 20), (W - 20, H - 22)], outline=gold_dark, width=4)
         draw.rectangle([(32, 32), (W - 32, H - 33)], outline=gold_light, width=1)
 
-        # 2. Ornamen Sudut Siku (L-shaped Ornamental Brackets) + Titik Aksen
         bracket_len = 22
         dot_dist = 7
-        # Top-Left
         draw.line([(42, 42), (42 + bracket_len, 42)], fill=gold_dark, width=2)
         draw.line([(42, 42), (42, 42 + bracket_len)], fill=gold_dark, width=2)
         draw.ellipse([(42 + dot_dist - 2, 42 + dot_dist - 2), (42 + dot_dist + 2, 42 + dot_dist + 2)], fill=gold_dark)
 
-        # Top-Right
         draw.line([(W - 42, 42), (W - 42 - bracket_len, 42)], fill=gold_dark, width=2)
         draw.line([(W - 42, 42), (W - 42, 42 + bracket_len)], fill=gold_dark, width=2)
         draw.ellipse([(W - 42 - dot_dist - 2, 42 + dot_dist - 2), (W - 42 - dot_dist + 2, 42 + dot_dist + 2)], fill=gold_dark)
 
-        # Bottom-Left
         draw.line([(42, H - 43), (42 + bracket_len, H - 43)], fill=gold_dark, width=2)
         draw.line([(42, H - 43), (42, H - 43 - bracket_len)], fill=gold_dark, width=2)
         draw.ellipse([(42 + dot_dist - 2, H - 43 - dot_dist - 2), (42 + dot_dist + 2, H - 43 - dot_dist + 2)], fill=gold_dark)
 
-        # Bottom-Right
         draw.line([(W - 42, H - 43), (W - 42 - bracket_len, H - 43)], fill=gold_dark, width=2)
         draw.line([(W - 42, H - 43), (W - 42, H - 43 - bracket_len)], fill=gold_dark, width=2)
         draw.ellipse([(W - 42 - dot_dist - 2, H - 43 - dot_dist - 2), (W - 42 - dot_dist + 2, H - 43 - dot_dist + 2)], fill=gold_dark)
 
-        # 3. Header Kiri
         title_text = custom_title or f"KARTU RESMI ANGGOTA • {safe_guild_name.upper()}"
         draw.text((58, 48), title_text, font=fonts["title"], fill=text_dark)
         draw.text((58, 86), sub_header_str, font=fonts["subtitle"], fill=text_gold)
 
-        # Header Kanan (Badge Peringkat)
         if rank_pos is not None:
             badge_tier = f"RANK: #{rank_pos} • CLASS-A" if rank_pos > 3 else "RANK: S-CLASS MASTER"
         else:
@@ -339,10 +328,8 @@ async def generate_official_member_card(
         b_h = bw[3] - bw[1]
         draw.text((badge_x + (badge_w - b_w) // 2, badge_y + (badge_h - b_h) // 2 - 2), badge_tier, font=fonts["badge"], fill=(255, 255, 255, 255))
 
-        # 4. Garis Pembatas Header Emas
         draw.line([(58, 109), (W - 58, 109)], fill=gold_dark, width=1)
 
-        # 5. Box Foto Avatar Kiri
         frame_box = [(58, 138), (212, 345)]
         draw.rounded_rectangle(frame_box, radius=8, fill=(255, 246, 233, 255), outline=gold_light, width=1)
 
@@ -358,10 +345,8 @@ async def generate_official_member_card(
         else:
             draw.ellipse([(pic_cx - pic_r, pic_cy - pic_r), (pic_cx + pic_r, pic_cy + pic_r)], fill=(120, 140, 170, 255))
 
-        # Lis Emas Konsentris Sempurna Sekeliling Avatar
         draw.ellipse([(pic_cx - pic_r - 2, pic_cy - pic_r - 2), (pic_cx + pic_r + 2, pic_cy + pic_r + 2)], outline=gold_dark, width=2)
 
-        # Label Nama di Bawah Foto Avatar
         tag_box = [(75, 302), (195, 332)]
         draw.rounded_rectangle(tag_box, radius=6, fill=(248, 237, 218, 255), outline=gold_light, width=1)
         short_u = safe_user_name[:12]
@@ -369,7 +354,6 @@ async def generate_official_member_card(
         tb_w = tb[2] - tb[0]
         draw.text((75 + (120 - tb_w) // 2, 310), short_u, font=fonts["photo_label"], fill=text_dark)
 
-        # 6. Detail Informasi Tengah
         user_header_text = f"{safe_user_name} • {highest_role_name}"
         if len(user_header_text) > 36:
             user_header_text = user_header_text[:33] + "..."
@@ -391,7 +375,6 @@ async def generate_official_member_card(
             draw.text((415, field_y), val, font=fonts["value"], fill=text_dark)
             field_y += 33
 
-        # 7. Luxury Scalloped Wax Seal (Ukuran Proporsional & Rapi)
         seal_cx, seal_cy = 887, 240
         draw_luxury_wax_seal(
             draw=draw,
@@ -404,35 +387,29 @@ async def generate_official_member_card(
             fonts=fonts
         )
 
-        # 8. Divider Horizontal Tengah
         draw.line([(58, 415), (W - 58, 415)], fill=gold_light, width=1)
 
-        # 9. Teks Dekrit / Pengesahan
         quote_text = f"Lisensi resmi ini diterbitkan secara sah atas keaktifan dan keanggotaan terverifikasi di server {safe_guild_name}."
         q_bbox = fonts["quote"].getbbox(quote_text)
         qw = q_bbox[2] - q_bbox[0]
         draw.text(((W - qw) // 2, 445), quote_text, font=fonts["quote"], fill=(122, 103, 80, 255))
 
-        # 10. Tanda Tangan Resmi (Owner Server di Kiri, Owner Bot di Kanan)
         cx_left = 185
         sw = fonts["sign_name"].getbbox(server_owner_name)[2] - fonts["sign_name"].getbbox(server_owner_name)[0]
         draw.text((cx_left - sw // 2, 482), server_owner_name, font=fonts["sign_name"], fill=text_dark)
         srw = fonts["sign_role"].getbbox(server_owner_role)[2] - fonts["sign_role"].getbbox(server_owner_role)[0]
         draw.text((cx_left - srw // 2, 510), server_owner_role, font=fonts["sign_role"], fill=text_gold)
 
-        # Bintang & Sakura di Tengah
         draw_star(draw, W // 2 - 36, 498, r_outer=13, r_inner=6)
         draw_sakura(draw, W // 2, 498, r_petal=7)
         draw_star(draw, W // 2 + 36, 498, r_outer=13, r_inner=6)
 
-        # Owner Bot
         cx_right = 835
         bw = fonts["sign_name"].getbbox(bot_owner_name)[2] - fonts["sign_name"].getbbox(bot_owner_name)[0]
         draw.text((cx_right - bw // 2, 482), bot_owner_name, font=fonts["sign_name"], fill=text_dark)
         brw = fonts["sign_role"].getbbox(bot_owner_role)[2] - fonts["sign_role"].getbbox(bot_owner_role)[0]
         draw.text((cx_right - brw // 2, 510), bot_owner_role, font=fonts["sign_role"], fill=text_gold)
 
-        # 11. ID Otentikasi Footer (Jarak Bebas 26px di Atas Border Bawah, Tanpa Tabrakan)
         auth_str = f"ID OTENTIKASI RESMI: RTM-{target.id}-VERIFIED"
         a_bbox = fonts["auth_id"].getbbox(auth_str)
         aw = a_bbox[2] - a_bbox[0]
@@ -444,3 +421,490 @@ async def generate_official_member_card(
         return buf
 
     return await asyncio.to_thread(_render)
+
+def get_leaderboard_fonts():
+    """Load font tipografi modern untuk banner visual leaderboard."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    search_dirs = [
+        os.path.join(base_dir, "assets", "fonts"),
+        os.path.join(base_dir, "data", "fonts"),
+        r"C:\Windows\Fonts",
+        "/usr/share/fonts/truetype/dejavu",
+        "/usr/share/fonts/truetype/liberation",
+        "/usr/share/fonts",
+        "/usr/local/share/fonts"
+    ]
+
+    def find_font(filenames):
+        for fn in filenames:
+            for d in search_dirs:
+                if not os.path.exists(d):
+                    continue
+                p = os.path.join(d, fn)
+                if os.path.isfile(p):
+                    return p
+        return None
+
+    f_bold = find_font(["msyhbd.ttc", "segoeuib.ttf", "arialbd.ttf", "NotoSansCJK-Bold.ttc", "DejaVuSans-Bold.ttf", "LiberationSans-Bold.ttf"])
+    f_reg = find_font(["msyh.ttc", "segoeui.ttf", "arial.ttf", "NotoSansCJK-Regular.ttc", "DejaVuSans.ttf", "LiberationSans-Regular.ttf"])
+
+    def load_font(path, size):
+        try:
+            if path and os.path.exists(path):
+                return ImageFont.truetype(path, size)
+        except Exception:
+            pass
+        return ImageFont.load_default()
+
+    return {
+        "title": load_font(f_bold, 24),
+        "subtitle": load_font(f_reg, 13),
+        "badge": load_font(f_bold, 11),
+        "podium_num": load_font(f_bold, 44),
+        "podium_rank": load_font(f_bold, 10),
+        "podium_name": load_font(f_bold, 15),
+        "podium_score": load_font(f_bold, 14),
+        "podium_sub": load_font(f_reg, 11),
+        "table_hdr": load_font(f_bold, 13),
+        "row_rank": load_font(f_bold, 12),
+        "row_name": load_font(f_bold, 13),
+        "row_score": load_font(f_bold, 13),
+        "row_sub": load_font(f_reg, 10),
+        "name_1": load_font(f_bold, 17),
+        "name_23": load_font(f_bold, 15),
+        "score_1": load_font(f_bold, 15),
+        "score_23": load_font(f_bold, 13),
+        "sub": load_font(f_reg, 12),
+        "footer": load_font(f_reg, 11),
+    }
+
+def draw_crown(draw, cx, cy, w=38, h=22, fill=(245, 158, 11, 255)):
+    hw = w // 2
+    pts = [
+        (cx - hw, cy + h // 2),
+        (cx - hw, cy - h // 4),
+        (cx - hw // 2, cy + h // 4),
+        (cx, cy - h // 2),
+        (cx + hw // 2, cy + h // 4),
+        (cx + hw, cy - h // 4),
+        (cx + hw, cy + h // 2)
+    ]
+    draw.polygon(pts, fill=fill)
+    for p in [(cx - hw, cy - h // 4), (cx, cy - h // 2), (cx + hw, cy - h // 4)]:
+        draw.ellipse([(p[0] - 2, p[1] - 2), (p[0] + 2, p[1] + 2)], fill=(255, 240, 150, 255))
+
+def draw_fallback_avatar(card, cx, cy, radius, initial, bg_color, fonts):
+    diam = radius * 2
+    av = Image.new("RGBA", (diam, diam), (0, 0, 0, 0))
+    d = ImageDraw.Draw(av)
+    d.ellipse([(0, 0), (diam - 1, diam - 1)], fill=bg_color)
+    f = fonts["name_23"]
+    bb = f.getbbox(initial)
+    tw = bb[2] - bb[0]
+    th = bb[3] - bb[1]
+    d.text(((diam - tw) // 2, (diam - th) // 2 - 2), initial, font=f, fill=(255, 255, 255, 255))
+    mask = Image.new("L", (diam, diam), 0)
+    ImageDraw.Draw(mask).ellipse([(0, 0), (diam - 1, diam - 1)], fill=255)
+    card.paste(av, (cx - radius, cy - radius), mask)
+
+async def generate_top3_podium_card(
+    guild: discord.Guild,
+    top_users_data: list,
+    title_tag: str = "TOP 3 LEADERBOARD",
+    subtitle_text: str = None,
+    bot_name: str = None,
+    footer_system: str = "Sistem Leveling & Aktivitas Server"
+) -> io.BytesIO:
+    """
+    Menghasilkan gambar visual leaderboard HD 3 Besar (1000x580 PNG)
+    dengan 3-tier podium emas, perak, dan perunggu simetris tanpa tabel kosong.
+    """
+    safe_guild_name = clean_display_text(guild.name if guild else "SERVER DISCORD", fallback="SERVER DISCORD")
+    now_str = datetime.now().strftime("%d/%m/%Y %H:%M WIB")
+
+    async def _get_avatar(m, sz):
+        if not m or not getattr(m, "display_avatar", None):
+            return None
+        try:
+            return await asyncio.wait_for(m.display_avatar.replace(size=sz, format="png").read(), timeout=2.5)
+        except Exception:
+            return None
+
+    avatar_tasks = []
+    for idx, item in enumerate(top_users_data[:3]):
+        avatar_tasks.append(_get_avatar(item.get("member"), 128))
+
+    avatars = await asyncio.gather(*avatar_tasks, return_exceptions=True)
+
+    enriched_users = []
+    for idx, item in enumerate(top_users_data[:3]):
+        av_bytes = avatars[idx] if idx < len(avatars) and isinstance(avatars[idx], (bytes, bytearray)) else None
+        enriched_users.append({
+            "name": item.get("name", getattr(item.get("member"), "display_name", f"Member {idx + 1}")),
+            "score_str": item.get("score_str", "+0 EXP"),
+            "sub_str": item.get("sub_str", "Lvl 0"),
+            "rank": item.get("rank", idx + 1),
+            "avatar_bytes": av_bytes
+        })
+
+    def _render() -> io.BytesIO:
+        W, H = 1000, 580
+        card = Image.new("RGBA", (W, H), (11, 15, 25, 255))
+        draw = ImageDraw.Draw(card)
+        fonts = get_leaderboard_fonts()
+
+        for y in range(H):
+            r = int(11 + (y / H) * (28 - 11))
+            g = int(15 + (y / H) * (38 - 15))
+            b = int(25 + (y / H) * (56 - 25))
+            draw.line([(0, y), (W, y)], fill=(r, g, b, 255))
+
+        draw.rounded_rectangle([(16, 16), (W - 16, H - 16)], radius=16, outline=(51, 65, 85, 200), width=1)
+        draw.rounded_rectangle([(20, 20), (W - 20, H - 20)], radius=14, outline=(255, 255, 255, 14), width=1)
+
+        tag_display = clean_display_text(title_tag, fallback="TOP 3").upper()
+        tb = fonts["badge"].getbbox(tag_display)
+        tb_w = tb[2] - tb[0]
+        draw.rounded_rectangle([(42, 32), (42 + tb_w + 18, 32 + 24)], radius=6, fill=(30, 58, 138, 220), outline=(59, 130, 246, 255), width=1)
+        draw.text((51, 37), tag_display, font=fonts["badge"], fill=(191, 219, 254, 255))
+
+        draw.text((42, 62), safe_guild_name, font=fonts["title"], fill=(255, 255, 255, 255))
+        sub_desc = subtitle_text or "Top 3 Anggota Teratas Berdasarkan Aktivitas dan Perolehan Server"
+        draw.text((42, 96), clean_display_text(sub_desc, fallback=sub_desc), font=fonts["subtitle"], fill=(148, 163, 184, 255))
+        draw.line([(42, 122), (W - 42, 122)], fill=(51, 65, 85, 160), width=1)
+
+        podium_cfg = [
+            {
+                "rank": 2, "idx": 1, "cx": 230, "r": 42,
+                "ped_box": [(140, 420), (320, 505)], "ped_top": [(140, 420), (320, 425)],
+                "hi_color": (203, 213, 225, 255), "num_color": (203, 213, 225, 110),
+                "score_color": (226, 232, 240, 255), "pill_text": "2ND PLACE",
+                "name_font": fonts["name_23"], "score_font": fonts["score_23"],
+                "av_y": 275, "name_y": 332, "score_y": 358, "sub_y": 382
+            },
+            {
+                "rank": 1, "idx": 0, "cx": 500, "r": 50,
+                "ped_box": [(395, 370), (605, 505)], "ped_top": [(395, 370), (605, 376)],
+                "hi_color": (234, 179, 8, 255), "num_color": (234, 179, 8, 130),
+                "score_color": (250, 204, 21, 255), "pill_text": "1ST PLACE",
+                "name_font": fonts["name_1"], "score_font": fonts["score_1"],
+                "av_y": 218, "name_y": 282, "score_y": 308, "sub_y": 332
+            },
+            {
+                "rank": 3, "idx": 2, "cx": 770, "r": 42,
+                "ped_box": [(680, 445), (860, 505)], "ped_top": [(680, 445), (860, 450)],
+                "hi_color": (249, 115, 22, 255), "num_color": (249, 115, 22, 110),
+                "score_color": (253, 186, 116, 255), "pill_text": "3RD PLACE",
+                "name_font": fonts["name_23"], "score_font": fonts["score_23"],
+                "av_y": 300, "name_y": 358, "score_y": 384, "sub_y": 408
+            }
+        ]
+
+        for cfg in podium_cfg:
+            draw.rounded_rectangle(cfg["ped_box"], radius=10, fill=(30, 41, 59, 230), outline=(51, 65, 85, 200), width=1)
+            draw.rounded_rectangle(cfg["ped_top"], radius=3, fill=cfg["hi_color"])
+
+            num_str = str(cfg["rank"])
+            nb = fonts["podium_num"].getbbox(num_str)
+            nw = nb[2] - nb[0]
+            num_y = (cfg["ped_box"][0][1] + cfg["ped_box"][1][1]) // 2 - 12
+            draw.text((cfg["cx"] - nw // 2, num_y), num_str, font=fonts["podium_num"], fill=cfg["num_color"])
+
+            pt = cfg["pill_text"]
+            pb = fonts["podium_rank"].getbbox(pt)
+            pw = pb[2] - pb[0]
+            pill_y = cfg["ped_box"][0][1] + 10
+            draw.rounded_rectangle([(cfg["cx"] - pw // 2 - 8, pill_y), (cfg["cx"] + pw // 2 + 8, pill_y + 18)], radius=5, fill=(15, 23, 42, 220), outline=cfg["hi_color"], width=1)
+            draw.text((cfg["cx"] - pw // 2, pill_y + 3), pt, font=fonts["podium_rank"], fill=cfg["hi_color"])
+
+            cx = cfg["cx"]
+            ay = cfg["av_y"]
+            r = cfg["r"]
+
+            if cfg["idx"] < len(enriched_users):
+                u = enriched_users[cfg["idx"]]
+                av_b = u.get("avatar_bytes")
+                if av_b:
+                    try:
+                        av_img = Image.open(io.BytesIO(av_b)).convert("RGBA").resize((r * 2, r * 2), Image.Resampling.LANCZOS)
+                        mask = Image.new("L", (r * 2, r * 2), 0)
+                        ImageDraw.Draw(mask).ellipse([(0, 0), (r * 2 - 1, r * 2 - 1)], fill=255)
+                        card.paste(av_img, (cx - r, ay - r), mask)
+                    except Exception:
+                        init_char = u["name"][0].upper() if u["name"] else "?"
+                        draw_fallback_avatar(card, cx, ay, r, init_char, (51, 65, 85, 255), fonts)
+                else:
+                    init_char = u["name"][0].upper() if u["name"] else "?"
+                    draw_fallback_avatar(card, cx, ay, r, init_char, (51, 65, 85, 255), fonts)
+
+                draw.ellipse([(cx - r - 2, ay - r - 2), (cx + r + 2, ay + r + 2)], outline=cfg["hi_color"], width=3)
+
+                if cfg["rank"] == 1:
+                    draw_crown(draw, cx, ay - r - 16, w=38, h=22)
+
+                uname = clean_display_text(u["name"], fallback=f"Juara {cfg['rank']}")
+                if len(uname) > 15:
+                    uname = uname[:13] + ".."
+                ub = cfg["name_font"].getbbox(uname)
+                uw = ub[2] - ub[0]
+                draw.text((cx - uw // 2, cfg["name_y"]), uname, font=cfg["name_font"], fill=(255, 255, 255, 255))
+
+                sc = clean_display_text(u["score_str"], fallback="+0")
+                sb = cfg["score_font"].getbbox(sc)
+                sw = sb[2] - sb[0]
+                draw.text((cx - sw // 2, cfg["score_y"]), sc, font=cfg["score_font"], fill=cfg["score_color"])
+
+                sub = clean_display_text(u["sub_str"], fallback="-")
+                sub_b = fonts["sub"].getbbox(sub)
+                sub_w = sub_b[2] - sub_b[0]
+                draw.text((cx - sub_w // 2, cfg["sub_y"]), sub, font=fonts["sub"], fill=(148, 163, 184, 255))
+            else:
+                draw_fallback_avatar(card, cx, ay, r, "-", (30, 41, 59, 255), fonts)
+                draw.ellipse([(cx - r - 2, ay - r - 2), (cx + r + 2, ay + r + 2)], outline=(51, 65, 85, 200), width=1)
+                dash = "-"
+                db = fonts["sub"].getbbox(dash)
+                draw.text((cx - (db[2] - db[0]) // 2, ay - 8), dash, font=fonts["sub"], fill=(100, 116, 139, 255))
+                empty_lbl = "Belum Terisi"
+                eb = fonts["sub"].getbbox(empty_lbl)
+                ew = eb[2] - eb[0]
+                draw.text((cx - ew // 2, cfg["name_y"]), empty_lbl, font=fonts["sub"], fill=(100, 116, 139, 255))
+
+        draw.line([(42, 532), (W - 42, 532)], fill=(51, 65, 85, 160), width=1)
+        resolved_bot_name = bot_name or (guild.me.display_name if guild and getattr(guild, "me", None) else "ハキムラーマン")
+        footer_bot_str = f"{clean_display_text(resolved_bot_name, fallback='ハキムラーマン')} • {footer_system}"
+        draw.text((42, 545), footer_bot_str, font=fonts["footer"], fill=(100, 116, 139, 255))
+        ts_text = f"Diperbarui: {now_str}"
+        tb = fonts["footer"].getbbox(ts_text)
+        tw = tb[2] - tb[0]
+        draw.text((W - 42 - tw, 545), ts_text, font=fonts["footer"], fill=(100, 116, 139, 255))
+
+        buf = io.BytesIO()
+        card.save(buf, format="PNG")
+        buf.seek(0)
+        return buf
+
+    return await asyncio.to_thread(_render)
+
+async def generate_weekly_leaderboard_card(
+    guild: discord.Guild,
+    top_users_data: list,
+    title_tag: str = "WEEKLY LEADERBOARD",
+    subtitle_text: str = None,
+    bot_name: str = None,
+    footer_system: str = "Sistem Leveling & Aktivitas Server"
+) -> io.BytesIO:
+    safe_guild_name = clean_display_text(guild.name if guild else "SERVER DISCORD", fallback="SERVER DISCORD")
+    now_str = datetime.now().strftime("%d/%m/%Y %H:%M WIB")
+
+    async def _get_avatar(m, sz):
+        if not m or not getattr(m, "display_avatar", None):
+            return None
+        try:
+            return await asyncio.wait_for(m.display_avatar.replace(size=sz, format="png").read(), timeout=2.5)
+        except Exception:
+            return None
+
+    avatar_tasks = []
+    for idx, item in enumerate(top_users_data[:10]):
+        sz = 128 if idx < 3 else 64
+        avatar_tasks.append(_get_avatar(item.get("member"), sz))
+
+    avatars = await asyncio.gather(*avatar_tasks, return_exceptions=True)
+
+    enriched_users = []
+    for idx, item in enumerate(top_users_data[:10]):
+        av_bytes = avatars[idx] if idx < len(avatars) and isinstance(avatars[idx], (bytes, bytearray)) else None
+        enriched_users.append({
+            "name": item.get("name", getattr(item.get("member"), "display_name", f"Member {idx + 1}")),
+            "score_str": item.get("score_str", "+0 EXP"),
+            "sub_str": item.get("sub_str", "Voice: 0m"),
+            "rank": item.get("rank", idx + 1),
+            "avatar_bytes": av_bytes
+        })
+
+    def _render() -> io.BytesIO:
+        W, H = 1200, 675
+        card = Image.new("RGBA", (W, H), (11, 15, 25, 255))
+        draw = ImageDraw.Draw(card)
+        fonts = get_leaderboard_fonts()
+
+        for y in range(H):
+            r = int(11 + (y / H) * (30 - 11))
+            g = int(15 + (y / H) * (41 - 15))
+            b = int(25 + (y / H) * (59 - 25))
+            draw.line([(0, y), (W, y)], fill=(r, g, b, 255))
+
+        draw.rounded_rectangle([(18, 18), (W - 18, H - 18)], radius=16, outline=(51, 65, 85, 200), width=1)
+        draw.rounded_rectangle([(22, 22), (W - 22, H - 22)], radius=14, outline=(255, 255, 255, 15), width=1)
+
+        tag_display = clean_display_text(title_tag, fallback="LEADERBOARD").upper()
+        tb = fonts["badge"].getbbox(tag_display)
+        tb_w = tb[2] - tb[0]
+        draw.rounded_rectangle([(45, 36), (45 + tb_w + 18, 36 + 24)], radius=6, fill=(30, 58, 138, 200), outline=(59, 130, 246, 255), width=1)
+        draw.text((54, 41), tag_display, font=fonts["badge"], fill=(191, 219, 254, 255))
+
+        draw.text((45, 66), safe_guild_name, font=fonts["title"], fill=(255, 255, 255, 255))
+        sub_desc = subtitle_text or "Top 10 Perolehan EXP & Aktivitas Mingguan Server • Reset Otomatis Setiap Senin 00:00 UTC"
+        draw.text((45, 100), clean_display_text(sub_desc, fallback=sub_desc), font=fonts["subtitle"], fill=(148, 163, 184, 255))
+        draw.line([(45, 126), (W - 45, 126)], fill=(51, 65, 85, 160), width=1)
+
+        podium_cfg = [
+            {
+                "rank": 2, "idx": 1, "cx": 135, "r": 38,
+                "ped_box": [(70, 435), (200, 585)], "ped_top": [(70, 435), (200, 441)],
+                "ped_color": (30, 41, 59, 230), "hi_color": (203, 213, 225, 255),
+                "ring_color": (203, 213, 225, 255), "num_color": (203, 213, 225, 120),
+                "score_color": (226, 232, 240, 255), "pill_text": "2ND PLACE",
+                "av_y": 315, "name_y": 365, "score_y": 388, "sub_y": 409
+            },
+            {
+                "rank": 1, "idx": 0, "cx": 315, "r": 46,
+                "ped_box": [(235, 385), (395, 585)], "ped_top": [(235, 385), (395, 391)],
+                "ped_color": (30, 41, 59, 230), "hi_color": (234, 179, 8, 255),
+                "ring_color": (234, 179, 8, 255), "num_color": (234, 179, 8, 140),
+                "score_color": (250, 204, 21, 255), "pill_text": "1ST PLACE",
+                "av_y": 245, "name_y": 305, "score_y": 330, "sub_y": 353
+            },
+            {
+                "rank": 3, "idx": 2, "cx": 495, "r": 38,
+                "ped_box": [(430, 470), (560, 585)], "ped_top": [(430, 470), (560, 476)],
+                "ped_color": (30, 41, 59, 230), "hi_color": (249, 115, 22, 255),
+                "ring_color": (249, 115, 22, 255), "num_color": (249, 115, 22, 120),
+                "score_color": (253, 186, 116, 255), "pill_text": "3RD PLACE",
+                "av_y": 355, "name_y": 405, "score_y": 428, "sub_y": 449
+            }
+        ]
+
+        for cfg in podium_cfg:
+            draw.rounded_rectangle(cfg["ped_box"], radius=10, fill=cfg["ped_color"], outline=(51, 65, 85, 200), width=1)
+            draw.rounded_rectangle(cfg["ped_top"], radius=3, fill=cfg["hi_color"])
+
+            num_str = str(cfg["rank"])
+            nb = fonts["podium_num"].getbbox(num_str)
+            nw = nb[2] - nb[0]
+            num_y = (cfg["ped_box"][0][1] + cfg["ped_box"][1][1]) // 2 - 10
+            draw.text((cfg["cx"] - nw // 2, num_y), num_str, font=fonts["podium_num"], fill=cfg["num_color"])
+
+            pt = cfg["pill_text"]
+            pb = fonts["podium_rank"].getbbox(pt)
+            pw = pb[2] - pb[0]
+            draw.rounded_rectangle([(cfg["cx"] - pw // 2 - 8, cfg["ped_box"][0][1] + 10), (cfg["cx"] + pw // 2 + 8, cfg["ped_box"][0][1] + 28)], radius=5, fill=(15, 23, 42, 200), outline=cfg["hi_color"], width=1)
+            draw.text((cfg["cx"] - pw // 2, cfg["ped_box"][0][1] + 13), pt, font=fonts["podium_rank"], fill=cfg["hi_color"])
+
+            cx = cfg["cx"]
+            ay = cfg["av_y"]
+            r = cfg["r"]
+
+            if cfg["idx"] < len(enriched_users):
+                u = enriched_users[cfg["idx"]]
+                av_b = u.get("avatar_bytes")
+                if av_b:
+                    try:
+                        av_img = Image.open(io.BytesIO(av_b)).convert("RGBA").resize((r * 2, r * 2), Image.Resampling.LANCZOS)
+                        mask = Image.new("L", (r * 2, r * 2), 0)
+                        ImageDraw.Draw(mask).ellipse([(0, 0), (r * 2 - 1, r * 2 - 1)], fill=255)
+                        card.paste(av_img, (cx - r, ay - r), mask)
+                    except Exception:
+                        init_char = u["name"][0].upper() if u["name"] else "?"
+                        draw_fallback_avatar(card, cx, ay, r, init_char, (51, 65, 85, 255), fonts)
+                else:
+                    init_char = u["name"][0].upper() if u["name"] else "?"
+                    draw_fallback_avatar(card, cx, ay, r, init_char, (51, 65, 85, 255), fonts)
+
+                draw.ellipse([(cx - r - 2, ay - r - 2), (cx + r + 2, ay + r + 2)], outline=cfg["ring_color"], width=3)
+
+                if cfg["rank"] == 1:
+                    draw_crown(draw, cx, ay - r - 16, w=34, h=20)
+
+                uname = clean_display_text(u["name"], fallback=f"Rank {cfg['rank']}")
+                if len(uname) > 14:
+                    uname = uname[:12] + ".."
+                ub = fonts["podium_name"].getbbox(uname)
+                uw = ub[2] - ub[0]
+                draw.text((cx - uw // 2, cfg["name_y"]), uname, font=fonts["podium_name"], fill=(255, 255, 255, 255))
+
+                sc = clean_display_text(u["score_str"], fallback="+0")
+                sb = fonts["podium_score"].getbbox(sc)
+                sw = sb[2] - sb[0]
+                draw.text((cx - sw // 2, cfg["score_y"]), sc, font=fonts["podium_score"], fill=cfg["score_color"])
+
+                sub = clean_display_text(u["sub_str"], fallback="-")
+                sub_b = fonts["podium_sub"].getbbox(sub)
+                sub_w = sub_b[2] - sub_b[0]
+                draw.text((cx - sub_w // 2, cfg["sub_y"]), sub, font=fonts["podium_sub"], fill=(148, 163, 184, 255))
+            else:
+                draw_fallback_avatar(card, cx, ay, r, "-", (30, 41, 59, 255), fonts)
+                draw.ellipse([(cx - r - 2, ay - r - 2), (cx + r + 2, ay + r + 2)], outline=(51, 65, 85, 200), width=1)
+                empty_lbl = "Belum Terisi"
+                eb = fonts["podium_sub"].getbbox(empty_lbl)
+                ew = eb[2] - eb[0]
+                draw.text((cx - ew // 2, cfg["name_y"]), empty_lbl, font=fonts["podium_sub"], fill=(100, 116, 139, 255))
+
+        draw.text((615, 142), "PERINGKAT #4 - #10", font=fonts["table_hdr"], fill=(255, 255, 255, 255))
+        draw.text((1060, 144), "PEROLEHAN EXP", font=fonts["podium_rank"], fill=(148, 163, 184, 255))
+
+        start_y = 172
+        row_h = 49
+        gap = 9
+        for i in range(3, 10):
+            row_idx = i - 3
+            ry = start_y + row_idx * (row_h + gap)
+            draw.rounded_rectangle([(615, ry), (1155, ry + row_h)], radius=8, fill=(24, 33, 47, 180), outline=(51, 65, 85, 140), width=1)
+
+            rank_str = f"#{i + 1}"
+            rb = fonts["row_rank"].getbbox(rank_str)
+            rw = rb[2] - rb[0]
+            draw.rounded_rectangle([(627, ry + 10), (665, ry + 38)], radius=6, fill=(15, 23, 42, 220), outline=(51, 65, 85, 180), width=1)
+            draw.text((646 - rw // 2, ry + 16), rank_str, font=fonts["row_rank"], fill=(203, 213, 225, 255))
+
+            if i < len(enriched_users):
+                u = enriched_users[i]
+                av_b = u.get("avatar_bytes")
+                if av_b:
+                    try:
+                        av_img = Image.open(io.BytesIO(av_b)).convert("RGBA").resize((32, 32), Image.Resampling.LANCZOS)
+                        mask = Image.new("L", (32, 32), 0)
+                        ImageDraw.Draw(mask).ellipse([(0, 0), (31, 31)], fill=255)
+                        card.paste(av_img, (680, ry + 8), mask)
+                    except Exception:
+                        init_char = u["name"][0].upper() if u["name"] else "?"
+                        draw_fallback_avatar(card, 696, ry + 24, 16, init_char, (71, 85, 105, 255), fonts)
+                else:
+                    init_char = u["name"][0].upper() if u["name"] else "?"
+                    draw_fallback_avatar(card, 696, ry + 24, 16, init_char, (71, 85, 105, 255), fonts)
+
+                draw.ellipse([(680, ry + 8), (712, ry + 40)], outline=(100, 116, 139, 200), width=1)
+
+                uname = clean_display_text(u["name"], fallback=f"Rank {i + 1}")
+                if len(uname) > 18:
+                    uname = uname[:16] + ".."
+                draw.text((724, ry + 16), uname, font=fonts["row_name"], fill=(255, 255, 255, 255))
+
+                sc = clean_display_text(u["score_str"], fallback="+0")
+                sb = fonts["row_score"].getbbox(sc)
+                sw = sb[2] - sb[0]
+                draw.text((1140 - sw, ry + 9), sc, font=fonts["row_score"], fill=(56, 189, 248, 255))
+
+                sub = clean_display_text(u["sub_str"], fallback="-")
+                sub_b = fonts["row_sub"].getbbox(sub)
+                sub_w = sub_b[2] - sub_b[0]
+                draw.text((1140 - sub_w, ry + 28), sub, font=fonts["row_sub"], fill=(148, 163, 184, 255))
+            else:
+                draw.text((724, ry + 16), "-", font=fonts["row_sub"], fill=(100, 116, 139, 255))
+
+        draw.line([(45, 622), (W - 45, 622)], fill=(51, 65, 85, 160), width=1)
+        resolved_bot_name = bot_name or (guild.me.display_name if guild and getattr(guild, "me", None) else "ハキムラーマン")
+        footer_bot_str = f"{clean_display_text(resolved_bot_name, fallback='ハキムラーマン')} • {footer_system}"
+        draw.text((45, 636), footer_bot_str, font=fonts["footer"], fill=(100, 116, 139, 255))
+        ts_text = f"Diperbarui: {now_str}"
+        tb = fonts["footer"].getbbox(ts_text)
+        tw = tb[2] - tb[0]
+        draw.text((W - 45 - tw, 636), ts_text, font=fonts["footer"], fill=(100, 116, 139, 255))
+
+        buf = io.BytesIO()
+        card.save(buf, format="PNG")
+        buf.seek(0)
+        return buf
+
+    return await asyncio.to_thread(_render)
+

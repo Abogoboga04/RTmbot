@@ -127,7 +127,62 @@
                 "description": "",
                 "content": "",
                 "placeholder": "\u2728 Pilih role yang ingin kamu ambil",
-                "roles": {}
+                "roles": {
+                    "1380821606267621427": {
+                        "label": "\ud83d\udc80 ORANG GILAA",
+                        "emoji": null,
+                        "description": "admin abuse"
+                    },
+                    "1382034275641327717": {
+                        "label": "Bronze",
+                        "emoji": null,
+                        "description": "Role untuk Bronze"
+                    }
+                },
+                "roles_data": {
+                    "1380821606267621427": {
+                        "label": "\ud83d\udc80 ORANG GILAA",
+                        "emoji": null,
+                        "description": "admin abuse"
+                    },
+                    "1382034275641327717": {
+                        "label": "Bronze",
+                        "emoji": null,
+                        "description": "Role untuk Bronze"
+                    }
+                }
+            },
+            "1563234775882272780": {
+                "channel_id": 1379762287740715060,
+                "mode": "select",
+                "rule_type": "free",
+                "title": "\ud83c\udfad AMBIL ROLE MANDIRI",
+                "description": "Pilih role yang kamu inginkan untuk membuka akses channel dan notifikasi server:",
+                "placeholder": "\u2728 Pilih role yang ingin kamu ambil",
+                "roles": {
+                    "1380821606267621427": {
+                        "label": "\ud83d\udc80 ORANG GILAA",
+                        "emoji": null,
+                        "description": "Role akses @\ud83d\udc80 ORANG GILAA"
+                    },
+                    "1382034275641327717": {
+                        "label": "Bronze",
+                        "emoji": null,
+                        "description": "Role akses @Bronze"
+                    }
+                },
+                "roles_data": {
+                    "1380821606267621427": {
+                        "label": "\ud83d\udc80 ORANG GILAA",
+                        "emoji": null,
+                        "description": "Role akses @\ud83d\udc80 ORANG GILAA"
+                    },
+                    "1382034275641327717": {
+                        "label": "Bronze",
+                        "emoji": null,
+                        "description": "Role akses @Bronze"
+                    }
+                }
             }
         },
         "trigger_channels": [
@@ -135,7 +190,8 @@
         ],
         "boost_enabled": true,
         "ticket_category_id": 1039509115044626484,
-        "ticket_support_role_id": 1380821606267621427
+        "ticket_support_role_id": 1380821606267621427,
+        "trap_msg_1379762287740715060": 1563223568370901084
     },
     "788337048997199882": {
         "auto_role_id": null,
@@ -263,6 +319,13 @@
                 "disallow_prefix": false,
                 "disallow_url": false,
                 "auto_delete_seconds": 0
+            },
+            "1384266552504881292": {
+                "disallow_bots": false,
+                "disallow_media": false,
+                "disallow_prefix": false,
+                "disallow_url": false,
+                "auto_delete_seconds": 0
             }
         },
         "welcome_embed_title": "halo",
@@ -290,7 +353,7 @@
         "ticket_support_role_id": null
     },
     "765138959625486357": {
-        "auto_role_id": 1498673916208746506,
+        "auto_role_id": 1563418707693281381,
         "welcome_channel_id": 1255219778407366688,
         "welcome_message": "Selamat datang di {guild_name}! \ud83d\udc4b\n\nHalo {user}, kami gembira sekali kamu sudah bergabung Bersama kami. Agar kamu bisa langsung nyaman dan berinteraksi, yuk, baca beberapa hal penting ini:\n- **Aturan:** Baca dulu ya, biar kita semua bisa enjoy bareng: **[klik di sini](https://canary.discord.com/channels/765138959625486357/1255220296508768326)**.\n- **Butuh Bantuan?**: Cek **[FAQ](https://discord.com/channels/765138959625486357/1410342866760241162)** untuk jawaban cepat.\n\nSelamat menikmati waktu di server ini! Enjoy! \u270c\ufe0f",
         "log_channel_id": null,
@@ -687,6 +750,55 @@
                 "disallow_prefix": false,
                 "disallow_url": false,
                 "auto_delete_seconds": 0
+            },
+            "1563231737935565023": {
+                "disallow_bots": false,
+                "disallow_media": false,
+                "disallow_prefix": false,
+                "disallow_url": false,
+                "auto_delete_seconds": 0
+            },
+            "1563487205492662323": {
+                "disallow_bots": false,
+                "disallow_media": false,
+                "disallow_prefix": false,
+                "disallow_url": false,
+                "auto_delete_seconds": 0
+            },
+            "1563487654446899240": {
+                "disallow_bots": false,
+                "disallow_media": false,
+                "disallow_prefix": false,
+                "disallow_url": false,
+                "auto_delete_seconds": 0
+            },
+            "1563512757532360856": {
+                "disallow_bots": false,
+                "disallow_media": false,
+                "disallow_prefix": false,
+                "disallow_url": false,
+                "auto_delete_seconds": 0
+            },
+            "1563526306447106048": {
+                "disallow_bots": false,
+                "disallow_media": false,
+                "disallow_prefix": false,
+                "disallow_url": false,
+                "auto_delete_seconds": 0
+            },
+            "1563558695349260328": {
+                "disallow_bots": false,
+                "disallow_media": false,
+                "disallow_prefix": false,
+                "disallow_url": false,
+                "auto_delete_seconds": 0
+            },
+            "1563565458635104328": {
+                "disallow_bots": false,
+                "disallow_media": false,
+                "disallow_prefix": false,
+                "disallow_url": false,
+                "auto_delete_seconds": 0
             }
         },
         "welcome_embed_title": "Halo",
@@ -700,7 +812,7 @@
             "851069782803742720": "https://discord.com/api/webhooks/1412652444776792174/pyW8DIvAxKQvHs3FBf3sSgcIhfg64ykwmTAAs_ui93CZs1sdNXyZGEm4FCHQA1PKL_Ak"
         },
         "welcome_banner_url": "",
-        "mod_panel_message_id": 1559681857119846473,
+        "mod_panel_message_id": 1563249827821650031,
         "mod_panel_channel_id": 1413604641421398069,
         "spam_whitelist_roles": [
             765141076691386428,
@@ -730,7 +842,68 @@
             1279003289643646997,
             1279003289643646998
         ],
-        "role_panels": {},
+        "role_panels": {
+            "1563316395733942314": {
+                "channel_id": 1255221263811743836,
+                "mode": "select",
+                "rule_type": "mixed",
+                "title": "AMBIL ROLE DISINI",
+                "description": "Pilih role yang kamu inginkan untuk membuka akses channel dan notifikasi server:\nDetail : Male/ Female ( For akses channel )\n               Rnboyz (Untuk mendapatkan notifikasi informasi update)",
+                "placeholder": "Pilih role yang ingin kamu ambil",
+                "roles": {
+                    "1498673916208746506": {
+                        "label": "Rnboysz",
+                        "emoji": null,
+                        "description": "Role akses @Rnboysz",
+                        "exclusive": false
+                    },
+                    "1563418707693281381": {
+                        "label": "\ud83d\udd14ping",
+                        "emoji": null,
+                        "description": "Role untuk dapat notifikasi dari channel Notifikasi",
+                        "exclusive": false
+                    },
+                    "1255277534908645416": {
+                        "label": "Male",
+                        "emoji": null,
+                        "description": "Role untuk gender pria",
+                        "exclusive": true
+                    },
+                    "1255278470251151420": {
+                        "label": "Female",
+                        "emoji": null,
+                        "description": "Role untuk Gender Female",
+                        "exclusive": true
+                    }
+                },
+                "roles_data": {
+                    "1498673916208746506": {
+                        "label": "Rnboysz",
+                        "emoji": null,
+                        "description": "Role akses @Rnboysz",
+                        "exclusive": false
+                    },
+                    "1563418707693281381": {
+                        "label": "\ud83d\udd14ping",
+                        "emoji": null,
+                        "description": "Role untuk dapat notifikasi dari channel Notifikasi",
+                        "exclusive": false
+                    },
+                    "1255277534908645416": {
+                        "label": "Male",
+                        "emoji": null,
+                        "description": "Role untuk gender pria",
+                        "exclusive": true
+                    },
+                    "1255278470251151420": {
+                        "label": "Female",
+                        "emoji": null,
+                        "description": "Role untuk Gender Female",
+                        "exclusive": true
+                    }
+                }
+            }
+        },
         "trigger_channels": [
             1533770971939606618
         ],
@@ -798,6 +971,13 @@
                 "disallow_prefix": false,
                 "disallow_url": false,
                 "auto_delete_seconds": 0
+            },
+            "1417643131414908928": {
+                "disallow_bots": false,
+                "disallow_media": false,
+                "disallow_prefix": false,
+                "disallow_url": false,
+                "auto_delete_seconds": 0
             }
         },
         "boost_channel_id": null,
@@ -819,82 +999,53 @@
         "goodbye_message": "Selamat tinggal, **{user}**. Sampai jumpa lagi! \ud83d\udc4b",
         "panel_role_stats": [],
         "role_panels": {
-            "1562429429878096015": {
+            "1563315177812926545": {
+                "channel_id": 1562748945178824764,
                 "mode": "select",
-                "roles_data": {
+                "rule_type": "free",
+                "title": "\ud83c\udfad AMBIL ROLE MANDIRI",
+                "description": "Pilih role yang kamu inginkan untuk membuka akses channel dan notifikasi server:",
+                "placeholder": "\u2728 Pilih role yang ingin kamu ambil",
+                "roles": {
+                    "1472186327729700874": {
+                        "label": "Admin",
+                        "emoji": null,
+                        "description": "Role akses @Admin",
+                        "exclusive": false
+                    },
+                    "1437356785039183883": {
+                        "label": "Bot",
+                        "emoji": null,
+                        "description": "Role akses @Bot",
+                        "exclusive": false
+                    },
                     "1519276565941452941": {
                         "label": "Tes",
                         "emoji": null,
-                        "description": "Dapatkan akses role @Tes"
+                        "description": "Role akses @Tes",
+                        "exclusive": false
                     }
                 },
-                "placeholder": "\u2728 Pilih role yang ingin kamu ambil",
-                "channel_id": 1423376178156273664,
-                "title": "\ud83c\udfad AMBIL ROLE MANDIRI"
-            },
-            "1562430162178416641": {
-                "mode": "select",
                 "roles_data": {
                     "1472186327729700874": {
                         "label": "Admin",
                         "emoji": null,
-                        "description": "Dapatkan akses role @Admin"
-                    },
-                    "1519276565941452941": {
-                        "label": "Tes",
-                        "emoji": null,
-                        "description": "Dapatkan akses role @Tes"
+                        "description": "Role akses @Admin",
+                        "exclusive": false
                     },
                     "1437356785039183883": {
                         "label": "Bot",
                         "emoji": null,
-                        "description": "Dapatkan akses role @Bot"
-                    }
-                },
-                "placeholder": "\u2728 Pilih role yang ingin kamu ambil",
-                "channel_id": 1423376178156273664,
-                "title": "\ud83c\udfad AMBIL ROLE MANDIRI"
-            },
-            "1562723218786095175": {
-                "mode": "select",
-                "roles_data": {
-                    "1437356785039183883": {
-                        "label": "Bot",
-                        "emoji": null,
-                        "description": "Dapatkan akses role @Bot"
+                        "description": "Role akses @Bot",
+                        "exclusive": false
                     },
                     "1519276565941452941": {
                         "label": "Tes",
                         "emoji": null,
-                        "description": "Dapatkan akses role @Tes"
+                        "description": "Role akses @Tes",
+                        "exclusive": false
                     }
-                },
-                "placeholder": "\u2728 Pilih role yang ingin kamu ambil",
-                "channel_id": 1423376178156273664,
-                "title": "\ud83c\udfad AMBIL ROLE MANDIRI"
-            },
-            "1562723319633940562": {
-                "mode": "select",
-                "roles_data": {
-                    "1437356785039183883": {
-                        "label": "Bot",
-                        "emoji": null,
-                        "description": "Dapatkan akses role @Bot"
-                    },
-                    "1519276565941452941": {
-                        "label": "Tes",
-                        "emoji": null,
-                        "description": "Dapatkan akses role @Tes"
-                    },
-                    "1472186327729700874": {
-                        "label": "Admin",
-                        "emoji": null,
-                        "description": "Dapatkan akses role @Admin"
-                    }
-                },
-                "placeholder": "\u2728 Pilih role yang ingin kamu ambil",
-                "channel_id": 1423376178156273664,
-                "title": "\ud83c\udfad AMBIL ROLE MANDIRI"
+                }
             }
         },
         "trigger_channels": [],
@@ -913,7 +1064,7 @@
         "welcome_message": "Halo {user}, selamat datang di **{guild_name}**,\ud83c\udfe1\nSenang banget kamu sudah bergabung di rumah digital kita semua! Ini adalah tempat untuk ngobrolin musik, karya, dan main game bareng Rizky Febian dan teman-teman lainnya.\n\nBiar kamu nggak bingung, yuk ikuti beberapa langkah awal ini:\n **Wajib Baca Peraturan**\n Mampir dulu ke <#1418894497420677232> biar kita semua nyaman dan seru bareng.\n**Kenalan, Yuk!**\nJangan malu-malu buat sapa yang lain di <#1418839313130717276>.\n\nKami tunggu kamu di obrolan ya. Semoga betah! \u2728",
         "welcome_embed_title": "Selamat datang",
         "welcome_sender_name": "IkyLini",
-        "welcome_banner_url": "https://raw.githubusercontent.com/Kawansejalanproduction2019/my-projek/main/20250920_200231.jpg",
+        "welcome_banner_url": "",
         "log_channel_id": null,
         "reaction_roles": {},
         "channel_rules": {
@@ -1190,7 +1341,7 @@
         "ticket_category_id": null,
         "ticket_support_role_id": null
     },
-    "global_trap_count": 85,
+    "global_trap_count": 86,
     "1431215187305959477": {
         "auto_role_id": null,
         "welcome_channel_id": null,

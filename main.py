@@ -825,6 +825,16 @@ bot.send_global_action_log = send_global_action_log
 @bot.event
 async def on_command_completion(ctx):
     """Merekap setiap perintah yang berhasil dijalankan di semua server."""
+    owner_id_env = os.getenv("BOT_OWNER_ID") or os.getenv("OWNER_ID") or "1000737066822410311"
+    is_owner_user = (str(ctx.author.id) == str(owner_id_env))
+    if not is_owner_user:
+        try:
+            is_owner_user = await bot.is_owner(ctx.author)
+        except Exception:
+            pass
+    if is_owner_user:
+        return
+
     guild_name = ctx.guild.name if ctx.guild else "Direct Message"
     guild_id = getattr(ctx.guild, 'id', 'DM')
     channel_name = getattr(ctx.channel, 'name', 'DM')

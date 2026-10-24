@@ -112,6 +112,37 @@ def format_voice_duration(seconds: int) -> str:
         parts.append(f"{secs} Detik")
     return " ".join(parts)
 
+def format_card_voice_duration(seconds: int) -> str:
+    if seconds < 60:
+        return ""
+    days, remainder = divmod(seconds, 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, _ = divmod(remainder, 60)
+    parts = []
+    if days > 0:
+        parts.append(f"{days}h")
+    if hours > 0:
+        parts.append(f"{hours}j")
+    if minutes > 0:
+        parts.append(f"{minutes}m")
+    return f"Voice: {' '.join(parts)}" if parts else ""
+
+def format_weekly_card_duration(seconds: int) -> str:
+    if seconds < 60:
+        return "Voice: 0m"
+    days, remainder = divmod(seconds, 86400)
+    hours, remainder = divmod(remainder, 3600)
+    minutes, _ = divmod(remainder, 60)
+    parts = []
+    if days > 0:
+        parts.append(f"{days}h")
+    if hours > 0:
+        parts.append(f"{hours}j")
+    if minutes > 0:
+        parts.append(f"{minutes}m")
+    return f"Voice: {' '.join(parts)}" if parts else "Voice: 0m"
+
+
 def format_digital_clock(seconds: int) -> str:
     """Format durasi detik ke format jam digital (Hari jika >= 24 jam + HH:MM:SS)."""
     if seconds <= 0:
@@ -802,7 +833,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
             return
         try:
             db = mongo_client.get_database("rtmbot")
-            # 1. Config Data (Lokasi channel, Message ID panel, & Rekor Voice)
             cfg_doc = db["config_data"].find_one({"_id": "global_configs"})
             if cfg_doc and "data" in cfg_doc and isinstance(cfg_doc["data"], dict):
                 local_configs = load_json(CONFIG_FILE)
@@ -817,14 +847,12 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                                 local_configs[g_id][k] = v
                 save_json(CONFIG_FILE, local_configs)
 
-            # Pulihkan active channel session dari config lokal/mongo jika ada yang sedang aktif
             all_cfg = load_json(CONFIG_FILE)
             for g_id, g_cfg in all_cfg.items():
                 longest = g_cfg.get("voice_records", {}).get("longest_session", {})
                 if longest.get("is_active_now", False) and longest.get("channel_id"):
                     self._channel_voice_sessions[(g_id, longest["channel_id"])] = longest.get("duration_seconds", 0)
 
-            # 2. Level Data (Merge pintar dari MongoDB: pulihkan voice_time & exp tertinggi)
             lvl_doc = db["level_data"].find_one({"_id": "global_levels"})
             if lvl_doc and "data" in lvl_doc and isinstance(lvl_doc["data"], dict):
                 mongo_levels = lvl_doc["data"]
@@ -838,7 +866,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                                 local_levels[g_id][u_id] = u_data
                             else:
                                 curr = local_levels[g_id][u_id]
-                                # Pulihkan voice_time dari MongoDB jika di lokal lebih kecil
                                 if u_data.get("voice_time", 0) > curr.get("voice_time", 0):
                                     curr["voice_time"] = u_data["voice_time"]
                                 if u_data.get("weekly_voice_time", 0) > curr.get("weekly_voice_time", 0):
@@ -851,7 +878,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                                     curr["level"] = u_data["level"]
                 save_json(LEVEL_FILE, local_levels)
 
-            # 3. Bank Data (Merge pintar dari MongoDB)
             bank_doc = db["bank_data"].find_one({"_id": "global_banks"})
             if bank_doc and "data" in bank_doc and isinstance(bank_doc["data"], dict):
                 mongo_banks = bank_doc["data"]
@@ -992,7 +1018,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
             )
             return discord.File(card_buffer, filename=f"license_{target.name}.png")
 
-        # Fallback sederhana jika modul generator tidak tersedia
         buffer = BytesIO()
         img = Image.new("RGBA", (800, 300), (30, 30, 35, 255))
         draw = ImageDraw.Draw(img)
@@ -1032,7 +1057,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                     cfg_dirty = False
 
                     for vc in guild.voice_channels:
-                        # Lewati channel AFK server resmi jika ada
                         if guild.afk_channel and vc.id == guild.afk_channel.id:
                             continue
 
@@ -1040,11 +1064,9 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                         ch_key = (guild_id, vc.id)
 
                         if active_vc_members:
-                            # Tambah durasi sesi room berjalan (60 detik per menit perulangan)
                             current_sess = self._channel_voice_sessions.get(ch_key, 0) + 60
                             self._channel_voice_sessions[ch_key] = current_sess
 
-                            # Periksa apakah sesi ini adalah rekor tertinggi server
                             if current_sess >= longest.get("duration_seconds", 0):
                                 longest["channel_id"] = vc.id
                                 longest["channel_name"] = vc.name
@@ -1053,7 +1075,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                                 longest["updated_at"] = datetime.utcnow().isoformat()
                                 cfg_dirty = True
                         else:
-                            # Jika room kosong dan tadinya tercatat sebagai pemegang rekor aktif
                             if longest.get("channel_id") == vc.id and longest.get("is_active_now", False):
                                 longest["is_active_now"] = False
                                 cfg_dirty = True
@@ -1067,23 +1088,19 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                             if user_id not in data:
                                 data[user_id] = {"exp": 0, "weekly_exp": 0, "level": 0, "badges": []}
                             
-                            # Catat session timestamp untuk pelacakan real-time
                             if member.id not in self._voice_active_sessions:
                                 self._voice_active_sessions[member.id] = time.time()
 
-                            # Hitung durasi sesi aktif berjalan (continuous session)
                             cur_session_sec = int(time.time() - self._voice_active_sessions[member.id])
                             data[user_id].setdefault("longest_single_session", 0)
                             if cur_session_sec > data[user_id]["longest_single_session"]:
                                 data[user_id]["longest_single_session"] = cur_session_sec
 
-                            # Rekap durasi aktif voice (60 detik per menit perulangan)
                             data[user_id].setdefault("voice_time", 0)
                             data[user_id]["voice_time"] += 60
                             data[user_id].setdefault("weekly_voice_time", 0)
                             data[user_id]["weekly_voice_time"] += 60
 
-                            # EXP & Koin (tetap dapat selama tidak deafen)
                             if not (member.voice and (member.voice.self_deaf or member.voice.deaf)):
                                 boost_channels = guild_config.get("voice_boost_channels", {})
                                 ch_boost = float(boost_channels.get(str(vc.id), 1.0))
@@ -1098,7 +1115,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                                     bank_data[user_id] = {"balance": 0, "debt": 0}
                                 bank_data[user_id]["balance"] += rswn_gain_vc
 
-                            # Pemeriksaan Voice Role Milestones (Role otomatis berdasarkan akumulasi jam voice)
                             v_roles = guild_config.get("voice_roles", {})
                             if v_roles:
                                 total_hours = data[user_id]["voice_time"] // 3600
@@ -1124,7 +1140,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                     save_json(BANK_FILE, bank_data)
                     self._dirty_bank = True
 
-                    # Pembaruan otomatis (auto-update) panel voice terlama jika aktif di server
                     try:
                         await self.update_voice_panel(guild)
                     except Exception:
@@ -1156,7 +1171,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         all_configs = load_json(CONFIG_FILE)
         guild_config = all_configs.get(guild_id, {})
 
-        # Sticky Voice Panel: jika ada pesan baru di channel panel, reposisi panel ke dasar channel
         try:
             v_channel_id = guild_config.get("voice_panel_channel_id")
             if v_channel_id and message.channel.id == v_channel_id:
@@ -1851,11 +1865,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         else:
             save_json(LEVEL_FILE, all_level_data)
             
-        # DM disabled based on request
-        # try:
-        #     await member.send(f"🎁 Kamu telah menerima **{amount} EXP gratis** dari {ctx.author.mention}!")
-        # except discord.Forbidden:
-        #     pass
         await ctx.send(f"✅ Kamu telah memberikan **{amount} EXP** ke {member.mention}.", ephemeral=True)
 
     @commands.command(name="givecoins", help="Berikan RSWN gratis kepada member tertentu")
@@ -1867,11 +1876,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
             bank_data[user_id] = {"balance": 0, "debt": 0}
         bank_data[user_id]["balance"] += amount
         save_json(BANK_FILE, bank_data)
-        # DM disabled
-        # try:
-        #     await member.send(f"🎉 Kamu telah menerima **{amount} 🪙RSWN gratis** dari admin {ctx.author.mention}!")
-        # except discord.Forbidden:
-        #     pass
         await ctx.send(f"✅ Kamu telah memberikan **{amount} 🪙RSWN gratis** ke {member.mention}.", ephemeral=True)
 
     @commands.hybrid_command(name="transfercoins", description="Transfer RSWN milikmu ke pengguna lain")
@@ -1888,11 +1892,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         bank_data[sender_id]["balance"] -= amount
         bank_data[receiver_id]["balance"] += amount
         save_json(BANK_FILE, bank_data)
-        # DM disabled
-        # try:
-        #     await member.send(f"🎉 Kamu telah menerima **{amount} 🪙RSWN** dari {ctx.author.mention}!")
-        # except discord.Forbidden:
-        #     pass
         await ctx.send(f"✅ Transfer **{amount} 🪙RSWN** ke {member.mention} berhasil.", ephemeral=True)
 
     @commands.command(name="setlevel", help="Ubah level member secara instan")
@@ -1926,6 +1925,7 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         medals = ["🥇", "🥈", "🥉"] + [f"`#{i}`" for i in range(4, 11)]
 
         top_lines = []
+        top_users_data = []
         for idx, (user_id, user_data) in enumerate(sorted_users[:10], start=1):
             user = ctx.guild.get_member(int(user_id))
             if user:
@@ -1937,6 +1937,30 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                 vc_sec = user_data.get('voice_time', 0)
                 vc_str = f" | 🎙️ {format_voice_duration(vc_sec)}" if vc_sec > 0 else ""
                 top_lines.append(f"{medal} **{user.display_name}**\nLevel **{lvl_val}** (EXP: `{exp_val:,}`){badge_str}{vc_str}")
+                vc_card = format_card_voice_duration(vc_sec)
+                top_users_data.append({
+                    "member": user,
+                    "name": user.display_name,
+                    "rank": idx,
+                    "score_str": f"{exp_val:,} EXP",
+                    "sub_str": f"Lvl {lvl_val}" + (f" • {vc_card}" if vc_card else "")
+                })
+
+        if top_users_data:
+            try:
+                from cogs.card_generator import generate_weekly_leaderboard_card, clean_display_text
+                card_buf = await generate_weekly_leaderboard_card(
+                    guild=ctx.guild,
+                    top_users_data=top_users_data,
+                    title_tag="EXP LEADERBOARD",
+                    subtitle_text=f"Top 10 Perolehan EXP & Aktivitas Server • {clean_display_text(ctx.guild.name, fallback='Server')}",
+                    bot_name=(ctx.bot.user.display_name if ctx.bot.user else "ハキムラーマン")
+                )
+                if card_buf:
+                    file = discord.File(fp=card_buf, filename="exp_leaderboard.png")
+                    return await ctx.send(file=file)
+            except Exception:
+                pass
 
         v2_fields = [{
             "name": "🏆 TOP 10 PERINGKAT EXP SERVER",
@@ -1959,7 +1983,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         except Exception:
             pass
 
-        # Fallback ke Discord Embed jika layout V2 tidak tersedia
         embed = discord.Embed(
             title=f"🏆 EXP Leaderboard | {ctx.guild.name}",
             description="\n\n".join(top_lines) if top_lines else "Belum ada member.",
@@ -1984,6 +2007,7 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         medals = ["🥇", "🥈", "🥉"] + [f"`#{i}`" for i in range(4, 11)]
 
         top_lines = []
+        top_users_data = []
         for idx, (user_id, user_data) in enumerate(sorted_users[:10], start=1):
             user = ctx.guild.get_member(int(user_id))
             if user:
@@ -1992,6 +2016,29 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                 w_vc = user_data.get('weekly_voice_time', 0)
                 vc_info = f" | 🎙️ {format_voice_duration(w_vc)}" if w_vc > 0 else ""
                 top_lines.append(f"{medal} **{user.display_name}**\nEXP Mingguan: `+{w_exp:,}`{vc_info}")
+                top_users_data.append({
+                    "member": user,
+                    "name": user.display_name,
+                    "rank": idx,
+                    "score_str": f"+{w_exp:,} EXP",
+                    "sub_str": format_weekly_card_duration(w_vc)
+                })
+
+        if top_users_data:
+            try:
+                from cogs.card_generator import generate_weekly_leaderboard_card
+                card_buf = await generate_weekly_leaderboard_card(
+                    guild=ctx.guild,
+                    top_users_data=top_users_data,
+                    title_tag="WEEKLY LEADERBOARD",
+                    subtitle_text="Top 10 Perolehan EXP & Aktivitas Mingguan Server • Reset Otomatis Setiap Senin 00:00 UTC",
+                    bot_name=(ctx.bot.user.display_name if ctx.bot.user else "ハキムラーマン")
+                )
+                if card_buf:
+                    file = discord.File(fp=card_buf, filename="weekly_leaderboard.png")
+                    return await ctx.send(file=file)
+            except Exception:
+                pass
 
         v2_fields = [{
             "name": "🏅 TOP 10 PEROLEHAN EXP MINGGU INI",
@@ -2029,7 +2076,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         all_level_data = load_json(LEVEL_FILE)
         data = all_level_data.get(guild_id, {})
 
-        # 1. Top 10 Voice Akumulasi (All-Time)
         users_with_voice = [
             (uid, udata) for uid, udata in data.items()
             if udata.get("voice_time", 0) > 0 and guild.get_member(int(uid))
@@ -2048,7 +2094,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         top_all_text = "\n".join(top_all_lines) if top_all_lines else "Belum ada catatan durasi voice."
         top_all_text += "\n\n*Total akumulasi seluruh durasi aktif member sejak pertama kali tercatat.*"
 
-        # 2. Top 10 Sesi Voice Terlama (Sesi Tunggal Terlama)
         users_with_session = [
             (uid, udata) for uid, udata in data.items()
             if udata.get("longest_single_session", 0) > 0 and guild.get_member(int(uid))
@@ -2073,7 +2118,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         top_session_text = "\n".join(top_session_lines) if top_session_lines else "Belum ada catatan sesi voice."
         top_session_text += "\n\n*Rekor nonstop (HH:MM:SS) & durasi sesi terakhir sebelum putus.*"
 
-        # 3. Aktivitas Voice Saat Ini
         active_members_count = 0
         active_channels_info = []
         for vc in guild.voice_channels:
@@ -2085,7 +2129,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                     names += f" +{len(active_in_vc) - 4} lainnya"
                 active_channels_info.append(f"🔊 **{vc.name}** ({len(active_in_vc)} member): {names}")
 
-        # 4. Rekor Room Terlama Server
         all_configs = load_json(CONFIG_FILE)
         guild_config = all_configs.get(guild_id, {})
         records = guild_config.get("voice_records", {})
@@ -2195,14 +2238,13 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                 try:
                     panel_message = await channel.fetch_message(panel_id)
                 except discord.NotFound:
-                    panel_message = None  # Terhapus -> picu Self-Healing Auto-Recovery
+                    panel_message = None
                 except Exception:
                     return
 
             card = self.build_voice_panel_card(guild)
             from cogs.v2_layout import send_v2_message, edit_v2_message
 
-            # Jika panel terhapus (None) ATAU ada chat baru di bawah panel -> buat ulang di pesan terbawah
             if panel_message is None or (channel.last_message_id and channel.last_message_id != panel_id):
                 if panel_message:
                     try:
@@ -2215,7 +2257,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                     self.save_config_data(all_configs)
                 return
 
-            # Jika panel masih berada di paling bawah -> edit data in-place secara halus
             try:
                 resp = await edit_v2_message(self.bot, channel.id, panel_message.id, [card])
                 if resp is None:
@@ -2259,7 +2300,7 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         else:
             await ctx.send("❌ Gagal memasang panel voice. Silakan coba beberapa saat lagi.", ephemeral=True)
 
-    @commands.hybrid_command(name="voicepanel_remove", description="Hapus dan nonaktifkan panel aktivitas voice di server ini")
+    @commands.command(name="voicepanel_remove", description="Hapus dan nonaktifkan panel aktivitas voice di server ini")
     @commands.has_permissions(manage_guild=True)
     async def voicepanel_remove(self, ctx: commands.Context):
         await ctx.defer(ephemeral=True)
@@ -2320,14 +2361,7 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         embed.set_footer(text="Gunakan /voicepanel untuk memasang papan leaderboard voice lengkap.")
         await ctx.send(embed=embed)
 
-    @commands.hybrid_command(name="addvoicetime", description="Tambahkan durasi voice untuk diri sendiri atau member lain")
-    @app_commands.describe(
-        jam="Jumlah jam yang ingin ditambahkan",
-        menit="Jumlah menit yang ingin ditambahkan",
-        detik="Jumlah detik yang ingin ditambahkan",
-        member="Member target (kosongkan untuk diri sendiri)",
-        weekly="Apakah ditambahkan juga ke statistik mingguan? (Default: True)"
-    )
+    @commands.command(name="addvoicetime", description="Tambahkan durasi voice untuk diri sendiri atau member lain")
     async def addvoicetime(
         self,
         ctx: commands.Context,
@@ -2379,14 +2413,7 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
             ephemeral=True
         )
 
-    @commands.hybrid_command(name="setvoicetime", description="Atur total durasi voice diri sendiri atau member lain ke angka tertentu")
-    @app_commands.describe(
-        jam="Jumlah jam yang ingin diatur",
-        menit="Jumlah menit yang ingin diatur",
-        detik="Jumlah detik yang ingin diatur",
-        member="Member target (kosongkan untuk diri sendiri)",
-        weekly="Apakah diterapkan juga ke statistik mingguan? (Default: True)"
-    )
+    @commands.command(name="setvoicetime", description="Atur total durasi voice diri sendiri atau member lain ke angka tertentu")
     async def setvoicetime(
         self,
         ctx: commands.Context,
@@ -2473,7 +2500,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
             "updated_at": datetime.utcnow().isoformat()
         }
 
-        # Jika sedang aktif di channel tersebut, sinkronkan ke memori tracker sesi aktif
         if sedang_aktif:
             self._channel_voice_sessions[(guild_id, channel.id)] = total_sec
         else:
@@ -2573,7 +2599,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                                     pass
                             threading.Thread(target=_sync_new, args=(uid_str, str(guild.id), str(vc.id), now), daemon=True).start()
 
-        # Bersihkan sesi MongoDB untuk member yang sudah tidak berada di voice saat bot start
         if mongo_client and active_docs:
             stale_uids = [uid for uid in active_docs.keys() if uid not in current_voice_uids]
             if stale_uids:
@@ -2604,7 +2629,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
         guild = member.guild
         now = time.time()
 
-        # User baru join voice channel (dan bukan channel AFK)
         if before.channel is None and after.channel is not None:
             if not (guild.afk_channel and after.channel.id == guild.afk_channel.id):
                 self._voice_active_sessions[member.id] = now
@@ -2621,7 +2645,6 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                             pass
                     threading.Thread(target=_save_active, daemon=True).start()
 
-        # User keluar dari voice channel atau pindah ke channel AFK
         elif before.channel is not None and (after.channel is None or (guild.afk_channel and after.channel.id == guild.afk_channel.id)):
             join_time = self._voice_active_sessions.pop(member.id, None)
             mongo_client = getattr(self.bot, 'mongo_client', None)

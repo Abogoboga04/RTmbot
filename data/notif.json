@@ -459,7 +459,7 @@
                 "live": {
                     "title": "[{judul}]({url})",
                     "description": "{deskripsi}",
-                    "content": "@everyone {ai_hype}",
+                    "content": "<@&1563418707693281381> {ai_hype}",
                     "button_label": "Tonton Live",
                     "button_style": 4,
                     "button_color": "#ed4245",
@@ -470,7 +470,7 @@
                 "upload": {
                     "title": "[{judul}]({url})",
                     "description": "{deskripsi}",
-                    "content": "@everyone {ai_hype}",
+                    "content": "<@&1563418707693281381> {ai_hype}",
                     "button_label": "Tonton Video",
                     "button_style": 1,
                     "button_color": "#5865f2",
@@ -481,13 +481,14 @@
                 "premier": {
                     "title": "[{judul}]({url})",
                     "description": "{deskripsi}",
-                    "content": "@everyone {ai_hype}",
+                    "content": "<@&1563418707693281381> {ai_hype}",
                     "button_label": "Tonton Premiere",
                     "button_style": 3,
                     "button_color": "#57f287",
                     "embed_color": "#9b59b6",
-                    "use_embed": false,
-                    "embed_thumbnail": false
+                    "use_embed": true,
+                    "embed_thumbnail": false,
+                    "_format_explicitly_set": true
                 },
                 "tiktok": {
                     "title": "[{judul}]({url})",
@@ -503,7 +504,7 @@
                 "tiktok_live": {
                     "title": "[{judul}]({url})",
                     "description": "Ada yang lagi live di TikTok nih!\n\n{url}",
-                    "content": "@everyone {ai_hype}",
+                    "content": "<@&1563418707693281381> {ai_hype}",
                     "button_label": "Tonton Live TikTok",
                     "button_style": 4,
                     "button_color": "#ed4245",
@@ -713,7 +714,7 @@
                     "button_style": 4,
                     "button_color": "#ed4245",
                     "embed_color": "#e74c3c",
-                    "use_embed": true,
+                    "use_embed": false,
                     "embed_thumbnail": true
                 },
                 "upload": {
@@ -786,7 +787,7 @@
         }
     },
     "recent_video_ids": [],
-    "next_daily_reset_timestamp": "2026-10-24T15:34:55.026634+00:00",
+    "next_daily_reset_timestamp": "2026-10-25T15:34:55.029634+00:00",
     "recent_links": [
         "live https://www.youtube.com/watch?v=XCm2kEG5S_A",
         "premier https://www.youtube.com/watch?v=XCm2kEG5S_A !",

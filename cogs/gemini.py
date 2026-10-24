@@ -1251,9 +1251,9 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                         return False
                 await fresh_member.timeout(duration, reason=t_reason)
                 try:
-                    mod_cog = self.bot.get_cog("Sentinel Moderation")
+                    mod_cog = self.bot.get_cog("Sentinel Moderation") or self.bot.get_cog("SentinelGuard")
                     if mod_cog and hasattr(mod_cog, "increment_timeout_counter"):
-                        await mod_cog.increment_timeout_counter()
+                        await mod_cog.increment_timeout_counter(user_id=member.id, guild_id=member.guild.id)
                 except Exception:
                     pass
                 return True

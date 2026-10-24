@@ -1,103 +1,772 @@
 [
-    {"riddle": "Aku punya kota tapi tak punya rumah, punya hutan tapi tak punya pohon, dan punya air tapi tak punya ikan. Siapakah aku?", "answer": "Peta"},
-    {"riddle": "Apa yang selalu datang tapi tidak pernah tiba?", "answer": "Besok"},
-    {"riddle": "Semakin banyak kamu ambil, semakin banyak yang kamu tinggalkan. Apakah itu?", "answer": "Jejak Kaki"},
-    {"riddle": "Aku tidak punya suara, tapi aku bisa menceritakan segalanya. Siapakah aku?", "answer": "Buku"},
-    {"riddle": "Mana yang lebih berat, satu kilogram kapas atau satu kilogram besi?", "answer": "Sama Berat"},
-    {"riddle": "Jika kamu punya aku, kamu ingin membagikanku. Jika kamu membagikanku, kamu tidak lagi memilikiku. Apakah aku?", "answer": "Rahasia"},
-    {"riddle": "Aku punya leher tanpa kepala, dan punya punggung tanpa badan. Siapakah aku?", "answer": "Botol"},
-    {"riddle": "Apa yang bisa patah meskipun tidak pernah dipegang?", "answer": "Janji"},
-    {"riddle": "Aku selalu ada di depanmu, tapi kamu tidak akan pernah bisa melihatku. Siapakah aku?", "answer": "Masa Depan"},
-    {"riddle": "Aku punya banyak gigi tapi tidak bisa makan. Siapakah aku?", "answer": "Sisir"},
-    {"riddle": "Aku punya banyak mata tapi tidak bisa melihat. Siapakah aku?", "answer": "Nanas"},
-    {"riddle": "Apa yang naik tapi tidak pernah turun?", "answer": "Umur"},
-    {"riddle": "Aku basah saat mengeringkan. Siapakah aku?", "answer": "Handuk"},
-    {"riddle": "Aku bisa diisi tapi aku bukan ruangan. Aku punya penutup tapi aku bukan botol. Siapakah aku?", "answer": "Amplop"},
-    {"riddle": "Apa yang punya satu mata tapi tidak bisa melihat?", "answer": "Jarum"},
-    {"riddle": "Aku selalu mengikuti ke mana pun kamu pergi dan meniru setiap gerakanmu, tapi kamu tidak bisa menyentuhku. Siapakah aku?", "answer": "Bayangan"},
-    {"riddle": "Aku punya banyak kata tapi tidak pernah berbicara. Siapakah aku?", "answer": "Kamus"},
-    {"riddle": "Apa yang harus dipecahkan terlebih dahulu sebelum bisa digunakan?", "answer": "Telur"},
-    {"riddle": "Aku ringan seperti bulu, tapi orang terkuat pun tidak bisa menahanku lebih dari 5 menit. Siapakah aku?", "answer": "Napas"},
-    {"riddle": "Apa yang berjalan tanpa kaki?", "answer": "Jam"},
-    {"riddle": "Aku punya kepala dan ekor, tapi tidak punya badan. Siapakah aku?", "answer": "Koin"},
-    {"riddle": "Aku dilempar ke atas saat dibutuhkan, dan disimpan saat tidak dibutuhkan. Siapakah aku?", "answer": "Jangkar"},
-    {"riddle": "Aku punya banyak lubang tapi bisa menampung air. Siapakah aku?", "answer": "Spons"},
-    {"riddle": "Aku selalu lapar. Jika diberi makan aku hidup, jika diberi minum aku mati. Siapakah aku?", "answer": "Api"},
-    {"riddle": "Apa yang menjadi milikmu, tapi lebih sering digunakan oleh orang lain?", "answer": "Nama"},
-    {"riddle": "Aku bisa mengelilingi dunia tanpa pernah meninggalkan sudutku. Siapakah aku?", "answer": "Perangko"},
-    {"riddle": "Aku tidak punya kehidupan, tapi aku bisa mati. Siapakah aku?", "answer": "Baterai"},
-    {"riddle": "Aku hitam saat dibeli, merah saat dipakai, dan abu-abu saat dibuang. Siapakah aku?", "answer": "Arang"},
-    {"riddle": "Apa yang punya tempat tidur tapi tidak pernah tidur?", "answer": "Sungai"},
-    {"riddle": "Aku terbang tanpa sayap. Aku menangis tanpa mata. Siapakah aku?", "answer": "Awan"},
-    {"riddle": "Aku punya banyak kunci tapi tidak bisa membuka satu pintu pun. Siapakah aku?", "answer": "Piano"},
-    {"riddle": "Apa yang ada di tengah-tengah laut?", "answer": "Huruf A"},
-    {"riddle": "Aku punya banyak cerita tapi tidak punya mulut. Siapakah aku?", "answer": "Film"},
-    {"riddle": "Apa yang semakin besar jika semakin banyak diambil?", "answer": "Lubang"},
-    {"riddle": "Aku selalu datang berpasangan. Jika salah satu hilang, yang lain tidak berguna. Siapakah aku?", "answer": "Sepatu"},
-    {"riddle": "Aku bisa diukur tapi tidak punya panjang, lebar, atau tinggi. Siapakah aku?", "answer": "Suhu"},
-    {"riddle": "Benda apa yang jika diikat baru bisa jalan?", "answer": "Tali Sepatu"},
-    {"riddle": "Apa yang naik dan turun tanpa bergerak?", "answer": "Tangga"},
-    {"riddle": "Aku punya kulit tapi bukan hewan, punya daun tapi bukan pohon. Siapakah aku?", "answer": "Buku"},
-    {"riddle": "Gajah terbang dengan apa?", "answer": "Dengan susah payah"},
-    {"riddle": "Apa yang tidak pernah ditanyakan tapi selalu dijawab?", "answer": "Bel Pintu"},
-    {"riddle": "Aku punya banyak cabang tapi tidak punya daun atau buah. Siapakah aku?", "answer": "Bank"},
-    {"riddle": "Aku bisa dipegang dengan tangan kananmu, tapi tidak dengan tangan kirimu. Apakah itu?", "answer": "Tangan Kiri"},
-    {"riddle": "Apa yang selalu berakhir di setiap 'akhir'?", "answer": "Huruf R"},
-    {"riddle": "Aku bisa dipotong, disajikan, tapi tidak pernah bisa dimakan. Apakah itu?", "answer": "Kartu"},
-    {"riddle": "Aku tidak punya kaki, tangan, atau sayap, tapi aku bisa mendaki ke langit. Siapakah aku?", "answer": "Asap"},
-    {"riddle": "Apa yang selalu ada di dalam sebuah kesalahan?", "answer": "Huruf S"},
-    {"riddle": "Binatang apa yang paling jujur?", "answer": "Semut"},
-    {"riddle": "Aku punya seribu kaki tapi tidak bisa berjalan. Siapakah aku?", "answer": "Kaki Seribu"},
-    {"riddle": "Apa yang bisa kamu temukan sekali dalam satu menit, dua kali dalam satu momen, tapi tidak pernah dalam seribu tahun?", "answer": "Huruf M"},
-    {"riddle": "Aku bisa mengisi sebuah ruangan, tapi aku tidak memakan tempat. Apakah aku?", "answer": "Cahaya"},
-    {"riddle": "Aku sebuah kata dengan 5 huruf. Jika kamu buang satu huruf, aku tetap kata yang sama. Apakah aku?", "answer": "Harga"},
-    {"riddle": "Aku punya angka di wajahku, tapi aku tidak bisa menghitung. Siapakah aku?", "answer": "Jam"},
-    {"riddle": "Aku punya rumah tapi tidak punya pintu. Siapakah aku?", "answer": "Siput"},
-    {"riddle": "Apa yang basah kuyup saat dijemur?", "answer": "Keringat"},
-    {"riddle": "Aku bisa berlari tapi tidak punya kaki. Aku punya mulut tapi tidak pernah bicara. Siapakah aku?", "answer": "Sungai"},
-    {"riddle": "Apa yang ada di ujung langit?", "answer": "Huruf T"},
-    {"riddle": "Semakin banyak ditambahkan, semakin ringan jadinya. Apakah itu?", "answer": "Lubang"},
-    {"riddle": "Aku punya lidah tapi tidak bisa merasakan. Siapakah aku?", "answer": "Sepatu"},
-    {"riddle": "Aku selalu berkata jujur, tapi aku tidak punya mulut. Siapakah aku?", "answer": "Cermin"},
-    {"riddle": "Jika seekor ayam bertelur di puncak gunung, ke mana telur itu akan jatuh?", "answer": "Tidak kemana-mana"},
-    {"riddle": "Aku sebuah bangunan dengan ribuan cerita. Siapakah aku?", "answer": "Perpustakaan"},
-    {"riddle": "Apa yang punya leher dan badan, tapi tidak punya kepala dan tangan?", "answer": "Gitar"},
-    {"riddle": "Aku bisa pecah tanpa disentuh. Siapakah aku?", "answer": "Keheningan"},
-    {"riddle": "Aku punya sayap tapi bukan burung. Aku bisa membawamu ke tempat jauh. Siapakah aku?", "answer": "Pesawat"},
-    {"riddle": "Aku bisa menjadi jembatan atau penghalang. Aku terbuat dari kata-kata. Siapakah aku?", "answer": "Bahasa"},
-    {"riddle": "Apa yang akan selalu kamu temukan di tengah-tengah 'bahaya'?", "answer": "Huruf H"},
-    {"riddle": "Aku punya banyak tulang rusuk tapi tidak punya tulang punggung. Siapakah aku?", "answer": "Payung"},
-    {"riddle": "Aku sebuah kotak dengan kunci, tapi tidak ada lubang kunci. Di dalamnya ada harta karun emas. Apakah aku?", "answer": "Telur"},
-    {"riddle": "Apa yang bisa patah saat kamu menyebut namanya?", "answer": "Diam"},
-    {"riddle": "Semakin panas, aku semakin dingin. Siapakah aku?", "answer": "AC"},
-    {"riddle": "Aku punya gigi tapi tidak punya mulut. Siapakah aku?", "answer": "Gergaji"},
-    {"riddle": "Apa yang selalu turun tapi tidak pernah naik?", "answer": "Hujan"},
-    {"riddle": "Aku bisa membuat dua orang menjadi satu. Siapakah aku?", "answer": "Cermin"},
-    {"riddle": "Benda apa yang jika dipukul malah semakin kencang suaranya?", "answer": "Drum"},
-    {"riddle": "Aku punya badan tapi tidak punya nyawa, punya tangan tapi tidak bisa memegang. Siapakah aku?", "answer": "Baju"},
-    {"riddle": "Apa yang selalu menjawab meskipun tidak ditanya?", "answer": "Telepon"},
-    {"riddle": "Aku bisa dimakan, tapi jika aku memakanmu, kamu akan mati. Siapakah aku?", "answer": "Racun"},
-    {"riddle": "Aku punya banyak cerita tapi hanya satu halaman. Siapakah aku?", "answer": "Koran"},
-    {"riddle": "Aku ada di awal malam dan di akhir pagi. Siapakah aku?", "answer": "Huruf M"},
-    {"riddle": "Apa yang selalu bertambah dan tidak pernah berkurang?", "answer": "Usia"},
-    {"riddle": "Aku bisa lebih kuat dari baja, tapi matahari bisa menghancurkanku. Siapakah aku?", "answer": "Es"},
-    {"riddle": "Aku punya kaki tapi tidak bisa berjalan. Siapakah aku?", "answer": "Meja"},
-    {"riddle": "Apa yang bisa kamu lihat dengan mata tertutup?", "answer": "Mimpi"},
-    {"riddle": "Aku tidak bisa dilihat, tapi aku bisa dirasakan. Aku bisa membuat pohon menari. Siapakah aku?", "answer": "Angin"},
-    {"riddle": "Aku punya ibu jari dan empat jari, tapi aku bukan tangan. Siapakah aku?", "answer": "Sarung Tangan"},
-    {"riddle": "Apa yang selalu ada di dalam sebuah acara TV?", "answer": "Huruf A"},
-    {"riddle": "Aku punya banyak nada tapi tidak bisa menyanyi. Siapakah aku?", "answer": "Tangga Nada"},
-    {"riddle": "Aku sebuah kotak. Semakin banyak isinya, semakin ringan jadinya. Apakah aku?", "answer": "Kotak Amal"},
-    {"riddle": "Aku bisa menangis tanpa air mata. Siapakah aku?", "answer": "Lilin"},
-    {"riddle": "Apa yang harus kamu berikan sebelum bisa menyimpannya?", "answer": "Janji"},
-    {"riddle": "Aku adalah awal dari segalanya dan akhir dari mana saja. Siapakah aku?", "answer": "Huruf A"},
-    {"riddle": "Aku sebuah jalan tanpa aspal, sebuah kota tanpa bangunan. Siapakah aku?", "answer": "Peta"},
-    {"riddle": "Aku bisa berjalan di atas air tanpa basah. Siapakah aku?", "answer": "Bayangan"},
-    {"riddle": "Aku punya ekor tapi bukan binatang. Siapakah aku?", "answer": "Pesawat"},
-    {"riddle": "Apa yang bisa kamu pegang tanpa menyentuhnya?", "answer": "Pembicaraan"},
-    {"riddle": "Aku selalu datang, tapi tidak pernah benar-benar ada. Siapakah aku?", "answer": "Hari Esok"},
-    {"riddle": "Aku punya banyak wajah tapi hanya satu tubuh. Siapakah aku?", "answer": "Dadu"},
-    {"riddle": "Aku bisa membuatmu kaya, tapi aku tidak punya uang. Siapakah aku?", "answer": "Ide"},
-    {"riddle": "Aku adalah sesuatu yang jika kamu berdiri, dia berbaring. Jika kamu berbaring, dia berdiri. Apakah itu?", "answer": "Telapak Kaki"}
+    {
+        "riddle": "Aku punya cabang tapi tak punya batang, daun, atau buah. Siapakah aku?",
+        "answer": "Bank"
+    },
+    {
+        "riddle": "Aku punya banyak gigi tapi tidak bisa mengunyah makanan sedikit pun. Siapakah aku?",
+        "answer": "Sisir"
+    },
+    {
+        "riddle": "Aku selalu basah saat mengeringkan sesuatu. Siapakah aku?",
+        "answer": "Handuk"
+    },
+    {
+        "riddle": "Aku punya leher tapi tidak punya kepala. Siapakah aku?",
+        "answer": "Botol"
+    },
+    {
+        "riddle": "Makin banyak yang kamu ambil dariku, makin besar jadinya aku. Apakah aku?",
+        "answer": "Lubang"
+    },
+    {
+        "riddle": "Aku selalu datang tapi tidak pernah benar-benar tiba hari ini. Siapakah aku?",
+        "answer": "Besok"
+    },
+    {
+        "riddle": "Aku bisa terbang tanpa sayap dan bisa menangis tanpa mata. Siapakah aku?",
+        "answer": "Awan"
+    },
+    {
+        "riddle": "Aku punya kota tanpa gedung, hutan tanpa pohon, dan laut tanpa air. Siapakah aku?",
+        "answer": "Peta"
+    },
+    {
+        "riddle": "Aku punya puluhan kunci tapi tak bisa membuka satu pintu pun. Siapakah aku?",
+        "answer": "Piano"
+    },
+    {
+        "riddle": "Jika kamu menyebut namaku, aku akan lenyap seketika. Siapakah aku?",
+        "answer": "Keheningan"
+    },
+    {
+        "riddle": "Aku punya kepala dan ekor, tapi sama sekali tidak punya badan. Siapakah aku?",
+        "answer": "Koin"
+    },
+    {
+        "riddle": "Aku selalu berada tepat di depan matamu tapi tak pernah bisa kamu sentuh. Apakah aku?",
+        "answer": "Masa Depan"
+    },
+    {
+        "riddle": "Aku sangat ringan seperti kapas, tapi orang terkuat di dunia pun tak bisa menahanku lebih dari beberapa menit. Apakah aku?",
+        "answer": "Napas"
+    },
+    {
+        "riddle": "Aku bisa hancur berkeping-keping tanpa disentuh atau dijatuhkan. Apakah aku?",
+        "answer": "Janji"
+    },
+    {
+        "riddle": "Aku bisa berkeliling dunia tapi tetap setia menempel di satu sudut. Siapakah aku?",
+        "answer": "Perangko"
+    },
+    {
+        "riddle": "Aku adalah milikmu seutuhnya, tapi orang lain yang jauh lebih sering menggunakannya. Apakah itu?",
+        "answer": "Nama"
+    },
+    {
+        "riddle": "Aku berwarna hitam saat baru dibeli, merah saat digunakan, dan abu-abu saat dibuang. Apakah aku?",
+        "answer": "Arang"
+    },
+    {
+        "riddle": "Aku akan naik dan terbuka lebar saat hujan turun. Siapakah aku?",
+        "answer": "Payung"
+    },
+    {
+        "riddle": "Aku bisa berdetik dan berjalan tanpa kaki, serta berbunyi tanpa mulut. Siapakah aku?",
+        "answer": "Jam"
+    },
+    {
+        "riddle": "Aku punya satu mata tajam di ujung tapi tidak bisa melihat apa-apa. Apakah aku?",
+        "answer": "Jarum"
+    },
+    {
+        "riddle": "Tubuhku makin pendek dan mencair saat aku memberikan cahaya terang. Siapakah aku?",
+        "answer": "Lilin"
+    },
+    {
+        "riddle": "Aku setia mengikutimu di tempat terang, tapi langsung menghilang saat gelap gulita datang. Siapakah aku?",
+        "answer": "Bayangan"
+    },
+    {
+        "riddle": "Aku harus dipecahkan terlebih dahulu sebelum bisa dimasak atau dimakan. Apakah aku?",
+        "answer": "Telur"
+    },
+    {
+        "riddle": "Aku punya banyak lembaran halaman dan cerita berharga tapi tak bersuara. Siapakah aku?",
+        "answer": "Buku"
+    },
+    {
+        "riddle": "Jika kamu memberiku makan kayu aku akan membesar, tapi jika memberiku minum air aku akan mati. Siapakah aku?",
+        "answer": "Api"
+    },
+    {
+        "riddle": "Aku punya tempat tidur tapi tak pernah tidur, dan punya mulut tapi tak pernah berbicara. Apakah aku?",
+        "answer": "Sungai"
+    },
+    {
+        "riddle": "Benda apakah yang kalau diikat erat justru baru bisa berjalan?",
+        "answer": "Sepatu"
+    },
+    {
+        "riddle": "Aku selalu memantulkan wajah dan gerakan orang yang melihatku. Siapakah aku?",
+        "answer": "Cermin"
+    },
+    {
+        "riddle": "Aku berhembus menyejukkan tapi wujudku tak kasat mata. Siapakah aku?",
+        "answer": "Angin"
+    },
+    {
+        "riddle": "Aku muncul melengkung indah dengan tujuh warna di langit setelah hujan reda. Siapakah aku?",
+        "answer": "Pelangi"
+    },
+    {
+        "riddle": "Aku bersinar terang di malam hari tapi bukan bintang dan tidak memancarkan panas. Siapakah aku?",
+        "answer": "Bulan"
+    },
+    {
+        "riddle": "Aku bisa menampung banyak air meskipun tubuhku dipenuhi lubang-lubang kecil. Siapakah aku?",
+        "answer": "Spons"
+    },
+    {
+        "riddle": "Makin cepat kamu berlari mengejarku, makin banyak yang kamu tinggalkan di belakangmu. Apakah aku?",
+        "answer": "Jejak Kaki"
+    },
+    {
+        "riddle": "Jika kamu membagikanku, kamu tidak lagi memilikiku secara utuh. Apakah aku?",
+        "answer": "Rahasia"
+    },
+    {
+        "riddle": "Aku naik dan bertambah setiap tahun tapi tidak pernah berkurang sedikit pun. Apakah aku?",
+        "answer": "Umur"
+    },
+    {
+        "riddle": "Aku punya daun tapi bukan pohon, punya punggung tapi bukan manusia. Siapakah aku?",
+        "answer": "Buku"
+    },
+    {
+        "riddle": "Aku punya lidah tapi tak bisa bicara, punya alas tapi tak punya kaki. Siapakah aku?",
+        "answer": "Sepatu"
+    },
+    {
+        "riddle": "Aku dilempar ke dasar laut saat dibutuhkan dan ditarik kembali saat kapal hendak pergi. Siapakah aku?",
+        "answer": "Jangkar"
+    },
+    {
+        "riddle": "Aku tidak punya organ tubuh, tidak bernyawa, tapi jika dayaku habis aku bisa mati. Siapakah aku?",
+        "answer": "Baterai"
+    },
+    {
+        "riddle": "Aku bisa diisi surat atau dokumen berharga sebelum direkatkan dan dikirim. Siapakah aku?",
+        "answer": "Amplop"
+    },
+    {
+        "riddle": "Aku bisa mengukur suhu panas dan dingin tubuh manusia. Siapakah aku?",
+        "answer": "Termometer"
+    },
+    {
+        "riddle": "Aku alat petunjuk arah bermagnet yang selalu menunjuk ke arah utara dan selatan. Siapakah aku?",
+        "answer": "Kompas"
+    },
+    {
+        "riddle": "Aku berdering membangunkanmu di pagi hari agar tidak terlambat. Siapakah aku?",
+        "answer": "Alarm"
+    },
+    {
+        "riddle": "Aku punya roda dua dan pedal yang harus kamu gowes untuk melaju santai. Apakah aku?",
+        "answer": "Sepeda"
+    },
+    {
+        "riddle": "Aku alat komunikasi pintar yang ada di genggaman tanganmu sepanjang hari. Apakah aku?",
+        "answer": "Smartphone"
+    },
+    {
+        "riddle": "Aku benda bening di jendela yang membiarkan cahaya matahari masuk ke dalam ruangan. Apakah aku?",
+        "answer": "Kaca"
+    },
+    {
+        "riddle": "Aku benda bundar yang ditendang dan diperebutkan oleh 22 pemain di lapangan hijau. Apakah aku?",
+        "answer": "Bola"
+    },
+    {
+        "riddle": "Aku memuat ribuan kata beserta definisinya dari A sampai Z. Apakah aku?",
+        "answer": "Kamus"
+    },
+    {
+        "riddle": "Aku punya dua jarum yang berputar terus-menerus mengelilingi lingkaran angka. Apakah aku?",
+        "answer": "Jam Dinding"
+    },
+    {
+        "riddle": "Aku adalah pelindung matamu dari silau terik sinar matahari tropis. Apakah aku?",
+        "answer": "Kacamata"
+    },
+    {
+        "riddle": "Semakin banyak kamu mengambil dariku, semakin besar aku jadinya. Siapakah aku?",
+        "answer": "Lubang",
+        "category": "Logika",
+        "clue": "Pikirkan penggalian tanah."
+    },
+    {
+        "riddle": "Aku punya leher tapi tak punya kepala, punya badan tapi tak punya kaki. Siapakah aku?",
+        "answer": "Botol",
+        "category": "Benda",
+        "clue": "Wadah air minum kaca atau plastik."
+    },
+    {
+        "riddle": "Aku punya banyak kunci tapi tak bisa membuka satu pintu pun. Siapakah aku?",
+        "answer": "Piano",
+        "category": "Alat Musik",
+        "clue": "Tutsnya menghasilkan tangga nada nada merdu."
+    },
+    {
+        "riddle": "Aku selalu di depanmu tapi kamu tak pernah bisa melihatku secara langsung di masa kini. Siapakah aku?",
+        "answer": "Masa Depan",
+        "category": "Filsafat Waktu",
+        "clue": "Hari esok yang belum tiba."
+    },
+    {
+        "riddle": "Benda apa yang selalu basah saat sedang mengeringkan sesuatu?",
+        "answer": "Handuk",
+        "category": "Benda",
+        "clue": "Dipakai sehabis mandi."
+    },
+    {
+        "riddle": "Jika kamu memilikiku, kamu ingin membagikanku. Namun jika kamu membagikanku, kamu kehilanganku. Siapakah aku?",
+        "answer": "Rahasia",
+        "category": "Konsep",
+        "clue": "Sesuatu yang disimpan rapat di dalam hati."
+    },
+    {
+        "riddle": "Aku punya kota tapi tak punya rumah, punya gunung tapi tak punya pohon, punya laut tapi tak punya air. Siapakah aku?",
+        "answer": "Peta",
+        "category": "Geografi",
+        "clue": "Gambar denah bumi di atas selembar kertas."
+    },
+    {
+        "riddle": "Aku bisa mengisi seluruh ruangan tanpa memakan tempat satu sentimeter pun. Siapakah aku?",
+        "answer": "Cahaya",
+        "category": "Fisika Alam",
+        "clue": "Lampu atau sinar mentari."
+    },
+    {
+        "riddle": "Benda apa yang jika dibeli warnanya hitam, saat dipakai warnanya merah, dan saat dibuang warnanya abu-abu?",
+        "answer": "Arang",
+        "category": "Bahan Bakar",
+        "clue": "Dipakai untuk membakar sate."
+    },
+    {
+        "riddle": "Bila disebutkan namaku, aku langsung hilang lenyap. Siapakah aku?",
+        "answer": "Keheningan",
+        "category": "Suasana",
+        "clue": "Kondisi tanpa suara atau sunyi senyap."
+    },
+    {
+        "riddle": "Aku punya gigi yang banyak tapi tidak pernah menggigit atau makan makanan. Siapakah aku?",
+        "answer": "Sisir",
+        "category": "Alat Rias",
+        "clue": "Merapikan rambut kusut."
+    },
+    {
+        "riddle": "Aku bisa berlari kencang tanpa punya kaki, dan menangis tersedu-sedu tanpa punya mata. Siapakah aku?",
+        "answer": "Awan",
+        "category": "Cuaca Alam",
+        "clue": "Membawa angin kencang dan hujan lebat."
+    },
+    {
+        "riddle": "Aku punya satu mata di ujung tubuhku tapi sama sekali buta tidak bisa melihat apa-apa. Siapakah aku?",
+        "answer": "Jarum",
+        "category": "Alat Jahit",
+        "clue": "Tempat memasukkan benang jahit."
+    },
+    {
+        "riddle": "Semakin kencang kamu menarikku, semakin pendek umurku jadinya. Siapakah aku?",
+        "answer": "Rokok",
+        "category": "Benda",
+        "clue": "Dihisap dan terbakar menjadi abu."
+    },
+    {
+        "riddle": "Aku selalu naik ke atas tapi tidak pernah bisa turun kembali ke bawah. Siapakah aku?",
+        "answer": "Umur",
+        "category": "Kehidupan Manusia",
+        "clue": "Bertambah satu setiap hari ulang tahunmu."
+    },
+    {
+        "riddle": "Benda apa yang punya jempol dan empat jari, tapi tidak punya daging atau tulang?",
+        "answer": "Sarung Tangan",
+        "category": "Pakaian",
+        "clue": "Dipakai di tangan saat udara dingin."
+    },
+    {
+        "riddle": "Aku bisa pecah berkeping-keping tanpa perlu dijatuhkan atau disentuh oleh tangan. Siapakah aku?",
+        "answer": "Janji",
+        "category": "Konsep Sosial",
+        "clue": "Diucapkan lewat kata-kata tapi sering diingkari."
+    },
+    {
+        "riddle": "Pintu apa yang didorong oleh sepuluh orang pun tidak akan pernah terbuka?",
+        "answer": "Pintu Geser",
+        "category": "Logika Arsitektur",
+        "clue": "Harus ditarik ke samping, bukan didorong ke depan."
+    },
+    {
+        "riddle": "Aku mengikuti langkahmu ke mana pun kamu pergi di siang hari, tapi lenyap seketika dalam gelap gulita. Siapakah aku?",
+        "answer": "Bayangan",
+        "category": "Optik Cahaya",
+        "clue": "Siluet hitam akibat terhalangnya sinar cahaya."
+    },
+    {
+        "riddle": "Benda apa yang punya kepala dan ekor, tapi tidak punya badan sama sekali?",
+        "answer": "Uang Koin",
+        "category": "Alat Transaksi",
+        "clue": "Dua sisi lempengan logam uang receh."
+    },
+    {
+        "riddle": "Benda apa yang harus dipukul berkali-kali di kepalanya agar bisa bekerja menancap erat?",
+        "answer": "Paku",
+        "category": "Pertukangan",
+        "clue": "Dihantam memakai martil besi."
+    },
+    {
+        "riddle": "Jika ada 5 burung di pohon, lalu ditembak 1 ekor oleh pemburu, berapa burung yang tersisa di pohon?",
+        "answer": "Nol",
+        "category": "Logika Hewan",
+        "clue": "Suara tembakan membuat burung lainnya terbang kabur ketakutan."
+    },
+    {
+        "riddle": "Benda apa yang jika diiris dan dipotong bagian tengahnya, justru yang mengiris yang meneteskan air mata?",
+        "answer": "Bawang Merah",
+        "category": "Bumbu Dapur",
+        "clue": "Gas senyawanya memicu pedih di bola mata."
+    },
+    {
+        "riddle": "Aku punya jarum yang selalu berputar tapi tak pernah menjahit pakaian satu lembar pun. Siapakah aku?",
+        "answer": "Jam Dinding",
+        "category": "Pengukur Waktu",
+        "clue": "Menunjukkan jam, menit, dan detik."
+    },
+    {
+        "riddle": "Benda apa yang kalau dibalik posisinya akan berkurang nilainya tepat sebesar 3 angka?",
+        "answer": "Angka 9",
+        "category": "Matematika Angka",
+        "clue": "Dibalik menjadi angka 6."
+    },
+    {
+        "riddle": "Aku tidak punya lidah tapi bisa menjawab semua panggilan bicaramu dalam sekejap. Siapakah aku?",
+        "answer": "Gema",
+        "category": "Akustik Suara",
+        "clue": "Pantulan suara di tebing jurang atau goa."
+    },
+    {
+        "riddle": "Benda apa yang kalau kamu buang ke sungai akan semakin ringan membumbung ke atas?",
+        "answer": "Jangkar",
+        "category": "Kapal Laut",
+        "clue": "Beban penahan perahu agar tidak hanyut."
+    },
+    {
+        "riddle": "Benda apa yang hanya bisa dipakai dengan baik setelah kamu memecahkan cangkangnya?",
+        "answer": "Telur",
+        "category": "Bahan Makanan",
+        "clue": "Dipecahkan untuk didadar atau diceplok."
+    },
+    {
+        "riddle": "Rumah apa yang paling dihindari oleh semua orang kaya maupun miskin di dunia?",
+        "answer": "Rumah Sakit",
+        "category": "Fasilitas Medis",
+        "clue": "Tempat orang dirawat saat tubuhnya drop."
+    },
+    {
+        "riddle": "Hewan apa yang paling banyak membawa buku ke mana-mana?",
+        "answer": "Kutu Buku",
+        "category": "Plesetan Kata",
+        "clue": "Julukan bagi orang yang gemar membaca."
+    },
+    {
+        "riddle": "Aku bisa berjalan mengelilingi dunia tanpa pernah meninggalkan sudut kecil di amplop surat. Siapakah aku?",
+        "answer": "Prangko",
+        "category": "Pos & Filateli",
+        "clue": "Kertas bergambar berukuran mini ditempel di amplop."
+    },
+    {
+        "riddle": "Benda apa yang bisa menyanyikan lagu merdu tapi tidak memiliki mulut dan pita suara?",
+        "answer": "Radio",
+        "category": "Elektronik",
+        "clue": "Menangkap gelombang frekuensi FM/AM."
+    },
+    {
+        "riddle": "Aku punya lubang di bagian atas, lubang di bagian bawah, lubang di sisi kiri dan kanan, tapi tetap bisa menampung air. Siapakah aku?",
+        "answer": "Spons",
+        "category": "Alat Bersih",
+        "clue": "Busa berpori untuk mencuci piring."
+    },
+    {
+        "riddle": "Benda apa yang paling rajin mengantar anak sekolah di pagi hari tapi tidak pernah masuk ke dalam kelas?",
+        "answer": "Sepatu",
+        "category": "Alas Kaki",
+        "clue": "Dilepas di depan pintu kelas."
+    },
+    {
+        "riddle": "Kapal apa yang memiliki ban roda dan melaju di jalan raya kota?",
+        "answer": "Kapal Keruk",
+        "category": "Plesetan Konstruksi",
+        "clue": "Alat berat pengeruk tanah proyek."
+    },
+    {
+        "riddle": "Gajah naik becak yang kelihatan apanya?",
+        "answer": "Kelihatan Bohongnya",
+        "category": "Humor Logika",
+        "clue": "Mana muat gajah duduk di atas becak kecil!"
+    },
+    {
+        "riddle": "Benda apa yang selalu diinjak-injak setiap hari oleh ratusan orang tapi tidak pernah mengeluh sakit?",
+        "answer": "Keset",
+        "category": "Perabot Rumah",
+        "clue": "Ditaruh di depan pintu kamar mandi."
+    },
+    {
+        "riddle": "Benda apa yang ditarik talinya justru malah menutup pintu?",
+        "answer": "Ritsleting",
+        "category": "Aksesoris Busana",
+        "clue": "Gigi penutup tas ransel atau celana jeans."
+    },
+    {
+        "riddle": "Bila kamu memotongnya menjadi dua, hasilnya justru menjadi lebih panjang. Benda apakah itu?",
+        "answer": "Tali",
+        "category": "Fisika Sederhana",
+        "clue": "Panjang total kedua potongannya."
+    },
+    {
+        "riddle": "Pohon apa yang paling ditakuti oleh orang-orang saat melintas di malam Jumat?",
+        "answer": "Pohon Angker",
+        "category": "Humor Supranatural",
+        "clue": "Mitos tempat bersarang kuntilanak."
+    },
+    {
+        "riddle": "Kucing apa yang warnanya hitam putih dan bisa memainkan bola bambu di hutan Tiongkok?",
+        "answer": "Panda",
+        "category": "Mamalia Beruang",
+        "clue": "Nama ilmiahnya Ailuropoda melanoleuca."
+    },
+    {
+        "riddle": "Benda apa yang dimasukkan miring, tapi saat keluar tegak lurus?",
+        "answer": "Kancing Baju",
+        "category": "Aksesoris Busana",
+        "clue": "Masuk ke lubang kain baju."
+    },
+    {
+        "riddle": "Kue apa yang tidak boleh dimakan dan membuat orang terluka parah jika terkena?",
+        "answer": "Kue Klepon Beracun",
+        "category": "Plesetan Bahaya",
+        "clue": "Atau ranjau darat!"
+    },
+    {
+        "riddle": "Benda apa yang bisa berputar ratusan kali setiap menit tanpa pernah merasa pusing mual?",
+        "answer": "Kipas Angin",
+        "category": "Alat Elektronik",
+        "clue": "Baling-baling penyejuk ruangan di langit-langit."
+    },
+    {
+        "riddle": "Apa persamaan tukang sate keliling dengan tukang soto gerobak?",
+        "answer": "Sama-sama Jualan Makanan",
+        "category": "Logika Sederhana",
+        "clue": "Bukan soal roda atau asapnya."
+    },
+    {
+        "riddle": "Ban apa yang tidak bisa dipompa dengan angin kompresor?",
+        "answer": "Bandara",
+        "category": "Plesetan Kata",
+        "clue": "Tempat mendaratnya pesawat terbang."
+    },
+    {
+        "riddle": "Benda apa yang jika dipegang terasa dingin, tapi jika dibakar api langsung mencair hilang?",
+        "answer": "Es Batu",
+        "category": "Fase Benda",
+        "clue": "Air beku bersuhu 0 derajat Celcius."
+    },
+    {
+        "riddle": "Kota apa yang paling sering disayangi dan dicintai oleh banyak orang di Indonesia?",
+        "answer": "Kota Padang",
+        "category": "Plesetan Makanan",
+        "clue": "Karena masakan rendangnya dicintai semua lidah!"
+    },
+    {
+        "riddle": "Mata apa yang ukurannya sebesar rumah dan memancarkan sinar hangat ke seluruh dunia?",
+        "answer": "Matahari",
+        "category": "Astronomi Tata Surya",
+        "clue": "Pusat tata surya kita."
+    },
+    {
+        "riddle": "Gigi apa yang tidak ada di dalam mulut manusia maupun hewan?",
+        "answer": "Gigi Roda",
+        "category": "Teknik Mesin",
+        "clue": "Roda gerigi gear pada mesin kendaraan."
+    },
+    {
+        "riddle": "Benda apa yang memiliki ratusan bilah daun tapi tidak memiliki batang atau akar satu pun?",
+        "answer": "Buku",
+        "category": "Literasi Bacaan",
+        "clue": "Lembaran kertas halaman bacaan yang dijilid."
+    },
+    {
+        "riddle": "Minyak apa yang paling disukai oleh semua anak muda di malam hari?",
+        "answer": "Minyaksikan Konser Musik",
+        "category": "Plesetan Seru",
+        "clue": "Bukan minyak goreng atau minyak tanah."
+    },
+    {
+        "riddle": "Benda apa yang punya lidah tapi tidak bisa mengecap rasa asin, manis, atau pahit?",
+        "answer": "Sepatu",
+        "category": "Alas Kaki",
+        "clue": "Lidah sepatu di bawah tali pengikat."
+    },
+    {
+        "riddle": "Daun apa yang tidak pernah gugur rontok ke tanah saat ditiup angin badai?",
+        "answer": "Daun Telinga",
+        "category": "Anatomi Tubuh",
+        "clue": "Menempel kuat di sisi kepala kiri dan kananmu."
+    },
+    {
+        "riddle": "Kaki apa yang tidak bisa dipakai untuk melangkah berjalan ke mana pun?",
+        "answer": "Kaki Meja",
+        "category": "Perabot Kayu",
+        "clue": "Penyangga papan meja makan atau belajar."
+    },
+    {
+        "riddle": "Aku punya mata tapi tak bisa melihat, punya kulit tapi tak punya daging. Apakah aku?",
+        "answer": "Kentang"
+    },
+    {
+        "riddle": "Semakin banyak kamu mengambil dariku, semakin besar aku jadinya. Apakah aku?",
+        "answer": "Lubang"
+    },
+    {
+        "riddle": "Aku punya leher tapi tak punya kepala, dan memakai topi tapi tak punya rambut. Apakah aku?",
+        "answer": "Botol"
+    },
+    {
+        "riddle": "Aku selalu basah saat mengeringkan sesuatu. Apakah aku?",
+        "answer": "Handuk"
+    },
+    {
+        "riddle": "Aku bisa pecah tanpa disentuh, dan bisa hilang saat kamu menyebut namaku. Apakah aku?",
+        "answer": "Keheningan"
+    },
+    {
+        "riddle": "Aku bisa terbang tanpa sayap, menangis tanpa mata, dan berlari tanpa kaki. Apakah aku?",
+        "answer": "Awan"
+    },
+    {
+        "riddle": "Aku punya gigi banyak tapi tidak bisa menggigit, tugasku merapikan sesuatu. Apakah aku?",
+        "answer": "Sisir"
+    },
+    {
+        "riddle": "Jika kamu memberiku makan aku akan hidup dan membesar, tetapi jika memberiku air aku akan mati. Apakah aku?",
+        "answer": "Api"
+    },
+    {
+        "riddle": "Aku selalu mengikutimu ke mana pun kamu pergi saat siang, tetapi hilang saat malam gelap gulita. Apakah aku?",
+        "answer": "Bayangan"
+    },
+    {
+        "riddle": "Aku punya satu tempat tidur tapi tak pernah tidur, punya mulut tapi tak pernah bicara. Apakah aku?",
+        "answer": "Sungai"
+    },
+    {
+        "riddle": "Aku punya punggung dan kaki, tetapi tidak bisa berjalan. Apakah aku?",
+        "answer": "Kursi"
+    },
+    {
+        "riddle": "Aku naik saat hujan turun, dan turun saat hujan reda. Apakah aku?",
+        "answer": "Payung"
+    },
+    {
+        "riddle": "Aku punya kunci banyak tapi tak bisa membuka pintu satu pun. Apakah aku?",
+        "answer": "Piano"
+    },
+    {
+        "riddle": "Apa yang bisa dipegang dengan tangan kiri tapi tidak pernah bisa dipegang dengan tangan kanan?",
+        "answer": "Siku kanan"
+    },
+    {
+        "riddle": "Aku punya jarum tapi tidak bisa menjahit, punya muka tapi tidak punya hidung. Apakah aku?",
+        "answer": "Jam"
+    },
+    {
+        "riddle": "Apa yang bertambah basah jika air mengeringkannya?",
+        "answer": "Handuk"
+    },
+    {
+        "riddle": "Apa yang semakin ditarik malah semakin pendek?",
+        "answer": "Rokok"
+    },
+    {
+        "riddle": "Aku punya kota tanpa rumah, punya hutan tanpa pohon, dan punya sungai tanpa air. Apakah aku?",
+        "answer": "Peta"
+    },
+    {
+        "riddle": "Benda apa yang jika dibeli berwarna hitam, saat digunakan berwarna merah, dan saat dibuang berwarna abu-abu?",
+        "answer": "Arang"
+    },
+    {
+        "riddle": "Benda apa yang selalu datang tapi tak pernah tiba hari ini?",
+        "answer": "Besok"
+    },
+    {
+        "riddle": "Pintu apa yang tidak bisa dimasuki oleh seratus orang tetapi bisa didorong oleh satu jari saja?",
+        "answer": "Pintu keluar"
+    },
+    {
+        "riddle": "Apa yang berjalan dengan empat kaki di pagi hari, dua kaki di siang hari, dan tiga kaki di sore hari?",
+        "answer": "Manusia"
+    },
+    {
+        "riddle": "Aku bisa mengisi seluruh ruangan tanpa memakan tempat sedikit pun. Apakah aku?",
+        "answer": "Cahaya"
+    },
+    {
+        "riddle": "Jika kamu memotongku, aku tidak akan berdarah, tetapi yang memotongku justru yang akan menangis. Apakah aku?",
+        "answer": "Bawang"
+    },
+    {
+        "riddle": "Apa yang memiliki ibu jari dan empat jari tetapi bukan bagian dari makhluk hidup?",
+        "answer": "Sarung tangan"
+    },
+    {
+        "riddle": "Hewan apa yang bersaudara tapi bersaudara?",
+        "answer": "Katak beradik"
+    },
+    {
+        "riddle": "Aku memiliki ratusan halaman tetapi tidak bisa membaca satu huruf pun. Apakah aku?",
+        "answer": "Buku"
+    },
+    {
+        "riddle": "Semakin kencang kamu meniupku, semakin cepat aku melayang dan meletus. Apakah aku?",
+        "answer": "Balon"
+    },
+    {
+        "riddle": "Apa yang jatuh tapi tidak pernah terluka, dan naik tapi tidak pernah berjalan?",
+        "answer": "Hujan"
+    },
+    {
+        "riddle": "Ban apa yang paling basah di dunia?",
+        "answer": "Banjir"
+    },
+    {
+        "riddle": "Aku punya daun tapi bukan pohon, punya tulang tapi bukan hewan. Apakah aku?",
+        "answer": "Buku"
+    },
+    {
+        "riddle": "Apa yang ada di ujung pelangi?",
+        "answer": "Huruf i"
+    },
+    {
+        "riddle": "Rumah apa yang paling dingin di dunia?",
+        "answer": "Kulkas"
+    },
+    {
+        "riddle": "Bisa dibuka tapi tidak bisa ditutup kembali setelah digunakan. Apakah aku?",
+        "answer": "Telur"
+    },
+    {
+        "riddle": "Pohon apa yang paling ditakuti orang karena bikin pusing?",
+        "answer": "Pohon taruhan"
+    },
+    {
+        "riddle": "Jika diucapkan sekali jaraknya jauh, tapi jika diucapkan dua kali jaraknya dekat. Apakah itu?",
+        "answer": "Langit"
+    },
+    {
+        "riddle": "Aku ringan seperti kapas, tapi orang terkuat di dunia sekalipun tak bisa menahanku lebih dari lima menit. Apakah aku?",
+        "answer": "Napas"
+    },
+    {
+        "riddle": "Apa yang selalu berada di depan matamu tetapi kamu tidak pernah bisa melihatnya langsung?",
+        "answer": "Masa depan"
+    },
+    {
+        "riddle": "Makin diisi makin ringan. Apakah aku?",
+        "answer": "Balon gas"
+    },
+    {
+        "riddle": "Punya ekor tidak punya kepala, punya sayap tidak punya bulu. Apakah itu?",
+        "answer": "Layang-layang"
+    },
+    {
+        "riddle": "Selalu melihat ke atas saat kamu berjalan turun, dan melihat ke bawah saat kamu berjalan naik. Apakah itu?",
+        "answer": "Tangga"
+    },
+    {
+        "riddle": "Siapakah yang selalu memakai topi seragam bahkan saat tidur?",
+        "answer": "Paku"
+    },
+    {
+        "riddle": "Kue apa yang paling menyebalkan dan bikin emosi?",
+        "answer": "Kuecewakan"
+    },
+    {
+        "riddle": "Hewan apa yang paling banyak memiliki angka di tubuhnya?",
+        "answer": "Kaki seribu"
+    },
+    {
+        "riddle": "Kera apa yang bisa membuat kamu terluka dan masuk rumah sakit?",
+        "answer": "Keracunan"
+    },
+    {
+        "riddle": "Gajah apa yang belalainya sangat pendek?",
+        "answer": "Gajah pesek"
+    },
+    {
+        "riddle": "Apa perbedaan antara apel dan semangka?",
+        "answer": "Harganya"
+    },
+    {
+        "riddle": "Bisa masuk tapi tidak bisa keluar tanpa bantuan kunci. Apakah itu?",
+        "answer": "Penjara"
+    },
+    {
+        "riddle": "Kipas apa yang tidak mengeluarkan angin sama sekali?",
+        "answer": "Kipas sate"
+    },
+    {
+        "riddle": "Batu apa yang paling sering dicari orang saat gelap?",
+        "answer": "Batu baterai"
+    },
+    {
+        "riddle": "Aku punya kepala dan ekor, tetapi tak punya badan. Apakah aku?",
+        "answer": "Koin"
+    },
+    {
+        "riddle": "Lemari apa yang bisa dimasukkan ke dalam kantong celana?",
+        "answer": "Lemaribuan"
+    },
+    {
+        "riddle": "Bulan apa yang paling ditunggu oleh karyawan di seluruh dunia?",
+        "answer": "Bulanan"
+    },
+    {
+        "riddle": "Telor apa yang rasanya paling ditakuti orang saat ujian?",
+        "answer": "Telortidur"
+    },
+    {
+        "riddle": "Apa yang milikmu sendiri tetapi paling sering digunakan oleh orang lain?",
+        "answer": "Nama"
+    },
+    {
+        "riddle": "Kendaraan apa yang tidak bisa mundur selamanya?",
+        "answer": "Waktu"
+    },
+    {
+        "riddle": "Mata apa yang bisa memotong kayu balok?",
+        "answer": "Mata gergaji"
+    },
+    {
+        "riddle": "Bel apa yang suaranya tidak pernah terdengar sama sekali?",
+        "answer": "Belum bunyi"
+    },
+    {
+        "riddle": "Jam apa yang bisa dimakan dan rasanya manis gurih?",
+        "answer": "Jambu"
+    },
+    {
+        "riddle": "Kunci apa yang bisa bernyanyi merdu di atas panggung?",
+        "answer": "Kunci nada"
+    }
 ]
-

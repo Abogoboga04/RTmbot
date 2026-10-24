@@ -1,104 +1,1054 @@
 {
-  "questions": [
-    {
-      "question": "Siapakah penyanyi lagu legendaris 'Hati-Hati di Jalan'?",
-      "options": ["Tulus", "Afgan", "Judika", "Rizky Febian"],
-      "answer": "A"
-    },
-    {
-      "question": "Grup band asal Bandung yang mempopulerkan lagu 'Separuh Aku' adalah?",
-      "options": ["Dewa 19", "NOAH", "Sheila on 7", "Padi"],
-      "answer": "B"
-    },
-    {
-      "question": "Alat musik petik tradisional asal Rote, Nusa Tenggara Timur adalah?",
-      "options": ["Angklung", "Kolintang", "Sasando", "Gamelan"],
-      "answer": "C"
-    },
-    {
-      "question": "Siapa musisi yang dikenal sebagai pencipta lagu kebangsaan 'Indonesia Raya'?",
-      "options": ["Ismail Marzuki", "W.R. Supratman", "Ibu Sud", "Kusbini"],
-      "answer": "B"
-    },
-    {
-      "question": "Lagu 'Dan...' dan 'Sephia' dipopulerkan oleh grup band legendaris?",
-      "options": ["Sheila on 7", "Slank", "Gigi", "Ungu"],
-      "answer": "A"
-    },
-    {
-      "question": "Penyanyi wanita Indonesia yang sukses meniti karir global di label 88rising adalah?",
-      "options": ["Raisa", "Isyana Sarasvati", "NIKI", "Maudy Ayunda"],
-      "answer": "C"
-    },
-    {
-      "question": "Alat musik gesek yang memiliki 4 senar dengan nada G-D-A-E adalah?",
-      "options": ["Cello", "Biola (Violin)", "Kontrabas", "Gitar"],
-      "answer": "B"
-    },
-    {
-      "question": "Lagu daerah 'Gundul-Gundul Pacul' berasal dari provinsi?",
-      "options": ["Jawa Tengah", "Jawa Barat", "Sumatera Barat", "Bali"],
-      "answer": "A"
-    },
-    {
-      "question": "Grup musik rock legendaris asal Inggris yang mempopulerkan 'Bohemian Rhapsody' adalah?",
-      "options": ["The Beatles", "Led Zeppelin", "Queen", "Pink Floyd"],
-      "answer": "C"
-    },
-    {
-      "question": "Penyanyi pop dunia yang dijuluki sebagai 'King of Pop' adalah?",
-      "options": ["Elvis Presley", "Michael Jackson", "Prince", "Freddie Mercury"],
-      "answer": "B"
-    },
-    {
-      "question": "Lagu 'Kemesraan' yang melegenda sering dinyanyikan bersama oleh musisi legendaris?",
-      "options": ["Iwan Fals", "Rhoma Irama", "Ebiet G. Ade", "Chrisye"],
-      "answer": "A"
-    },
-    {
-      "question": "Alat musik tiup tradisional khas Minangkabau yang terbuat dari bambu adalah?",
-      "options": ["Saluang", "Suling Sunda", "Tarompet", "Serunai"],
-      "answer": "A"
-    },
-    {
-      "question": "Lagu 'Komang' yang viral dan menyentuh hati dinyanyikan oleh?",
-      "options": ["Raim Laode", "Fiersa Besari", "Kunto Aji", "Nadin Amizah"],
-      "answer": "A"
-    },
-    {
-      "question": "Album legendaris 'Bintang Lima' (2000) dirilis oleh grup musik?",
-      "options": ["Padi", "Dewa 19", "Cokelat", "Jikustik"],
-      "answer": "B"
-    },
-    {
-      "question": "Instrumen musik perkusi asal Jawa Barat yang terbuat dari bambu dan digoyangkan adalah?",
-      "options": ["Calung", "Angklung", "Kendang", "Gong"],
-      "answer": "B"
-    },
-    {
-      "question": "Lagu 'Sial' yang dipopulerkan oleh Mahalini bercerita tentang?",
-      "options": ["Patah hati & kecewa mencintai", "Merayakan kelulusan", "Kebahagiaan pacaran", "Rindu kampung halaman"],
-      "answer": "A"
-    },
-    {
-      "question": "Siapakah vokalis utama dari grup musik pop-rock Coldplay?",
-      "options": ["Chris Martin", "Adam Levine", "Thom Yorke", "Bono"],
-      "answer": "A"
-    },
-    {
-      "question": "Lagu anak-anak 'Bintang Kecil' diciptakan oleh tokoh musisi anak bernama?",
-      "options": ["Daljono (Pak Dal)", "Ibu Sud", "A.T. Mahmud", "Papa T. Bob"],
-      "answer": "A"
-    },
-    {
-      "question": "Berapa jumlah tuts standar pada piano akustik ukuran penuh (full size)?",
-      "options": ["76", "88", "61", "100"],
-      "answer": "B"
-    },
-    {
-      "question": "Lagu pop 'Cintanya Aku' dinyanyikan secara duet oleh Tiara Andini bersama?",
-      "options": ["Arsy Widianto", "Rizky Febian", "Afgan", "Vidi Aldiano"],
-      "answer": "A"
-    }
-  ]
+    "questions": [
+        {
+            "question": "Siapakah penyanyi lagu legendaris 'Hati-Hati di Jalan'?",
+            "options": [
+                "Tulus",
+                "Afgan",
+                "Judika",
+                "Rizky Febian"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Grup band asal Bandung yang mempopulerkan lagu 'Separuh Aku' adalah?",
+            "options": [
+                "Dewa 19",
+                "NOAH",
+                "Sheila on 7",
+                "Padi"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Alat musik petik tradisional asal Rote, Nusa Tenggara Timur adalah?",
+            "options": [
+                "Angklung",
+                "Kolintang",
+                "Sasando",
+                "Gamelan"
+            ],
+            "answer": "C"
+        },
+        {
+            "question": "Siapa musisi yang dikenal sebagai pencipta lagu kebangsaan 'Indonesia Raya'?",
+            "options": [
+                "Ismail Marzuki",
+                "W.R. Supratman",
+                "Ibu Sud",
+                "Kusbini"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Lagu 'Dan...' dan 'Sephia' dipopulerkan oleh grup band legendaris?",
+            "options": [
+                "Sheila on 7",
+                "Slank",
+                "Gigi",
+                "Ungu"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Penyanyi wanita Indonesia yang sukses meniti karir global di label 88rising adalah?",
+            "options": [
+                "Raisa",
+                "Isyana Sarasvati",
+                "NIKI",
+                "Maudy Ayunda"
+            ],
+            "answer": "C"
+        },
+        {
+            "question": "Alat musik gesek yang memiliki 4 senar dengan nada G-D-A-E adalah?",
+            "options": [
+                "Cello",
+                "Biola (Violin)",
+                "Kontrabas",
+                "Gitar"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Lagu daerah 'Gundul-Gundul Pacul' berasal dari provinsi?",
+            "options": [
+                "Jawa Tengah",
+                "Jawa Barat",
+                "Sumatera Barat",
+                "Bali"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Grup musik rock legendaris asal Inggris yang mempopulerkan 'Bohemian Rhapsody' adalah?",
+            "options": [
+                "The Beatles",
+                "Led Zeppelin",
+                "Queen",
+                "Pink Floyd"
+            ],
+            "answer": "C"
+        },
+        {
+            "question": "Penyanyi pop dunia yang dijuluki sebagai 'King of Pop' adalah?",
+            "options": [
+                "Elvis Presley",
+                "Michael Jackson",
+                "Prince",
+                "Freddie Mercury"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Lagu 'Kemesraan' yang melegenda sering dinyanyikan bersama oleh musisi legendaris?",
+            "options": [
+                "Iwan Fals",
+                "Rhoma Irama",
+                "Ebiet G. Ade",
+                "Chrisye"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Alat musik tiup tradisional khas Minangkabau yang terbuat dari bambu adalah?",
+            "options": [
+                "Saluang",
+                "Suling Sunda",
+                "Tarompet",
+                "Serunai"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu 'Komang' yang viral dan menyentuh hati dinyanyikan oleh?",
+            "options": [
+                "Raim Laode",
+                "Fiersa Besari",
+                "Kunto Aji",
+                "Nadin Amizah"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Album legendaris 'Bintang Lima' (2000) dirilis oleh grup musik?",
+            "options": [
+                "Padi",
+                "Dewa 19",
+                "Cokelat",
+                "Jikustik"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Instrumen musik perkusi asal Jawa Barat yang terbuat dari bambu dan digoyangkan adalah?",
+            "options": [
+                "Calung",
+                "Angklung",
+                "Kendang",
+                "Gong"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Lagu 'Sial' yang dipopulerkan oleh Mahalini bercerita tentang?",
+            "options": [
+                "Patah hati & kecewa mencintai",
+                "Merayakan kelulusan",
+                "Kebahagiaan pacaran",
+                "Rindu kampung halaman"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Siapakah vokalis utama dari grup musik pop-rock Coldplay?",
+            "options": [
+                "Chris Martin",
+                "Adam Levine",
+                "Thom Yorke",
+                "Bono"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu anak-anak 'Bintang Kecil' diciptakan oleh tokoh musisi anak bernama?",
+            "options": [
+                "Daljono (Pak Dal)",
+                "Ibu Sud",
+                "A.T. Mahmud",
+                "Papa T. Bob"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Berapa jumlah tuts standar pada piano akustik ukuran penuh (full size)?",
+            "options": [
+                "76",
+                "88",
+                "61",
+                "100"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Lagu pop 'Cintanya Aku' dinyanyikan secara duet oleh Tiara Andini bersama?",
+            "options": [
+                "Arsy Widianto",
+                "Rizky Febian",
+                "Afgan",
+                "Vidi Aldiano"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu 'Komang' yang viral dengan lirik 'Sebab kau terlalu indah dari sekadar kata' dinyanyikan oleh siapa?",
+            "options": [
+                "Raim Laode",
+                "Fabio Asher",
+                "Anggi Marito",
+                "Idgitaf"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Siapakah vokalis utama dari band legendaris Indonesia 'Sheila on 7'?",
+            "options": [
+                "Eross Candra",
+                "Duta",
+                "Adam",
+                "Brian"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Lagu 'Sial' yang sangat populer di tahun 2023 dipopulerkan oleh penyanyi jebolan Indonesian Idol bernama siapa?",
+            "options": [
+                "Tiara Andini",
+                "Lyodra Ginting",
+                "Mahalini",
+                "Ziva Magnolya"
+            ],
+            "answer": "C"
+        },
+        {
+            "question": "Lagu rock legendaris 'Bohemian Rhapsody' dibawakan oleh grup band asal Inggris bernama apa?",
+            "options": [
+                "The Beatles",
+                "Queen",
+                "Pink Floyd",
+                "Led Zeppelin"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Musisi asal Indonesia yang sukses bergabung dengan label 88rising dan merilis lagu 'Glimpse of Us' adalah siapa?",
+            "options": [
+                "Rich Brian",
+                "Warren Hue",
+                "Joji",
+                "Stephanie Poetri"
+            ],
+            "answer": "C"
+        },
+        {
+            "question": "Siapakah pencipta dan penyanyi lagu hits 'Mungkin Hari Ini Esok atau Nanti'?",
+            "options": [
+                "Anneth Delliecia",
+                "Kaleb J",
+                "Stevan Pasaribu",
+                "Nadin Amizah"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Grup musik asal Yogyakarta yang mempopulerkan lagu 'Tentang Tiga Titik Temu' dan 'Secukupnya' adalah siapa?",
+            "options": [
+                "Fourtwnty",
+                "Hindia",
+                "Feast",
+                "Kunto Aji"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Lagu 'Dan...' merupakan salah satu hits paling ikonik dari album perdana band apa?",
+            "options": [
+                "Dewa 19",
+                "Padi",
+                "Sheila on 7",
+                "Slank"
+            ],
+            "answer": "C"
+        },
+        {
+            "question": "Siapakah vokalis pertama band Dewa 19 sebelum digantikan oleh Once Mekel?",
+            "options": [
+                "Ari Lasso",
+                "Judika",
+                "Ello",
+                "Virzha"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu pop akustik 'Runtuh' dinyanyikan duet oleh Feby Putri bersama penyanyi pria siapa?",
+            "options": [
+                "Tulus",
+                "Fiersa Besari",
+                "Kunto Aji",
+                "Pamungkas"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Siapakah musisi wanita di balik album 'Menari Dengan Bayangan' dan lagu 'Evaluasi'?",
+            "options": [
+                "Nadin Amizah",
+                "Hindia (Baskara Putra)",
+                "Danilla Riyadi",
+                "Yura Yunita"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Lagu bertajuk 'Tak Ingin Usai' yang sukses menduduki puncak tangga lagu Spotify Indonesia dinyanyikan oleh siapa?",
+            "options": [
+                "Keisya Levronka",
+                "Mahalini",
+                "Tiara Andini",
+                "Ziva Magnolya"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Penyanyi wanita Indonesia yang membawakan lagu 'Tutur Batin' dan 'Dunia Tipu-Tipu' adalah siapa?",
+            "options": [
+                "Isyana Sarasvati",
+                "Raisa",
+                "Yura Yunita",
+                "Maudy Ayunda"
+            ],
+            "answer": "C"
+        },
+        {
+            "question": "Band indie-pop asal Jakarta dengan lagu hits 'Lantas' dan 'Cinta Luar Biasa' adalah band apa?",
+            "options": [
+                "Juicy Luicy",
+                "Guyon Waton",
+                "Lomba Sihir",
+                "Reality Club"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu 'To the Bone' yang sempat viral di TikTok secara global pada tahun 2021 diciptakan oleh siapa?",
+            "options": [
+                "Pamungkas",
+                "Ardhito Pramono",
+                "Rizky Febian",
+                "Kunto Aji"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Siapakah penyanyi asal Jakarta yang merilis lagu jazzy 'Bitterlove' dan 'Fine Today'?",
+            "options": [
+                "Ardhito Pramono",
+                "Tulus",
+                "Afgan",
+                "Glenn Fredly"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Band pop-punk/emo asal Amerika Serikat yang mempopulerkan lagu 'Welcome to the Black Parade' adalah siapa?",
+            "options": [
+                "Green Day",
+                "Blink-182",
+                "My Chemical Romance",
+                "Fall Out Boy"
+            ],
+            "answer": "C"
+        },
+        {
+            "question": "Lagu 'Kangen' ciptaan Ahmad Dhani pertama kali dirilis pada tahun 1992 oleh band apa?",
+            "options": [
+                "Dewa 19",
+                "Padi",
+                "Gigi",
+                "KLa Project"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu hits 'Menghapus Jejakmu' awalnya dipopulerkan oleh grup band apa sebelum berganti nama menjadi NOAH?",
+            "options": [
+                "Peterpan",
+                "D'Masiv",
+                "Ungu",
+                "Ada Band"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Penyanyi wanita muda yang menyanyikan lagu 'Bertaut' dan 'Sorai' dengan nuansa folk syahdu adalah siapa?",
+            "options": [
+                "Nadin Amizah",
+                "Danilla",
+                "Feby Putri",
+                "Idgitaf"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu 'Cinta Sejati' yang menjadi soundtrack film Habibie & Ainun dinyanyikan oleh diva siapa?",
+            "options": [
+                "Rossa",
+                "Krisdayanti",
+                "Bunga Citra Lestari",
+                "Ruth Sahanaya"
+            ],
+            "answer": "C"
+        },
+        {
+            "question": "Siapakah penyanyi pria legendaris asal Maluku dengan hits 'Kasih Putih' dan 'Januari'?",
+            "options": [
+                "Glenn Fredly",
+                "Broery Marantika",
+                "Harvey Malaihollo",
+                "Bob Tutupoly"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu dangdut koplo modern 'Rungkad' diciptakan oleh Vicky Prasetyo dan dipopulerkan oleh penyanyi wanita siapa?",
+            "options": [
+                "Happy Asmara",
+                "Denny Caknan",
+                "Ndarboy Genk",
+                "Nella Kharisma"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Siapakah penyanyi asal Ngawi pencipta dan pelantun lagu campursari hits 'Kartonyono Medot Janji'?",
+            "options": [
+                "Denny Caknan",
+                "Didi Kempot",
+                "Ndarboy Genk",
+                "Gilga Sahid"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Penyanyi campursari legendaris yang dijuluki 'The Godfather of Broken Heart' adalah siapa?",
+            "options": [
+                "Didi Kempot",
+                "Manthous",
+                "Campursari Gunungkidul",
+                "Gesang"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu 'Viva La Vida' dan 'Fix You' adalah karya megah dari band alternatif rock asal Inggris bernama apa?",
+            "options": [
+                "Coldplay",
+                "Radiohead",
+                "Oasis",
+                "Muse"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Grup vokal wanita K-Pop dengan lagu hits 'DDU-DU DDU-DU' dan 'How You Like That' adalah siapa?",
+            "options": [
+                "TWICE",
+                "BLACKPINK",
+                "Red Velvet",
+                "aespa"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Boyband Korea Selatan pertama yang dinominasikan untuk Grammy Award dan merilis 'Dynamite' adalah siapa?",
+            "options": [
+                "EXO",
+                "BTS",
+                "NCT",
+                "SEVENTEEN"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Lagu opening anime Naruto Shippuden berjudul 'Blue Bird' dibawakan oleh grup musik apa?",
+            "options": [
+                "Ikimono Gakari",
+                "Asian Kung-Fu Generation",
+                "FLOW",
+                "KANA-BOON"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Band rock asal Jepang yang membawakan lagu 'Silhouette' untuk anime Naruto Shippuden adalah siapa?",
+            "options": [
+                "KANA-BOON",
+                "SPYAIR",
+                "ONE OK ROCK",
+                "Radwimps"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Grup musik Jepang yang mengisi seluruh soundtrack film anime 'Kimi no Na wa' (Your Name) adalah siapa?",
+            "options": [
+                "Radwimps",
+                "Yoasobi",
+                "King Gnu",
+                "Official HIGE DANdism"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Duo musik pop Jepang yang viral dengan lagu debut 'Yoru ni Kakeru' (Racing into the Night) adalah siapa?",
+            "options": [
+                "YOASOBI",
+                "ZUTOMAYO",
+                "Yorushika",
+                "Eve"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Penyanyi pop dunia yang merilis album 'Midnights' dan '1989' dengan jutaan penggemar berjuluk Swifties adalah siapa?",
+            "options": [
+                "Ariana Grande",
+                "Taylor Swift",
+                "Katy Perry",
+                "Billie Eilish"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Lagu hits 'Bad Guy' dan 'Birds of a Feather' dinyanyikan oleh penyanyi muda berbakat siapa?",
+            "options": [
+                "Olivia Rodrigo",
+                "Billie Eilish",
+                "Dua Lipa",
+                "Lorde"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Lagu pop 'Drivers License' dan 'Vampire' melambungkan nama penyanyi wanita muda siapa?",
+            "options": [
+                "Olivia Rodrigo",
+                "Sabrina Carpenter",
+                "Billie Eilish",
+                "Camila Cabello"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu bernuansa disko-pop 'Levitating' dan 'Don't Start Now' dipopulerkan oleh penyanyi keturunan Albania siapa?",
+            "options": [
+                "Dua Lipa",
+                "Rita Ora",
+                "Bebe Rexha",
+                "Ava Max"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Siapakah musisi Bruno Mars yang berkolaborasi dengan Anderson .Paak membentuk supergrup apa?",
+            "options": [
+                "Silk Sonic",
+                "Maroon 5",
+                "Daft Punk",
+                "The Black Eyed Peas"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu 'Die With A Smile' adalah single kolaborasi emosional tahun 2024 antara Lady Gaga dan siapa?",
+            "options": [
+                "Bruno Mars",
+                "Ed Sheeran",
+                "The Weeknd",
+                "Justin Bieber"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu 'Shape of You' dan 'Perfect' adalah karya hits dunia dari musisi asal Inggris bernama siapa?",
+            "options": [
+                "Ed Sheeran",
+                "Sam Smith",
+                "Harry Styles",
+                "Lewis Capaldi"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Mantan anggota One Direction yang sukses besar lewat lagu solo 'Watermelon Sugar' dan 'As It Was' adalah siapa?",
+            "options": [
+                "Zayn Malik",
+                "Niall Horan",
+                "Harry Styles",
+                "Liam Payne"
+            ],
+            "answer": "C"
+        },
+        {
+            "question": "Siapakah penyanyi pria R&B asal Kanada dengan hits 'Blinding Lights' dan 'Starboy'?",
+            "options": [
+                "The Weeknd",
+                "Drake",
+                "Justin Bieber",
+                "Shawn Mendes"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Band rock asal Amerika Serikat yang mempopulerkan lagu 'Numb' dan 'In the End' dengan vokalis mendiang Chester Bennington adalah apa?",
+            "options": [
+                "Linkin Park",
+                "Limp Bizkit",
+                "Evanescence",
+                "Papa Roach"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Siapakah vokalis baru band Linkin Park yang diumumkan resmi pada September 2024?",
+            "options": [
+                "Emily Armstrong",
+                "Amy Lee",
+                "Hayley Williams",
+                "Tarja Turunen"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Vokalis wanita ikonik dari band pop-punk Amerika Serikat 'Paramore' bernama siapa?",
+            "options": [
+                "Hayley Williams",
+                "Avril Lavigne",
+                "Courtney Love",
+                "Shirley Manson"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu pop-punk remaja 'Sk8er Boi' dan 'Complicated' melambungkan nama penyanyi asal Kanada siapa?",
+            "options": [
+                "Avril Lavigne",
+                "Alanis Morissette",
+                "Carly Rae Jepsen",
+                "Nelly Furtado"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Band metal legendaris asal Los Angeles dengan hits 'Enter Sandman' dan 'Master of Puppets' adalah apa?",
+            "options": [
+                "Metallica",
+                "Megadeth",
+                "Slayer",
+                "Iron Maiden"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu rock ballad legendaris 'Sweet Child O' Mine' dan 'November Rain' dibawakan oleh band apa?",
+            "options": [
+                "Guns N' Roses",
+                "Aerosmith",
+                "Bon Jovi",
+                "Def Leppard"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Siapakah gitaris bertopi tinggi ikonik dari band rock Guns N' Roses?",
+            "options": [
+                "Slash",
+                "Joe Perry",
+                "Angus Young",
+                "Jimmy Page"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu grunge paling berpengaruh di era 90-an 'Smells Like Teen Spirit' diciptakan oleh band apa?",
+            "options": [
+                "Nirvana",
+                "Pearl Jam",
+                "Soundgarden",
+                "Alice in Chains"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Siapakah vokalis sekaligus gitaris karismatik dari band Nirvana?",
+            "options": [
+                "Kurt Cobain",
+                "Dave Grohl",
+                "Eddie Vedder",
+                "Chris Cornell"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Setelah bubarnya Nirvana, drummer Dave Grohl mendirikan band rock sukses bernama apa?",
+            "options": [
+                "Foo Fighters",
+                "Queens of the Stone Age",
+                "The Smashing Pumpkins",
+                "Weezer"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu 'Wonderwall' dan 'Don't Look Back in Anger' adalah lagu kebangsaan Britpop dari band apa?",
+            "options": [
+                "Oasis",
+                "Blur",
+                "Pulp",
+                "The Stone Roses"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Siapakah dua bersaudara pendiri band Oasis yang terkenal sering bertengkar?",
+            "options": [
+                "Liam & Noel Gallagher",
+                "Alex & Miles Turner",
+                "Chris & Thom Yorke",
+                "Damon & Graham"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Band indie rock asal Sheffield, Inggris dengan hits 'Do I Wanna Know?' dan '505' adalah siapa?",
+            "options": [
+                "Arctic Monkeys",
+                "The Strokes",
+                "The Kooks",
+                "Franz Ferdinand"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu hits 'Semua Aku Dirayakan' yang viral sebagai lagu pernikahan dan apresiasi pasangan dinyanyikan oleh siapa?",
+            "options": [
+                "Nadin Amizah",
+                "Yura Yunita",
+                "Sal Priadi",
+                "Baskara Putra"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu 'Gala Bunga Matahari' yang sangat menyentuh hati tentang kerinduan pada orang yang telah tiada diciptakan oleh siapa?",
+            "options": [
+                "Sal Priadi",
+                "Kunto Aji",
+                "Tulus",
+                "Fiersa Besari"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu 'Mesra-mesraannya Kecil-kecilan Dulu' yang bernuansa hangat dan puitis dibawakan oleh siapa?",
+            "options": [
+                "Sal Priadi",
+                "Tulus",
+                "Dere",
+                "Idgitaf"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu pop 'Takkan Berpaling Dari-Mu' dan 'Bukan Cinta Biasa' dipopulerkan oleh diva asal Malaysia siapa?",
+            "options": [
+                "Siti Nurhaliza",
+                "Sheila Majid",
+                "Rossa",
+                "Bunga Citra Lestari"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Siapakah penyanyi pria Indonesia yang dijuluki 'Raja Pop Melankolis' era 80-an dengan lagu 'Hati yang Luka'?",
+            "options": [
+                "Betharia Sonata",
+                "Obbie Messakh",
+                "Ratih Purwasih",
+                "Iis Sugianto"
+            ],
+            "answer": "B"
+        },
+        {
+            "question": "Lagu balada 'Kemesraan' dan 'Bongkar' dipopulerkan oleh musisi legendaris kritis Indonesia siapa?",
+            "options": [
+                "Iwan Fals",
+                "Ebiet G. Ade",
+                "Chrisye",
+                "Rhoma Irama"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu puitis tentang bencana alam 'Berita Kepada Kawan' diciptakan dan dinyanyikan oleh siapa?",
+            "options": [
+                "Ebiet G. Ade",
+                "Iwan Fals",
+                "Doel Sumbang",
+                "Gombloh"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Musisi legendaris yang dijuluki 'Raja Dangdut' Indonesia dengan ratusan lagu ciptaan adalah siapa?",
+            "options": [
+                "Rhoma Irama",
+                "Meggy Z",
+                "Mansyur S",
+                "A. Rafiq"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu pop legendaris 'Kala Cinta Menggoda' dan 'Pergilah Kasih' dinyanyikan oleh penyanyi abadi Indonesia siapa?",
+            "options": [
+                "Chrisye",
+                "Glenn Fredly",
+                "Broery Marantika",
+                "Vina Panduwinata"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Band pop-jazz legendaris Indonesia dengan hits 'Surat Cinta' dan 'Burung Camar' dipopulerkan oleh diva siapa?",
+            "options": [
+                "Vina Panduwinata",
+                "Titi DJ",
+                "Ruth Sahanaya",
+                "Hetty Koes Endang"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Grup musik asal Bandung beranggotakan Ariel, Lukman, dan David saat ini dinamai apa?",
+            "options": [
+                "NOAH",
+                "Peterpan",
+                "The Changcuters",
+                "Seurieus"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu hits 'Akad' yang sangat populer pada tahun 2017 dipopulerkan oleh grup musik apa?",
+            "options": [
+                "Payung Teduh",
+                "Fourtwnty",
+                "Banda Neira",
+                "Mocca"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Duo folk asal Bandung dengan lagu perpisahan menyentuh 'Sampai Jadi Debu' adalah siapa?",
+            "options": [
+                "Banda Neira",
+                "Payung Teduh",
+                "Stars and Rabbit",
+                "Danilla"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu 'Zona Nyaman' yang menjadi soundtrack film 'Filosofi Kopi 2' dinyanyikan oleh grup band apa?",
+            "options": [
+                "Fourtwnty",
+                "Barasuara",
+                "Efek Rumah Kaca",
+                "The Adams"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Band rock independen asal Jakarta dengan lirik kritis sosial seperti 'Kamar Gelap' dan 'Cinta Melulu' adalah apa?",
+            "options": [
+                "Efek Rumah Kaca",
+                "Barasuara",
+                "Sore",
+                "White Shoes & The Couples Company"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Band indie-rock bertenaga tinggi yang dipimpin oleh Iga Massardi adalah band apa?",
+            "options": [
+                "Barasuara",
+                "Scaller",
+                "Kelompok Penerbang Roket",
+                "Feast"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu 'Peradaban' dan 'Tarian Penghancur Raya' dibawakan oleh grup band rock Jakarta bernama apa?",
+            "options": [
+                ".Feast",
+                "Hindia",
+                "Lomba Sihir",
+                "Voice of Baceprot"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Trio hijaber asal Garut yang memainkan musik heavy metal hingga tur ke Eropa dan Amerika Serikat bernama apa?",
+            "options": [
+                "Voice of Baceprot",
+                "Burgerkill",
+                "Deadsquad",
+                "Jasad"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Band metalcore legendaris asal Ujungberung, Bandung yang merilis album 'Beyond Comatose' adalah apa?",
+            "options": [
+                "Burgerkill",
+                "Besok Bubar",
+                "Seringai",
+                "Down For Life"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Band high-octane rock asal Jakarta dengan vokalis Arian13 yang merilis lagu 'Mengadili Persepsi' adalah apa?",
+            "options": [
+                "Seringai",
+                "Komunal",
+                "Mooner",
+                "Kelompok Penerbang Roket"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu pop ceria 'C.H.R.I.S.Y.E.' yang memadukan berbagai judul lagu Chrisye dibawakan oleh Diskoria bersama siapa?",
+            "options": [
+                "Laleilmanino & Eva Celia",
+                "Isyana Sarasvati",
+                "Raisa",
+                "Yura Yunita"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Trio pencipta lagu hits modern Indonesia yang terdiri dari Lale, Ilman (Maliq & D'Essentials), dan Nino (RAN) bernama apa?",
+            "options": [
+                "Laleilmanino",
+                "Trio Lestari",
+                "3 Diva",
+                "Diskoria"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Grup musik soul-pop jazzy asal Jakarta yang terkenal dengan hits 'Pilihanku' dan 'Kita Bikin Romantis' adalah apa?",
+            "options": [
+                "Maliq & D'Essentials",
+                "RAN",
+                "The Groove",
+                "Kahitna"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Grup vokal pop asal Jakarta dengan personel Rayi, Asta, dan Nino yang mempopulerkan lagu 'Pandangan Pertama' adalah apa?",
+            "options": [
+                "RAN",
+                "Maliq & D'Essentials",
+                "Project Pop",
+                "SM*SH"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Grup musik legendaris pimpinan Yovie Widianto yang merajai lagu cinta Indonesia seperti 'Cantik' dan 'Soulmate' adalah apa?",
+            "options": [
+                "Kahitna",
+                "Yovie & Nuno",
+                "Kerispatih",
+                "Ada Band"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu hits 'Janji Suci' dan 'Menikahimu' dibawakan oleh grup musik pop legendaris bentukan tahun 1986 bernama apa?",
+            "options": [
+                "Kahitna",
+                "KLa Project",
+                "Padi",
+                "Dewa 19"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Siapakah pencipta lagu dan pianis jenius di balik sukses Kahitna dan Yovie & Nuno?",
+            "options": [
+                "Yovie Widianto",
+                "Ahmad Dhani",
+                "Addie MS",
+                "Erwin Gutawa"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu 'Kasih Jangan Kau Pergi' merupakan karya hits paling populer dari band slow rock Indonesia apa?",
+            "options": [
+                "Bunga",
+                "U'Camp",
+                "Whizzkid",
+                "Power Slaves"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu pop 'Separuh Nafas' dan 'Pupus' merupakan dua lagu cinta abadi karya band apa?",
+            "options": [
+                "Dewa 19",
+                "Padi",
+                "Ungu",
+                "Naff"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Vokalis band rock 'Padi Reborn' yang memiliki karakter vokal khas melengking dan lembut adalah siapa?",
+            "options": [
+                "Fadly",
+                "Piyu",
+                "Rindra",
+                "Yoyo"
+            ],
+            "answer": "A"
+        },
+        {
+            "question": "Lagu 'Kasih Tak Sampai' dan 'Sobat' merupakan karya agung dari band asal Surabaya bernama apa?",
+            "options": [
+                "Padi Reborn",
+                "Dewa 19",
+                "Boomerang",
+                "Power Metal"
+            ],
+            "answer": "A"
+        }
+    ]
 }

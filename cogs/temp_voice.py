@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands, tasks
+from discord import app_commands
 import asyncio
 import os
 import logging
@@ -37,11 +38,9 @@ def load_json_file(file_path, default_data={}):
                     json.dump(default_data, f, indent=4)
                 return data
             return data
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, Exception):
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(default_data, f, indent=4)
-        return data
-    except Exception:
         return default_data
 
 def save_json_file(file_path, data):
@@ -64,10 +63,10 @@ def load_guild_config():
 def save_guild_config(data):
     save_json_file(GUILD_CONFIG_FILE, data)
 
-class RenameVCModal(discord.ui.Modal, title="Ganti Nama Channel Suara"):
+class RenameVCModal(discord.ui.Modal, title="Ganti Nama Ruangan"):
     new_name = discord.ui.TextInput(
         label="Nama Baru",
-        placeholder="Masukkan nama channel baru...",
+        placeholder="Masukkan nama ruangan baru...",
         min_length=2,
         max_length=100
     )
@@ -77,23 +76,249 @@ class RenameVCModal(discord.ui.Modal, title="Ganti Nama Channel Suara"):
 
     async def on_submit(self, interaction: discord.Interaction):
         if not self.cog.is_owner_vc_by_interaction(interaction):
-            return await interaction.response.send_message("Bot: Kamu bukan pemilik channel ini!", ephemeral=True)
+            return await interaction.response.send_message("❌ Kamu bukan pemilik ruangan ini!", ephemeral=True)
         vc = interaction.user.voice.channel
-        new_name = self.new_name.value
+        new_name_val = self.new_name.value.strip()
         try:
-            await vc.edit(name=new_name, reason=f"User {interaction.user.display_name} renamed VC via UI.")
-            await interaction.response.send_message(f"Bot: Nama channelmu diubah menjadi {new_name}.", ephemeral=True)
+            await vc.edit(name=new_name_val, reason=f"Ganti nama ruangan oleh {interaction.user.display_name}")
+            embed = discord.Embed(
+                title="✏️ Nama Ruangan Diubah",
+                description=f"Nama ruangan berhasil diubah menjadi **{new_name_val}**.",
+                color=0x57F287
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
         except discord.Forbidden:
-            await interaction.response.send_message("Bot: Tidak memiliki izin untuk mengubah nama channel ini.", ephemeral=True)
+            await interaction.response.send_message("❌ Bot tidak memiliki izin untuk mengubah nama channel ini.", ephemeral=True)
         except Exception as e:
-            await interaction.response.send_message(f"Bot: Terjadi kesalahan: {e}", ephemeral=True)
+            await interaction.response.send_message(f"❌ Terjadi kesalahan: {e}", ephemeral=True)
+
+class CustomLimitModal(discord.ui.Modal, title="Atur Batas Kursi"):
+    seat_limit = discord.ui.TextInput(
+        label="Jumlah Kursi (0 = Tak Terbatas)",
+        placeholder="Contoh: 0, 2, 4, 8...",
+        min_length=1,
+        max_length=2
+    )
+
+    def __init__(self, cog_instance):
+        super().__init__()
+        self.cog = cog_instance
+
+    async def on_submit(self, interaction: discord.Interaction):
+        if not self.cog.is_owner_vc_by_interaction(interaction):
+            return await interaction.response.send_message("❌ Kamu bukan pemilik ruangan ini!", ephemeral=True)
+        val_str = self.seat_limit.value.strip()
+        if not val_str.isdigit():
+            return await interaction.response.send_message("❌ Masukkan angka valid antara 0 sampai 99.", ephemeral=True)
+        limit_val = int(val_str)
+        if limit_val < 0 or limit_val > 99:
+            return await interaction.response.send_message("❌ Batas kursi harus antara 0 hingga 99.", ephemeral=True)
+        vc = interaction.user.voice.channel
+        try:
+            await vc.edit(user_limit=limit_val, reason=f"Atur batas kursi oleh {interaction.user.display_name}")
+            txt = f"{limit_val} orang" if limit_val > 0 else "Tak Terbatas (Bebas)"
+            embed = discord.Embed(
+                title="👥 Batas Kursi Diperbarui",
+                description=f"Kapasitas ruangan sekarang: **{txt}**.",
+                color=0x57F287
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Terjadi kesalahan: {e}", ephemeral=True)
+
+class LimitPresetSelect(discord.ui.Select):
+    def __init__(self, cog_instance):
+        options = [
+            discord.SelectOption(label="Bebas (Tanpa Batas)", value="0", emoji="🌐", description="Siapa saja boleh masuk tanpa batasan kursi"),
+            discord.SelectOption(label="Duet (2 Orang)", value="2", emoji="👥", description="Cocok untuk ngobrol berdua / privat"),
+            discord.SelectOption(label="Trio (3 Orang)", value="3", emoji="🥉", description="Cocok untuk mabar tim 3 orang"),
+            discord.SelectOption(label="Squad (4 Orang)", value="4", emoji="🎮", description="Standar tim game 4 orang"),
+            discord.SelectOption(label="Party (8 Orang)", value="8", emoji="🎉", description="Kapasitas ruang pesta / nobar"),
+            discord.SelectOption(label="Rombongan (15 Orang)", value="15", emoji="🚌", description="Ruangan diskusi besar"),
+            discord.SelectOption(label="Kustom (Ketik Angka)", value="custom", emoji="🔢", description="Ketik jumlah kursi bebas 0-99")
+        ]
+        super().__init__(placeholder="Pilih kapasitas kursi ruangan...", options=options, min_values=1, max_values=1)
+        self.cog = cog_instance
+
+    async def callback(self, interaction: discord.Interaction):
+        if not self.cog.is_owner_vc_by_interaction(interaction):
+            return await interaction.response.send_message("❌ Kamu bukan pemilik ruangan ini!", ephemeral=True)
+        chosen = self.values[0]
+        if chosen == "custom":
+            return await interaction.response.send_modal(CustomLimitModal(self.cog))
+        limit_val = int(chosen)
+        vc = interaction.user.voice.channel
+        try:
+            await vc.edit(user_limit=limit_val, reason=f"Preset kursi oleh {interaction.user.display_name}")
+            txt = f"{limit_val} orang" if limit_val > 0 else "Tak Terbatas (Bebas)"
+            embed = discord.Embed(
+                title="👥 Batas Kursi Diperbarui",
+                description=f"Kapasitas ruangan berhasil diatur ke **{txt}**.",
+                color=0x57F287
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Terjadi kesalahan: {e}", ephemeral=True)
+
+class FriendSelect(discord.ui.UserSelect):
+    def __init__(self, cog_instance):
+        super().__init__(
+            placeholder="Pilih teman yang ingin diberi izin masuk & bicara...",
+            min_values=1,
+            max_values=10
+        )
+        self.cog = cog_instance
+
+    async def callback(self, interaction: discord.Interaction):
+        if not self.cog.is_owner_vc_by_interaction(interaction):
+            return await interaction.response.send_message("❌ Kamu bukan pemilik ruangan ini!", ephemeral=True)
+        vc = interaction.user.voice.channel
+        invited_mentions = []
+        invite_url = None
+        try:
+            invite_obj = await vc.create_invite(max_age=3600, max_uses=10, unique=True, reason=f"Undangan teman oleh {interaction.user.display_name}")
+            invite_url = invite_obj.url
+        except Exception:
+            invite_url = None
+
+        for user_obj in self.values:
+            member = interaction.guild.get_member(user_obj.id) or user_obj
+            try:
+                await vc.set_permissions(member, connect=True, speak=True, view_channel=True, reason=f"Izin khusus teman oleh {interaction.user.display_name}")
+                invited_mentions.append(member.mention)
+                if invite_url and hasattr(member, 'send'):
+                    try:
+                        dm_embed = discord.Embed(
+                            title="👋 Undangan Ruangan Suara",
+                            description=(
+                                f"Kamu telah diberi akses khusus oleh **{interaction.user.display_name}** "
+                                f"untuk masuk dan berbicara di ruang pribadinya (**{vc.name}**)!\n\n"
+                                f"🔗 **Klik tautan ini untuk langsung bergabung:**\n{invite_url}"
+                            ),
+                            color=0x5865F2
+                        )
+                        await member.send(embed=dm_embed)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+        if invited_mentions:
+            names_str = ", ".join(invited_mentions)
+            embed = discord.Embed(
+                title="✅ Akses Teman Diberikan",
+                description=(
+                    f"Akses masuk dan izin berbicara berhasil diberikan kepada: {names_str}\n\n"
+                    f"*(Mereka sekarang bisa masuk dan berbicara bebas meskipun ruangan sedang digembok)*"
+                ),
+                color=0x57F287
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        else:
+            await interaction.response.send_message("❌ Gagal memberikan izin ke user yang dipilih.", ephemeral=True)
+
+class KickSelect(discord.ui.Select):
+    def __init__(self, members_to_kick):
+        options = []
+        for m in members_to_kick:
+            options.append(discord.SelectOption(label=m.display_name, value=str(m.id), emoji="👢"))
+        super().__init__(placeholder="Pilih anggota yang ingin dikeluarkan...", options=options, min_values=1, max_values=1)
+
+    async def callback(self, interaction: discord.Interaction):
+        vc = interaction.user.voice.channel if interaction.user.voice else None
+        if not vc:
+            return await interaction.response.send_message("❌ Kamu tidak berada di dalam voice channel.", ephemeral=True)
+        target_id = int(self.values[0])
+        target_member = vc.guild.get_member(target_id)
+        if target_member and target_member in vc.members:
+            try:
+                await target_member.move_to(None, reason=f"Dikeluarkan oleh pemilik ruangan {interaction.user.display_name}")
+                await interaction.response.send_message(f"👢 **{target_member.display_name}** telah dikeluarkan dari ruangan.", ephemeral=True)
+            except Exception as e:
+                await interaction.response.send_message(f"❌ Gagal mengeluarkan member: {e}", ephemeral=True)
+        else:
+            await interaction.response.send_message("❌ Anggota tersebut sudah tidak ada di dalam ruangan.", ephemeral=True)
+
+class KnockDecisionView(discord.ui.View):
+    def __init__(self, cog_instance, guest_id: int, vc_id: int):
+        super().__init__(timeout=300)
+        self.cog = cog_instance
+        self.guest_id = guest_id
+        self.vc_id = vc_id
+
+    @discord.ui.button(label="Izinkan & Buka Pintu", emoji="✅", style=discord.ButtonStyle.success)
+    async def accept_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        channel_info = self.cog.active_temp_channels.get(str(self.vc_id))
+        if not channel_info or channel_info.get("owner_id") != str(interaction.user.id):
+            return await interaction.response.send_message("❌ Hanya pemilik ruangan yang dapat memutuskan izin masuk.", ephemeral=True)
+
+        guild = interaction.guild
+        vc = guild.get_channel(self.vc_id)
+        if not vc:
+            return await interaction.response.send_message("❌ Ruangan sudah tidak ada.", ephemeral=True)
+
+        guest = guild.get_member(self.guest_id)
+        if not guest:
+            return await interaction.response.send_message("❌ Tamu yang mengetuk sudah tidak ditemukan di server.", ephemeral=True)
+
+        try:
+            await vc.set_permissions(guest, connect=True, speak=True, view_channel=True, reason=f"Ketuk pintu disetujui oleh {interaction.user.display_name}")
+            moved_in = False
+            if guest.voice and guest.voice.channel:
+                try:
+                    await guest.move_to(vc)
+                    moved_in = True
+                except Exception:
+                    moved_in = False
+
+            try:
+                invite_obj = await vc.create_invite(max_age=3600, max_uses=1, unique=True)
+                join_text = f"\n🔗 Klik untuk langsung masuk: {invite_obj.url}" if not moved_in else "\n*(Kamu telah dipindahkan langsung ke dalam ruangan)*"
+                await guest.send(f"🚪 Pemilik ruangan **{vc.name}** telah menerima permintaan masukmu! Kamu sekarang memiliki akses masuk dan hak berbicara.{join_text}")
+            except Exception:
+                pass
+
+            for item in self.children:
+                item.disabled = True
+
+            embed = discord.Embed(
+                title="✅ Tamu Diterima Masuk",
+                description=f"{guest.mention} telah diizinkan masuk dan diberi hak berbicara di ruangan ini.",
+                color=0x57F287
+            )
+            await interaction.response.edit_message(embed=embed, view=self)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Terjadi kesalahan saat memproses izin: {e}", ephemeral=True)
+
+    @discord.ui.button(label="Tolak", emoji="❌", style=discord.ButtonStyle.danger)
+    async def reject_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        channel_info = self.cog.active_temp_channels.get(str(self.vc_id))
+        if not channel_info or channel_info.get("owner_id") != str(interaction.user.id):
+            return await interaction.response.send_message("❌ Hanya pemilik ruangan yang dapat memutuskan izin masuk.", ephemeral=True)
+
+        guest = interaction.guild.get_member(self.guest_id)
+        if guest:
+            try:
+                await guest.send(f"🚪 Maaf, pemilik ruangan suara belum dapat menerima permintaan masukmu saat ini.")
+            except Exception:
+                pass
+
+        for item in self.children:
+            item.disabled = True
+
+        embed = discord.Embed(
+            title="🛑 Tamu Ditolak",
+            description=f"Permintaan masuk dari <@{self.guest_id}> telah ditolak.",
+            color=0xED4245
+        )
+        await interaction.response.edit_message(embed=embed, view=self)
 
 class VCControlView(discord.ui.View):
     def __init__(self, cog_instance):
         super().__init__(timeout=None)
         self.cog = cog_instance
         self.load_donation_buttons()
-    
+
     def load_donation_buttons(self):
         try:
             donation_file_path = 'data/donation_buttons.json'
@@ -105,101 +330,72 @@ class VCControlView(discord.ui.View):
                             label=button_data['label'],
                             style=discord.ButtonStyle.url,
                             url=button_data['url'],
-                            row=4
+                            row=2
                         ))
         except Exception:
             pass
 
     async def _check_owner(self, interaction: discord.Interaction):
         if not self.cog.is_owner_vc_by_interaction(interaction):
-            await interaction.response.send_message("Bot: Kamu bukan pemilik channel ini!", ephemeral=True)
+            await interaction.response.send_message("❌ Kamu bukan pemilik ruangan ini!", ephemeral=True)
             return False
         return True
 
-    @discord.ui.button(emoji="➕", label="Tambah Kursi", style=discord.ButtonStyle.secondary, custom_id="vc:limit_plus", row=0)
-    async def limit_plus_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(emoji="🔒", label="Kunci / Buka Gembok", style=discord.ButtonStyle.secondary, custom_id="vc:toggle_lock", row=0)
+    async def toggle_lock_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await self._check_owner(interaction): return
         vc = interaction.user.voice.channel
-        new_limit = min(vc.user_limit + 1, 99)
-        try:
-            await vc.edit(user_limit=new_limit, reason=f"User {interaction.user.display_name} increased user limit.")
-            await interaction.response.send_message(f"🪑 Kursi ditambah! Maksimal orang sekarang: {new_limit}.", ephemeral=True)
-        except discord.Forbidden:
-            await interaction.response.send_message("❌ Tidak memiliki izin untuk mengubah batas user.", ephemeral=True)
-    
-    @discord.ui.button(emoji="➖", label="Kurangi Kursi", style=discord.ButtonStyle.secondary, custom_id="vc:limit_minus", row=0)
-    async def limit_minus_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not await self._check_owner(interaction): return
-        vc = interaction.user.voice.channel
-        new_limit = max(vc.user_limit - 1, 0)
-        try:
-            await vc.edit(user_limit=new_limit, reason=f"User {interaction.user.display_name} decreased user limit.")
-            await interaction.response.send_message(f"🪑 Kursi dikurangi! Maksimal orang sekarang: {new_limit if new_limit > 0 else 'tak terbatas'}.", ephemeral=True)
-        except discord.Forbidden:
-            await interaction.response.send_message("❌ Tidak memiliki izin untuk mengubah batas user.", ephemeral=True)
+        everyone_role = interaction.guild.default_role
+        current_ov = vc.overwrites_for(everyone_role)
+        is_currently_locked = current_ov.connect is False
 
-    @discord.ui.button(emoji="🏷️", label="Ganti Papan Nama", style=discord.ButtonStyle.secondary, custom_id="vc:rename", row=1)
+        try:
+            if is_currently_locked:
+                current_ov.connect = True
+                current_ov.speak = True
+                await vc.set_permissions(everyone_role, overwrite=current_ov, reason=f"Gembok dibuka oleh {interaction.user.display_name}")
+                embed = discord.Embed(
+                    title="🔓 Gembok Ruangan Dibuka",
+                    description="Pintu ruangan sekarang **TERBUKA UMUM**. Siapa saja dapat bergabung dan berbicara.",
+                    color=0x57F287
+                )
+            else:
+                current_ov.connect = False
+                current_ov.speak = True
+                await vc.set_permissions(everyone_role, overwrite=current_ov, reason=f"Ruangan digembok oleh {interaction.user.display_name}")
+                embed = discord.Embed(
+                    title="🔒 Ruangan Digembok",
+                    description=(
+                        "Pintu ruangan sekarang **TERKUNCI**.\n"
+                        "Orang luar tidak dapat masuk kecuali kamu beri akses lewat tombol **Beri Akses Teman** "
+                        "atau kamu setujui ketukan pintunya."
+                    ),
+                    color=0xED4245
+                )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+        except discord.Forbidden:
+            await interaction.response.send_message("❌ Bot tidak memiliki izin untuk mengubah perizinan channel ini.", ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Terjadi kesalahan: {e}", ephemeral=True)
+
+    @discord.ui.button(emoji="👥", label="Batas Kursi", style=discord.ButtonStyle.secondary, custom_id="vc:set_limit", row=0)
+    async def set_limit_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not await self._check_owner(interaction): return
+        sub_view = discord.ui.View(timeout=120)
+        sub_view.add_item(LimitPresetSelect(self.cog))
+        embed = discord.Embed(
+            title="👥 Pengaturan Batas Kursi",
+            description="Pilih kapasitas maksimal jumlah anggota yang diizinkan masuk ke ruangan suaramu:",
+            color=0x5865F2
+        )
+        await interaction.response.send_message(embed=embed, view=sub_view, ephemeral=True)
+
+    @discord.ui.button(emoji="✏️", label="Ganti Nama", style=discord.ButtonStyle.secondary, custom_id="vc:rename", row=0)
     async def rename_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await self._check_owner(interaction): return
         await interaction.response.send_modal(RenameVCModal(self.cog))
 
-    @discord.ui.button(emoji="🔐", label="Gembok Ruangan", style=discord.ButtonStyle.secondary, custom_id="vc:lock", row=1)
-    async def lock_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not await self._check_owner(interaction): return
-        vc = interaction.user.voice.channel
-        try:
-            current_ov = vc.overwrites_for(interaction.guild.default_role)
-            current_ov.connect = False
-            current_ov.speak = True
-            await vc.set_permissions(interaction.guild.default_role, overwrite=current_ov, reason=f"User {interaction.user.display_name} locked VC via UI.")
-            await interaction.response.send_message(f"🔐 Pintu ruangan digembok! Orang luar tidak bisa masuk lagi.", ephemeral=True)
-        except discord.Forbidden:
-            await interaction.response.send_message("❌ Tidak memiliki izin untuk mengunci channel ini.", ephemeral=True)
-    
-    @discord.ui.button(emoji="🔓", label="Buka Gembok", style=discord.ButtonStyle.secondary, custom_id="vc:unlock", row=1)
-    async def unlock_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not await self._check_owner(interaction): return
-        vc = interaction.user.voice.channel
-        try:
-            current_ov = vc.overwrites_for(interaction.guild.default_role)
-            current_ov.connect = True
-            current_ov.speak = True
-            await vc.set_permissions(interaction.guild.default_role, overwrite=current_ov, reason=f"User {interaction.user.display_name} unlocked VC via UI.")
-            await interaction.response.send_message(f"🔓 Gembok dibuka! Sekarang siapa saja bisa masuk.", ephemeral=True)
-        except discord.Forbidden:
-            await interaction.response.send_message("❌ Tidak memiliki izin untuk membuka kunci channel ini.", ephemeral=True)
-
-    @discord.ui.button(emoji="👻", label="Mode Siluman", style=discord.ButtonStyle.secondary, custom_id="vc:toggle_visibility", row=2)
-    async def toggle_visibility_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not await self._check_owner(interaction): return
-        vc = interaction.user.voice.channel
-        everyone_role = interaction.guild.default_role
-        current_permission = vc.overwrites_for(everyone_role).view_channel
-        try:
-            if current_permission is True or current_permission is None:
-                await vc.set_permissions(everyone_role, view_channel=False)
-                await interaction.response.send_message("👻 Mode Siluman Aktif! Orang luar tidak bisa melihat ruangan ini.", ephemeral=True)
-            else:
-                await vc.set_permissions(everyone_role, view_channel=True)
-                await interaction.response.send_message("👀 Mode Siluman Mati! Ruangan sekarang terlihat umum.", ephemeral=True)
-        except discord.Forbidden:
-            await interaction.response.send_message("❌ Tidak memiliki izin untuk mengubah visibilitas channel ini.", ephemeral=True)
-        except Exception as e:
-            await interaction.response.send_message(f"❌ Terjadi kesalahan: {e}", ephemeral=True)
-    
-    @discord.ui.button(emoji="🔗", label="Buat Undangan", style=discord.ButtonStyle.secondary, custom_id="vc:invite", row=2)
-    async def invite_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if not await self._check_owner(interaction): return
-        vc = interaction.user.voice.channel
-        try:
-            invite = await vc.create_invite(max_age=3600, max_uses=1, unique=True, reason=f"Invite created by VC owner {interaction.user.display_name} via UI.")
-            await interaction.response.send_message(f"🔗 Ini link undangan rahasia untuk ruanganmu: {invite.url}\n(Link ini hanya bisa dipakai 1 kali)", ephemeral=True)
-        except discord.Forbidden:
-            await interaction.response.send_message("❌ Tidak memiliki izin untuk membuat link undangan di channel ini.", ephemeral=True)
-        except Exception as e:
-            await interaction.response.send_message(f"❌ Terjadi kesalahan saat membuat undangan: {e}", ephemeral=True)
-
-    @discord.ui.button(emoji="🛑", label="Tutup Ruangan", style=discord.ButtonStyle.danger, custom_id="vc:delete", row=2)
+    @discord.ui.button(emoji="🛑", label="Tutup Ruangan", style=discord.ButtonStyle.danger, custom_id="vc:delete", row=0)
     async def delete_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await self._check_owner(interaction): return
         vc = interaction.user.voice.channel
@@ -208,67 +404,107 @@ class VCControlView(discord.ui.View):
             del self.cog.active_temp_channels[vc_id_str]
             save_temp_channels(self.cog.active_temp_channels)
         try:
-            await interaction.response.send_message(f"🛑 Ruangan telah dibongkar dan ditutup.", ephemeral=True)
-            await vc.delete(reason=f"VC deleted by owner {interaction.user.display_name} via UI.")
+            await interaction.response.send_message("🛑 Ruangan telah dibongkar dan ditutup.", ephemeral=True)
+            await vc.delete(reason=f"Ruangan dihapus oleh pemilik {interaction.user.display_name}")
         except discord.NotFound:
-            await interaction.response.send_message("❌ Channel ini sudah terhapus.", ephemeral=True)
+            await interaction.response.send_message("❌ Ruangan ini sudah terhapus.", ephemeral=True)
         except discord.Forbidden:
-            await interaction.response.send_message("❌ Tidak memiliki izin untuk menghapus channel ini.", ephemeral=True)
+            await interaction.response.send_message("❌ Bot tidak memiliki izin untuk menghapus ruangan ini.", ephemeral=True)
         except Exception as e:
-            await interaction.response.send_message(f"❌ Terjadi kesalahan saat menghapus channel: {e}", ephemeral=True)
+            await interaction.response.send_message(f"❌ Terjadi kesalahan: {e}", ephemeral=True)
 
-    @discord.ui.button(emoji="👢", label="Usir Penyusup", style=discord.ButtonStyle.danger, custom_id="vc:kick", row=3)
+    @discord.ui.button(emoji="➕", label="Beri Akses Teman", style=discord.ButtonStyle.primary, custom_id="vc:grant_friend", row=1)
+    async def grant_friend_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not await self._check_owner(interaction): return
+        sub_view = discord.ui.View(timeout=120)
+        sub_view.add_item(FriendSelect(self.cog))
+        embed = discord.Embed(
+            title="➕ Beri Akses Masuk & Bicara Teman",
+            description=(
+                "Pilih satu atau beberapa teman dari daftar di bawah.\n"
+                "Teman yang dipilih akan **otomatis dibuka gemboknya** (diberi izin Connect, Speak, dan View), "
+                "serta bot akan mengirimkan tautan undangan langsung ke DM mereka."
+            ),
+            color=0x5865F2
+        )
+        await interaction.response.send_message(embed=embed, view=sub_view, ephemeral=True)
+
+    @discord.ui.button(emoji="🚪", label="Ketuk Pintu", style=discord.ButtonStyle.secondary, custom_id="vc:knock_action", row=1)
+    async def knock_action_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        vc = interaction.user.voice.channel if interaction.user.voice else None
+        if vc and self.cog.is_owner_vc_by_interaction(interaction):
+            embed = discord.Embed(
+                title="🚪 Panduan Fitur Ketuk Pintu",
+                description=(
+                    "Fitur **Ketuk Pintu** memungkinkan teman di luar ruangan untuk meminta izin masuk saat ruanganmu sedang terkunci.\n\n"
+                    "Saat ada yang mengetuk pintu, bot akan mengirim notifikasi tombol **[Izinkan & Buka Pintu]** atau **[Tolak]** langsung di sini."
+                ),
+                color=0x5865F2
+            )
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        if not vc:
+            return await interaction.response.send_message("❌ Kamu harus terhubung ke voice channel untuk mengetuk pintu ruangan lain.", ephemeral=True)
+
+        await interaction.response.send_message("ℹ️ Gunakan perintah `/knock` untuk mengetuk pintu ruangan yang terkunci.", ephemeral=True)
+
+    @discord.ui.button(emoji="👻", label="Mode Siluman", style=discord.ButtonStyle.secondary, custom_id="vc:toggle_ghost", row=1)
+    async def toggle_ghost_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if not await self._check_owner(interaction): return
+        vc = interaction.user.voice.channel
+        everyone_role = interaction.guild.default_role
+        current_perm = vc.overwrites_for(everyone_role).view_channel
+        try:
+            if current_perm is True or current_perm is None:
+                await vc.set_permissions(everyone_role, view_channel=False)
+                await interaction.response.send_message("👻 **Mode Siluman Aktif!** Ruangan ini sekarang tersembunyi dari daftar sidebar member biasa.", ephemeral=True)
+            else:
+                await vc.set_permissions(everyone_role, view_channel=True)
+                await interaction.response.send_message("👀 **Mode Siluman Dimatikan!** Ruangan sekarang terlihat di sidebar umum.", ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message(f"❌ Terjadi kesalahan: {e}", ephemeral=True)
+
+    @discord.ui.button(emoji="👢", label="Usir Member", style=discord.ButtonStyle.secondary, custom_id="vc:kick", row=1)
     async def kick_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await self._check_owner(interaction): return
         vc = interaction.user.voice.channel
-        
-        options = []
-        for member in vc.members:
-            if member.id != interaction.user.id and not member.bot:
-                options.append(discord.SelectOption(label=member.display_name, value=str(member.id)))
-                
-        if not options:
-            return await interaction.response.send_message("❌ Tidak ada orang lain di ruanganmu untuk diusir.", ephemeral=True)
-            
-        select = discord.ui.Select(placeholder="Pilih penyusup yang mau diusir...", options=options)
-        
-        async def select_callback(inter):
-            if inter.user.id != interaction.user.id:
-                return
-            target_id = int(select.values[0])
-            target_member = vc.guild.get_member(target_id)
-            if target_member and target_member in vc.members:
-                await target_member.move_to(None)
-                await inter.response.send_message(f"👢 {target_member.display_name} telah ditendang dari ruangan!", ephemeral=True)
-            else:
-                await inter.response.send_message("❌ Orang tersebut sudah tidak ada di ruangan.", ephemeral=True)
-                
-        select.callback = select_callback
-        view = discord.ui.View()
-        view.add_item(select)
-        await interaction.response.send_message("Pilih penyusup yang ingin kamu tendang:", view=view, ephemeral=True)
+        others = [m for m in vc.members if m.id != interaction.user.id and not m.bot]
+        if not others:
+            return await interaction.response.send_message("❌ Tidak ada orang lain di dalam ruanganmu untuk dikeluarkan.", ephemeral=True)
+        sub_view = discord.ui.View(timeout=120)
+        sub_view.add_item(KickSelect(others))
+        await interaction.response.send_message("Pilih anggota yang ingin dikeluarkan:", view=sub_view, ephemeral=True)
 
-    @discord.ui.button(emoji="👑", label="Klaim Ruangan", style=discord.ButtonStyle.primary, custom_id="vc:claim", row=3)
+    @discord.ui.button(emoji="👑", label="Klaim Pemilik", style=discord.ButtonStyle.secondary, custom_id="vc:claim", row=1)
     async def claim_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         vc = interaction.user.voice.channel if interaction.user.voice else None
         if not vc:
             return await interaction.response.send_message("❌ Kamu harus berada di dalam ruangan suara untuk mengklaimnya.", ephemeral=True)
-        
+
         vc_id_str = str(vc.id)
         if vc_id_str not in self.cog.active_temp_channels:
-            return await interaction.response.send_message("❌ Ini bukan ruangan sementara yang bisa diklaim.", ephemeral=True)
-            
-        current_owner_id = int(self.cog.active_temp_channels[vc_id_str]["owner_id"])
+            return await interaction.response.send_message("❌ Ini bukan ruangan sementara yang terdaftar.", ephemeral=True)
+
+        current_owner_id = int(self.cog.active_temp_channels[vc_id_str].get("owner_id", 0))
         if current_owner_id == interaction.user.id:
-            return await interaction.response.send_message("✅ Kamu sudah menjadi pemilik ruangan ini!", ephemeral=True)
-            
+            return await interaction.response.send_message("✅ Kamu sudah menjadi pemilik sah ruangan ini!", ephemeral=True)
+
         current_owner_in_vc = any(member.id == current_owner_id for member in vc.members)
         if current_owner_in_vc:
-            return await interaction.response.send_message("❌ Pemilik aslinya masih ada di dalam ruangan! Kamu tidak bisa merebutnya.", ephemeral=True)
-            
+            return await interaction.response.send_message("❌ Pemilik ruangan masih ada di dalam! Kamu tidak bisa merebut kepemilikan.", ephemeral=True)
+
         self.cog.active_temp_channels[vc_id_str]["owner_id"] = str(interaction.user.id)
         save_temp_channels(self.cog.active_temp_channels)
-        await interaction.response.send_message("👑 Berhasil! Kamu sekarang adalah Ketua RT (Pemilik) ruangan ini.", ephemeral=True)
+        try:
+            await vc.set_permissions(
+                interaction.user,
+                connect=True, speak=True, send_messages=True, view_channel=True,
+                manage_channels=True, manage_roles=True,
+                mute_members=True, deafen_members=True, move_members=True
+            )
+        except Exception:
+            pass
+        await interaction.response.send_message("👑 **Berhasil!** Kamu sekarang adalah pemilik ruangan ini.", ephemeral=True)
 
 
 class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
@@ -278,52 +514,80 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
         self.active_temp_channels = load_temp_channels()
         self.bot.add_view(VCControlView(self))
         self.cleanup_task.start()
-        
+
     def cog_unload(self):
         self.cleanup_task.cancel()
 
-    @tasks.loop(seconds=60)
-    async def cleanup_task(self):
-        channels_to_remove = []
-        for channel_id_str, channel_info in list(self.active_temp_channels.items()):
-            if not isinstance(channel_info, dict):
-                channels_to_remove.append(channel_id_str)
+    async def deep_clean_ghost_channels(self):
+        for guild_id_str, config in list(self.guild_config.items()):
+            if not isinstance(config, dict):
                 continue
-            channel_id = int(channel_id_str)
-            if 'guild_id' not in channel_info or 'owner_id' not in channel_info:
-                channels_to_remove.append(channel_id_str)
+            target_cat_id = config.get('target_category_id')
+            trigger_vc_id = config.get('trigger_vc_id')
+            if not target_cat_id:
                 continue
-            guild_id = int(channel_info["guild_id"])
-            guild = self.bot.get_guild(guild_id)
-            if not guild:
-                channels_to_remove.append(channel_id_str)
-                continue
-            channel = guild.get_channel(channel_id)
-            if not channel:
-                channels_to_remove.append(channel_id_str)
-                continue
-            human_members_in_custom_channel = [
-                member for member in channel.members
-                if not member.bot
-            ]
-            if not human_members_in_custom_channel:
-                try:
-                    await channel.delete(reason="Custom voice channel is empty of human users.")
-                    channels_to_remove.append(channel_id_str)
-                except discord.NotFound:
-                    channels_to_remove.append(channel_id_str)
-                except discord.Forbidden:
-                    pass
-                except Exception:
-                    pass
-        for ch_id in channels_to_remove:
-            self.active_temp_channels.pop(ch_id, None)
-        if channels_to_remove:
+
+            try:
+                guild = self.bot.get_guild(int(guild_id_str))
+                if not guild:
+                    continue
+                category = guild.get_channel(int(target_cat_id))
+                if not category or not isinstance(category, discord.CategoryChannel):
+                    continue
+
+                for vc in list(category.voice_channels):
+                    if trigger_vc_id and vc.id == int(trigger_vc_id):
+                        continue
+                    humans = [m for m in vc.members if not m.bot]
+                    vc_id_str = str(vc.id)
+                    if len(humans) == 0:
+                        try:
+                            await vc.delete(reason="Pembersihan otomatis: channel suara sementara kosong.")
+                        except (discord.NotFound, discord.Forbidden):
+                            pass
+                        except Exception:
+                            pass
+                        self.active_temp_channels.pop(vc_id_str, None)
+                    else:
+                        if vc_id_str not in self.active_temp_channels:
+                            first_human = humans[0]
+                            self.active_temp_channels[vc_id_str] = {
+                                "owner_id": str(first_human.id),
+                                "guild_id": guild_id_str
+                            }
+                        else:
+                            current_owner_id = self.active_temp_channels[vc_id_str].get("owner_id")
+                            if not any(str(m.id) == current_owner_id for m in humans):
+                                new_owner = humans[0]
+                                self.active_temp_channels[vc_id_str]["owner_id"] = str(new_owner.id)
+            except Exception:
+                pass
+
+        orphans = []
+        for ch_id_str, ch_info in list(self.active_temp_channels.items()):
+            try:
+                ch_id = int(ch_id_str)
+                g_id = int(ch_info.get("guild_id", 0))
+                guild = self.bot.get_guild(g_id)
+                if not guild or not guild.get_channel(ch_id):
+                    orphans.append(ch_id_str)
+            except Exception:
+                orphans.append(ch_id_str)
+
+        for o in orphans:
+            self.active_temp_channels.pop(o, None)
+
+        if orphans:
             save_temp_channels(self.active_temp_channels)
+
+    @tasks.loop(seconds=30)
+    async def cleanup_task(self):
+        await self.deep_clean_ghost_channels()
 
     @cleanup_task.before_loop
     async def before_cleanup_task(self):
         await self.bot.wait_until_ready()
+        await self.deep_clean_ghost_channels()
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
@@ -332,6 +596,7 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
 
         if before.channel and str(before.channel.id) in self.active_temp_channels:
             human_members = [m for m in before.channel.members if not m.bot]
+            vc_id_str = str(before.channel.id)
             if not human_members:
                 try:
                     await before.channel.delete(reason="Channel suara kosong (semua anggota keluar).")
@@ -339,9 +604,30 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
                     pass
                 except Exception:
                     pass
-                self.active_temp_channels.pop(str(before.channel.id), None)
+                self.active_temp_channels.pop(vc_id_str, None)
                 save_temp_channels(self.active_temp_channels)
-        
+            else:
+                current_owner_id = self.active_temp_channels.get(vc_id_str, {}).get("owner_id")
+                if str(member.id) == current_owner_id:
+                    new_owner = human_members[0]
+                    self.active_temp_channels[vc_id_str]["owner_id"] = str(new_owner.id)
+                    save_temp_channels(self.active_temp_channels)
+                    try:
+                        await before.channel.set_permissions(
+                            new_owner,
+                            connect=True, speak=True, send_messages=True, view_channel=True,
+                            manage_channels=True, manage_roles=True,
+                            mute_members=True, deafen_members=True, move_members=True
+                        )
+                        embed = discord.Embed(
+                            title="👑 Kepemilikan Dialihkan",
+                            description=f"Pemilik sebelumnya meninggalkan ruangan. Kepemilikan ruangan sekarang dialihkan ke {new_owner.mention}.",
+                            color=0xFEE75C
+                        )
+                        await before.channel.send(embed=embed)
+                    except Exception:
+                        pass
+
         guild_id_str = str(member.guild.id)
         config = self.guild_config.get(guild_id_str, {})
         trigger_vc_id = config.get('trigger_vc_id')
@@ -360,7 +646,7 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
                         return await self.send_scheduled_message(member, "Bot: Maaf, pembuatan channel pribadi hanya tersedia pada waktu yang ditentukan.")
                 elif not (start_time <= now <= end_time):
                     return await self.send_scheduled_message(member, "Bot: Maaf, pembuatan channel pribadi hanya tersedia pada waktu yang ditentukan.")
-            
+
             for ch_id_str, ch_info in list(self.active_temp_channels.items()):
                 if not isinstance(ch_info, dict):
                     continue
@@ -373,9 +659,9 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
                         except Exception:
                             return
                     else:
-                        self.active_temp_channels.pop(ch_id_str)
+                        self.active_temp_channels.pop(ch_id_str, None)
                         save_temp_channels(self.active_temp_channels)
-            
+
             guild = member.guild
             category = guild.get_channel(target_cat_id)
             if not category or not isinstance(category, discord.CategoryChannel):
@@ -384,11 +670,11 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
                 try: await member.move_to(None)
                 except Exception: pass
                 return
-            
+
             current_category_channels = [ch for ch in category.voice_channels if ch.name.startswith("Music ") or ch.name.startswith("Voice ")]
             next_channel_number = len(current_category_channels) + 1
             new_channel_name = f"Voice {next_channel_number}"
-            
+
             try:
                 everyone_role = guild.default_role
                 overwrites = {
@@ -400,38 +686,37 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
                         mute_members=True, deafen_members=True, move_members=True
                     )
                 }
-                
+
                 bitrate_to_set = guild.bitrate_limit
-                bitrate_kbps = bitrate_to_set // 1000 
-                
+                bitrate_kbps = bitrate_to_set // 1000
+
                 new_vc = await guild.create_voice_channel(
                     name=new_channel_name,
                     category=category,
                     user_limit=0,
                     overwrites=overwrites,
-                    bitrate=bitrate_to_set, 
+                    bitrate=bitrate_to_set,
                     rtc_region=TARGET_REGION,
-                    reason=f"{member.display_name} created a temporary voice channel."
+                    reason=f"{member.display_name} membuat ruangan suara sementara."
                 )
-                
+
                 await member.move_to(new_vc)
                 self.active_temp_channels[str(new_vc.id)] = {"owner_id": str(member.id), "guild_id": guild_id_str}
                 save_temp_channels(self.active_temp_channels)
-                
+
                 sent_panel = False
                 if build_v2_card and send_v2_message:
                     try:
                         buttons = [
-                            {"label": "Tambah Kursi", "emoji": "➕", "style": 2, "custom_id": "vc:limit_plus"},
-                            {"label": "Kurangi Kursi", "emoji": "➖", "style": 2, "custom_id": "vc:limit_minus"},
-                            {"label": "Ganti Papan Nama", "emoji": "🏷️", "style": 2, "custom_id": "vc:rename"},
-                            {"label": "Gembok Ruangan", "emoji": "🔐", "style": 2, "custom_id": "vc:lock"},
-                            {"label": "Buka Gembok", "emoji": "🔓", "style": 2, "custom_id": "vc:unlock"},
-                            {"label": "Mode Siluman", "emoji": "👻", "style": 2, "custom_id": "vc:toggle_visibility"},
-                            {"label": "Buat Undangan", "emoji": "🔗", "style": 2, "custom_id": "vc:invite"},
+                            {"label": "Kunci / Buka Gembok", "emoji": "🔒", "style": 2, "custom_id": "vc:toggle_lock"},
+                            {"label": "Batas Kursi", "emoji": "👥", "style": 2, "custom_id": "vc:set_limit"},
+                            {"label": "Ganti Nama", "emoji": "✏️", "style": 2, "custom_id": "vc:rename"},
                             {"label": "Tutup Ruangan", "emoji": "🛑", "style": 4, "custom_id": "vc:delete"},
-                            {"label": "Usir Penyusup", "emoji": "👢", "style": 4, "custom_id": "vc:kick"},
-                            {"label": "Klaim Ruangan", "emoji": "👑", "style": 1, "custom_id": "vc:claim"}
+                            {"label": "Beri Akses Teman", "emoji": "➕", "style": 1, "custom_id": "vc:grant_friend"},
+                            {"label": "Ketuk Pintu", "emoji": "🚪", "style": 2, "custom_id": "vc:knock_action"},
+                            {"label": "Mode Siluman", "emoji": "👻", "style": 2, "custom_id": "vc:toggle_ghost"},
+                            {"label": "Usir Member", "emoji": "👢", "style": 2, "custom_id": "vc:kick"},
+                            {"label": "Klaim Pemilik", "emoji": "👑", "style": 2, "custom_id": "vc:claim"}
                         ]
 
                         donation_file_path = 'data/donation_buttons.json'
@@ -449,21 +734,22 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
                                 pass
 
                         card_json = build_v2_card(
-                            title="🎙️ Ruang Pribadimu Siap!",
+                            title="🎙️ Ruang Suara Pribadi",
                             description=(
                                 f"Selamat datang di {new_vc.name}, <@{member.id}>!\n"
                                 f"Ruangan ini sepenuhnya milikmu.\n"
                                 f"Bitrate: **{bitrate_kbps} kbps** | Region: **{TARGET_REGION.upper()}**\n\n"
-                                f"**📖 Panduan Tombol Ruangan:**\n"
-                                f"➕ / ➖ **Kursi**: Menambah atau mengurangi batas maksimal orang di ruangan.\n"
-                                f"🏷️ **Ganti Papan Nama**: Mengubah nama ruanganmu sesuka hati.\n"
-                                f"🔐 **Gembok & Buka Gembok**: Mengatur perizinan masuk ruangan.\n"
-                                f"👻 **Mode Siluman**: Menyembunyikan ruanganmu dari pandangan umum.\n"
-                                f"🔗 **Buat Undangan**: Membuat tautan akses khusus teman.\n"
-                                f"👢 **Usir Penyusup**: Mengeluarkan pengguna lain dari ruangan.\n"
-                                f"👑 **Klaim Ruangan**: Mengambil alih kepemilikan jika pemilik sebelumnya keluar.\n"
+                                f"**🎮 Kontrol Ruangan Cepat:**\n"
+                                f"🔒 **Kunci / Buka Gembok**: Mengatur perizinan masuk ruangan.\n"
+                                f"👥 **Batas Kursi**: Pilih preset kapasitas instan (Duet, Squad, Bebas).\n"
+                                f"✏️ **Ganti Nama**: Mengubah nama ruanganmu.\n"
+                                f"➕ **Beri Akses Teman**: Pilih teman untuk langsung diberi akses masuk & bicara.\n"
+                                f"🚪 **Ketuk Pintu**: Teman di luar bisa meminta izin masuk.\n"
+                                f"👻 **Mode Siluman**: Sembunyikan ruangan dari sidebar server.\n"
+                                f"👢 **Usir Member**: Tendang penyusup dari ruangan.\n"
+                                f"👑 **Klaim Pemilik**: Ambil alih ruangan jika pemilik sebelumnya keluar.\n"
                                 f"🛑 **Tutup Ruangan**: Menutup dan menghapus ruangan ini seketika.\n\n"
-                                f"*Ruangan akan otomatis dihapus jika sudah kosong.*"
+                                f"*Ruangan akan otomatis dihapus jika seluruh anggota keluar.*"
                             ),
                             color=0x2ecc71,
                             buttons=buttons
@@ -476,14 +762,19 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
 
                 if not sent_panel:
                     embed = discord.Embed(
-                        title="Channel Pribadimu Dibuat!",
-                        description=f"Selamat datang di {new_vc.name}, {member.mention}! Kamu adalah pemilik channel ini.\nBitrate diatur maksimal ({bitrate_kbps} kbps) dan Region diatur ke {TARGET_REGION.upper()}.\n\nGunakan tombol di bawah untuk mengelola channelmu tanpa perintah teks.\nChannel ini akan otomatis dihapus jika tidak ada user di dalamnya.",
+                        title="🎙️ Ruang Suara Pribadi",
+                        description=(
+                            f"Selamat datang di {new_vc.name}, {member.mention}! Kamu adalah pemilik channel ini.\n"
+                            f"Bitrate: **{bitrate_kbps} kbps** | Region: **{TARGET_REGION.upper()}**\n\n"
+                            f"Gunakan tombol di bawah untuk mengelola ruanganmu dengan mudah.\n"
+                            f"*Ruangan akan otomatis dihapus saat kosong.*"
+                        ),
                         color=discord.Color.green()
                     )
                     view = VCControlView(self)
                     await new_vc.send(embed=embed, view=view)
             except discord.Forbidden:
-                try: await member.send(f"Bot: Gagal membuat channel suara pribadi, pastikan bot memiliki izin yang cukup.")
+                try: await member.send("Bot: Gagal membuat channel suara pribadi, pastikan bot memiliki izin yang cukup.")
                 except discord.Forbidden: pass
                 try: await member.move_to(None)
                 except Exception: pass
@@ -514,7 +805,7 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
         if channel_info.get("guild_id") != guild_id_str:
             return False
         return channel_info.get("owner_id") == str(ctx.author.id)
-        
+
     def is_owner_vc_by_interaction(self, interaction):
         if not interaction.user.voice or not interaction.user.voice.channel:
             return False
@@ -526,6 +817,86 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
         if channel_info.get("guild_id") != guild_id_str:
             return False
         return channel_info.get("owner_id") == str(interaction.user.id)
+
+    @commands.hybrid_command(
+        name="knock",
+        aliases=["vcknock", "ketukpintu"],
+        description="Ketuk pintu ruangan sementara yang terkunci untuk meminta izin masuk dan berbicara"
+    )
+    @app_commands.describe(room="Pilih ruangan suara sementara yang ingin kamu masuki")
+    async def knock(self, ctx: commands.Context, room: discord.VoiceChannel = None):
+        if not ctx.guild:
+            return await ctx.send("❌ Perintah ini hanya dapat digunakan di dalam server.", ephemeral=True)
+
+        target_vc = room
+        if not target_vc:
+            config = self.guild_config.get(str(ctx.guild.id), {})
+            cat_id = config.get("target_category_id")
+            if cat_id:
+                category = ctx.guild.get_channel(int(cat_id))
+                if category and isinstance(category, discord.CategoryChannel):
+                    locked_rooms = []
+                    for vc in category.voice_channels:
+                        if str(vc.id) in self.active_temp_channels:
+                            if vc.overwrites_for(ctx.guild.default_role).connect is False:
+                                locked_rooms.append(vc)
+                    if len(locked_rooms) == 1:
+                        target_vc = locked_rooms[0]
+                    elif len(locked_rooms) > 1:
+                        names_list = "\n".join(f"• {r.name} (ID: `{r.id}`)" for r in locked_rooms[:5])
+                        return await ctx.send(
+                            f"🔍 Ditemukan beberapa ruangan terkunci. Silakan sebutkan ruangannya, contoh:\n`/knock room:#nama-ruangan`\n\nDaftar ruangan:\n{names_list}",
+                            ephemeral=True
+                        )
+
+        if not target_vc:
+            return await ctx.send("❌ Silakan pilih atau sebutkan ruangan yang ingin kamu ketuk pintunya: `/knock room:#nama-ruangan`", ephemeral=True)
+
+        vc_id_str = str(target_vc.id)
+        if vc_id_str not in self.active_temp_channels:
+            return await ctx.send("❌ Channel tersebut bukan ruangan suara sementara yang aktif.", ephemeral=True)
+
+        channel_info = self.active_temp_channels[vc_id_str]
+        owner_id = int(channel_info.get("owner_id", 0))
+
+        if owner_id == ctx.author.id:
+            return await ctx.send("ℹ️ Kamu adalah pemilik ruangan ini, kamu tidak perlu mengetuk pintu.", ephemeral=True)
+
+        if ctx.author in target_vc.members:
+            return await ctx.send("ℹ️ Kamu sudah berada di dalam ruangan ini.", ephemeral=True)
+
+        owner = ctx.guild.get_member(owner_id)
+        if not owner:
+            return await ctx.send("❌ Pemilik ruangan sedang tidak ditemukan di server.", ephemeral=True)
+
+        view = KnockDecisionView(self, ctx.author.id, target_vc.id)
+        knock_embed = discord.Embed(
+            title="🚪 Tamu Mengetuk Pintu!",
+            description=(
+                f"**{ctx.author.mention}** (`{ctx.author.display_name}`) sedang mengetuk pintu ruanganmu "
+                f"dan meminta izin untuk bergabung serta berbicara di **{target_vc.name}**.\n\n"
+                f"Pilih tindakan di bawah:"
+            ),
+            color=0xFEE75C
+        )
+        knock_embed.set_thumbnail(url=ctx.author.display_avatar.url)
+        knock_embed.set_footer(text="Izin akan otomatis disematkan jika kamu klik Izinkan")
+
+        sent_notif = False
+        try:
+            await target_vc.send(content=f"{owner.mention}", embed=knock_embed, view=view)
+            sent_notif = True
+        except Exception:
+            try:
+                await owner.send(embed=knock_embed, view=view)
+                sent_notif = True
+            except Exception:
+                pass
+
+        if sent_notif:
+            await ctx.send(f"🚪 Kamu telah mengetuk pintu ruangan **{target_vc.name}**. Permintaan telah dikirim ke pemilik ({owner.display_name}). Mohon tunggu responnya!", ephemeral=True)
+        else:
+            await ctx.send("❌ Gagal mengirimkan ketukan pintu ke pemilik ruangan.", ephemeral=True)
 
     @commands.hybrid_group(name="vcadmin", description="Admin: Kelola konfigurasi channel suara sementara", fallback="help")
     async def vcadmin_group(self, ctx):
@@ -573,12 +944,30 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
     async def vc_group(self, ctx):
         if ctx.invoked_subcommand is None:
             embed = discord.Embed(
-                title="Panduan Channel Suara Pribadi",
-                description="Saat kamu bergabung ke Channel Khusus Buat VC Baru, bot akan otomatis membuat channel suara baru untukmu!",
-                color=discord.Color.blue()
+                title="🎙️ Panduan Ruang Suara Pribadi",
+                description="Saat kamu bergabung ke Channel Pemicu, bot akan otomatis membuat ruangan suara baru khusus untukmu!",
+                color=0x5865F2
             )
-            embed.add_field(name="Manajemen Channel:", value="`/vc limit <angka>`: Atur batas jumlah user.\n`/vc rename <nama_baru>`: Ubah nama channel suaramu.\n`/vc lock`: Kunci channel\n`/vc unlock`: Buka kunci channelmu\n`/vc delete`: Hapus ruangan", inline=False)
-            embed.add_field(name="Manajemen User:", value="`/vc kick @user`: Tendang user dari channelmu.\n`/vc grant @user`: Beri user izin masuk.\n`/vc revoke @user`: Cabut izin user.\n`/vc transfer @user`: Transfer kepemilikan.", inline=False)
+            embed.add_field(
+                name="Perintah Utama:",
+                value=(
+                    "`/vc lock`: Gembok ruangan dari orang luar\n"
+                    "`/vc unlock`: Buka gembok ruangan\n"
+                    "`/vc limit <angka>`: Atur kapasitas kursi (0 = bebas)\n"
+                    "`/vc rename <nama_baru>`: Ubah nama ruangan\n"
+                    "`/vc grant @user`: Beri izin khusus teman masuk & bicara\n"
+                    "`/vc revoke @user`: Cabut izin teman\n"
+                    "`/vc kick @user`: Keluarkan member dari ruangan\n"
+                    "`/vc transfer @user`: Alihkan kepemilikan ruangan\n"
+                    "`/vc delete`: Tutup ruangan sekarang"
+                ),
+                inline=False
+            )
+            embed.add_field(
+                name="Fitur Tamu:",
+                value="`/knock [room]`: Minta izin masuk ke ruangan yang sedang digembok",
+                inline=False
+            )
             await ctx.send(embed=embed)
 
     @vc_group.command(name="lock", description="Gembok ruangan agar orang lain tidak bisa masuk")
@@ -589,7 +978,7 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
             current_ov = vc.overwrites_for(ctx.guild.default_role)
             current_ov.connect = False
             current_ov.speak = True
-            await vc.set_permissions(ctx.guild.default_role, overwrite=current_ov, reason=f"User {ctx.author.display_name} locked VC.")
+            await vc.set_permissions(ctx.guild.default_role, overwrite=current_ov, reason=f"Ruangan digembok oleh {ctx.author.display_name}")
             await ctx.send(f"🔐 Pintu ruangan {vc.name} telah digembok.", ephemeral=True)
         except Exception as e:
             await ctx.send(f"Bot: Terjadi kesalahan: {e}", ephemeral=True)
@@ -602,7 +991,7 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
             current_ov = vc.overwrites_for(ctx.guild.default_role)
             current_ov.connect = True
             current_ov.speak = True
-            await vc.set_permissions(ctx.guild.default_role, overwrite=current_ov, reason=f"User {ctx.author.display_name} unlocked VC.")
+            await vc.set_permissions(ctx.guild.default_role, overwrite=current_ov, reason=f"Gembok dibuka oleh {ctx.author.display_name}")
             await ctx.send(f"🔓 Gembok ruangan {vc.name} telah dibuka.", ephemeral=True)
         except Exception as e:
             await ctx.send(f"Bot: Terjadi kesalahan: {e}", ephemeral=True)
@@ -614,8 +1003,8 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
             return await ctx.send("Bot: Batas user harus antara 0 hingga 99.", ephemeral=True)
         try:
             vc = ctx.author.voice.channel
-            await vc.edit(user_limit=limit, reason=f"User {ctx.author.display_name} set user limit.")
-            await ctx.send(f"🪑 Batas kursi diatur ke: {limit if limit > 0 else 'tak terbatas'}.", ephemeral=True)
+            await vc.edit(user_limit=limit, reason=f"User limit diatur oleh {ctx.author.display_name}")
+            await ctx.send(f"👥 Batas kursi diatur ke: {limit if limit > 0 else 'tak terbatas'}.", ephemeral=True)
         except Exception as e:
             await ctx.send(f"Bot: Terjadi kesalahan: {e}", ephemeral=True)
 
@@ -626,12 +1015,12 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
             return await ctx.send("Bot: Nama channel harus antara 2 hingga 100 karakter.", ephemeral=True)
         try:
             vc = ctx.author.voice.channel
-            await vc.edit(name=new_name, reason=f"User {ctx.author.display_name} renamed VC.")
-            await ctx.send(f"🏷️ Nama ruangan diubah menjadi {new_name}.", ephemeral=True)
+            await vc.edit(name=new_name, reason=f"Nama channel diubah oleh {ctx.author.display_name}")
+            await ctx.send(f"✏️ Nama ruangan diubah menjadi {new_name}.", ephemeral=True)
         except Exception as e:
             await ctx.send(f"Bot: Terjadi kesalahan: {e}", ephemeral=True)
 
-    @vc_group.command(name="kick", description="Tendang penyusup dari ruangan")
+    @vc_group.command(name="kick", description="Keluarkan penyusup dari ruangan")
     @commands.check(lambda ctx: ctx.cog.is_owner_vc(ctx))
     async def vc_kick(self, ctx, member: discord.Member):
         if member.id == ctx.author.id or member.bot:
@@ -639,31 +1028,31 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
         vc = ctx.author.voice.channel
         if member.voice and member.voice.channel == vc:
             try:
-                await member.move_to(None, reason=f"Kicked by VC owner {ctx.author.display_name}.")
-                await ctx.send(f"👢 {member.display_name} telah ditendang dari ruangan.", ephemeral=True)
+                await member.move_to(None, reason=f"Dikeluarkan oleh pemilik ruangan {ctx.author.display_name}")
+                await ctx.send(f"👢 {member.display_name} telah dikeluarkan dari ruangan.", ephemeral=True)
             except Exception as e:
                 await ctx.send(f"Bot: Terjadi kesalahan: {e}", ephemeral=True)
         else:
             await ctx.send("Bot: Pengguna tersebut tidak berada di ruanganmu.", ephemeral=True)
 
-    @vc_group.command(name="grant", description="Beri izin VIP untuk user tertentu masuk")
+    @vc_group.command(name="grant", description="Beri izin teman khusus masuk dan berbicara")
     @commands.check(lambda ctx: ctx.cog.is_owner_vc(ctx))
     async def vc_grant(self, ctx, member: discord.Member):
         if member.bot: return
         try:
             vc = ctx.author.voice.channel
-            await vc.set_permissions(member, connect=True, speak=True, reason=f"VC owner {ctx.author.display_name} granted access.")
-            await ctx.send(f"✅ {member.display_name} sekarang diizinkan bergabung ke ruangan.", ephemeral=True)
+            await vc.set_permissions(member, connect=True, speak=True, view_channel=True, reason=f"Izin diberikan oleh {ctx.author.display_name}")
+            await ctx.send(f"✅ {member.display_name} sekarang diizinkan bergabung dan berbicara di ruanganmu.", ephemeral=True)
         except Exception as e:
             await ctx.send(f"Bot: Terjadi kesalahan: {e}", ephemeral=True)
 
-    @vc_group.command(name="revoke", description="Cabut izin VIP dari user tertentu")
+    @vc_group.command(name="revoke", description="Cabut izin masuk dari user tertentu")
     @commands.check(lambda ctx: ctx.cog.is_owner_vc(ctx))
     async def vc_revoke(self, ctx, member: discord.Member):
         if member.bot: return
         try:
             vc = ctx.author.voice.channel
-            await vc.set_permissions(member, connect=False, reason=f"VC owner {ctx.author.display_name} revoked access.")
+            await vc.set_permissions(member, connect=False, reason=f"Izin dicabut oleh {ctx.author.display_name}")
             await ctx.send(f"❌ Izin akses {member.display_name} telah dicabut.", ephemeral=True)
         except Exception as e:
             await ctx.send(f"Bot: Terjadi kesalahan: {e}", ephemeral=True)
@@ -677,7 +1066,7 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
         try:
             self.active_temp_channels[vc_id_str]["owner_id"] = str(new_owner.id)
             save_temp_channels(self.active_temp_channels)
-            
+
             old_owner_overwrites = vc.overwrites_for(ctx.author)
             old_owner_overwrites.manage_channels = None
             old_owner_overwrites.manage_roles = None
@@ -685,7 +1074,7 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
             old_owner_overwrites.deafen_members = None
             old_owner_overwrites.move_members = None
             await vc.set_permissions(ctx.author, overwrite=old_owner_overwrites)
-            
+
             new_owner_overwrites = vc.overwrites_for(new_owner)
             new_owner_overwrites.manage_channels = True
             new_owner_overwrites.manage_roles = True
@@ -693,8 +1082,8 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
             new_owner_overwrites.deafen_members = True
             new_owner_overwrites.move_members = True
             await vc.set_permissions(new_owner, overwrite=new_owner_overwrites)
-            
-            await ctx.send(f"👑 Kepemilikan ruangan ditransfer ke {new_owner.mention}!", ephemeral=True)
+
+            await ctx.send(f"👑 Kepemilikan ruangan berhasil dialihkan ke {new_owner.mention}!", ephemeral=True)
         except Exception as e:
             await ctx.send(f"Bot: Terjadi kesalahan saat mengalihkan kepemilikan: {e}", ephemeral=True)
 
@@ -707,8 +1096,8 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
             if vc_id_str in self.active_temp_channels:
                 del self.active_temp_channels[vc_id_str]
                 save_temp_channels(self.active_temp_channels)
-            await ctx.send(f"🛑 Ruangan telah dibongkar dan ditutup.", ephemeral=True)
-            await vc.delete(reason=f"VC deleted by owner {ctx.author.display_name} via Command.")
+            await ctx.send("🛑 Ruangan telah dibongkar dan ditutup.", ephemeral=True)
+            await vc.delete(reason=f"Ruangan dihapus oleh pemilik {ctx.author.display_name}")
         except Exception as e:
             await ctx.send(f"Bot: Terjadi kesalahan saat menghapus channel: {e}", ephemeral=True)
 
@@ -717,14 +1106,14 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
     async def admin_vc_transfer_owner(self, ctx, channel: discord.VoiceChannel, new_owner: discord.Member):
         channel_id_str = str(channel.id)
         if channel_id_str not in self.active_temp_channels or new_owner.bot: return
-        
+
         old_owner_id = self.active_temp_channels[channel_id_str].get('owner_id')
         old_owner = ctx.guild.get_member(int(old_owner_id)) if old_owner_id else None
-        
+
         try:
             self.active_temp_channels[channel_id_str]['owner_id'] = str(new_owner.id)
             save_temp_channels(self.active_temp_channels)
-            
+
             if old_owner and old_owner.id != new_owner.id:
                 old_owner_overwrites = channel.overwrites_for(old_owner)
                 old_owner_overwrites.manage_channels = None
@@ -733,7 +1122,7 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
                 old_owner_overwrites.deafen_members = None
                 old_owner_overwrites.move_members = None
                 await channel.set_permissions(old_owner, overwrite=old_owner_overwrites)
-                
+
             new_owner_overwrites = channel.overwrites_for(new_owner)
             new_owner_overwrites.manage_channels = True
             new_owner_overwrites.manage_roles = True
@@ -741,25 +1130,23 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
             new_owner_overwrites.deafen_members = True
             new_owner_overwrites.move_members = True
             await channel.set_permissions(new_owner, overwrite=new_owner_overwrites)
-            
+
             await ctx.send(f"👑 Kepemilikan saluran {channel.mention} dialihkan ke {new_owner.mention}.", ephemeral=True)
         except Exception as e:
             await ctx.send(f"Bot: Terjadi kesalahan: {e}", ephemeral=True)
-
-
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         if ctx.cog != self:
             return
-        
+
         try:
             if isinstance(error, commands.CheckFailure):
                 await ctx.send("Bot: Kamu harus berada di channel suara pribadi milikmu untuk menggunakan perintah ini.", ephemeral=True)
             elif isinstance(error, commands.MissingRequiredArgument):
                 await ctx.send(f"Bot: Argumen tidak lengkap. Contoh penggunaan: !{ctx.command.name} {ctx.command.signature}", ephemeral=True)
             elif isinstance(error, commands.BadArgument):
-                await ctx.send(f"Bot: Argumen tidak valid.", ephemeral=True)
+                await ctx.send("Bot: Argumen tidak valid.", ephemeral=True)
             elif isinstance(error, discord.Forbidden):
                 await ctx.send("Bot: Bot tidak memiliki izin yang diperlukan.", ephemeral=True)
         except Exception:

@@ -96,10 +96,12 @@ def build_v2_card(title: str = None, description: str = None, fields: list = Non
     return main_card
 
 
-async def send_v2_message(bot, channel_id: int, components: list, files: list = None, content: str = None):
+async def send_v2_message(bot, channel_id: int, components: list, files: list = None, content: str = None, view: discord.ui.View = None):
     route = discord.http.Route('POST', '/channels/{channel_id}/messages', channel_id=channel_id)
 
     comp_list = list(components)
+    if view:
+        comp_list.extend(view.to_components())
     if content and str(content).strip():
         comp_list.insert(0, {
             "type": 10,
@@ -116,6 +118,7 @@ async def send_v2_message(bot, channel_id: int, components: list, files: list = 
     }
 
     try:
+        resp = None
         if files:
             payload["attachments"] = [f.to_dict(i) if hasattr(f, 'to_dict') else {"id": i, "filename": f.filename} for i, f in enumerate(files)]
             for file in files:
@@ -133,11 +136,51 @@ async def send_v2_message(bot, channel_id: int, components: list, files: list = 
                     'content_type': 'application/octet-stream'
                 })
             params = discord.http.MultipartParameters(payload=None, multipart=multipart, files=files)
-            return await bot.http.send_message(channel_id, params=params)
+            resp = await bot.http.send_message(channel_id, params=params)
         else:
-            return await bot.http.request(route, json=payload)
+            resp = await bot.http.request(route, json=payload)
+
+        if view and not view.is_finished():
+            msg_id = None
+            if isinstance(resp, dict) and "id" in resp:
+                msg_id = int(resp["id"])
+            elif hasattr(resp, "id"):
+                msg_id = resp.id
+            register_view(bot, view, message_id=msg_id)
+        return resp
     except Exception as e:
         print(f"[V2_LAYOUT] Failed to send V2 layout to channel {channel_id}: {e}")
+        return {"error_msg": str(e)}
+
+
+async def edit_v2_message(bot, channel_id: int, message_id: int, components: list, files: list = None, content: str = None, view: discord.ui.View = None):
+    route = discord.http.Route('PATCH', '/channels/{channel_id}/messages/{message_id}', channel_id=channel_id, message_id=message_id)
+    comp_list = list(components)
+    if view:
+        comp_list.extend(view.to_components())
+    if content and str(content).strip():
+        comp_list.insert(0, {
+            "type": 10,
+            "id": 80,
+            "content": str(content).strip()
+        })
+    payload = {
+        "components": comp_list,
+        "allowed_mentions": {
+            "parse": ["users", "roles", "everyone"]
+        }
+    }
+    try:
+        resp = None
+        if files:
+            resp = await bot.http.request(route, payload=payload, files=files)
+        else:
+            resp = await bot.http.request(route, json=payload)
+        if view and not view.is_finished():
+            register_view(bot, view, message_id=message_id)
+        return resp
+    except Exception as e:
+        print(f"[V2_LAYOUT] Failed to edit V2 layout message {message_id}: {e}")
         return {"error_msg": str(e)}
 
 
@@ -269,28 +312,6 @@ async def send_v2_interaction(bot, interaction: discord.Interaction, card: dict,
         except Exception as e:
             print(f"Fallback send_message failed: {e}")
             return None
-
-
-async def edit_v2_message(bot, channel_id: int, message_id: int, components: list, files: list = None):
-    route = discord.http.Route(
-        'PATCH',
-        '/channels/{channel_id}/messages/{message_id}',
-        channel_id=channel_id,
-        message_id=message_id
-    )
-
-    payload = {
-        "components": components
-    }
-
-    try:
-        if files:
-            return await bot.http.request(route, payload=payload, files=files)
-        else:
-            return await bot.http.request(route, json=payload)
-    except Exception as e:
-        print(f"Failed to edit layout: {e}")
-        return None
 
 
 async def update_v2_interaction(bot, interaction: discord.Interaction, card: dict, view: discord.ui.View = None):

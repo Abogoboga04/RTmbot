@@ -1,248 +1,1451 @@
 [
-    {"name": "Gajah", "category": "Hewan", "clues": ["Aku adalah mamalia darat terbesar.", "Aku memiliki belalai yang panjang untuk mengambil makanan dan minum.", "Gadingku yang berharga sering menjadi incaran."]},
-    {"name": "Pisang", "category": "Buah", "clues": ["Aku berwarna kuning saat matang dan hijau saat mentah.", "Aku adalah makanan favorit monyet.", "Aku sering diolah menjadi gorengan atau kolak."]},
-    {"name": "Wortel", "category": "Sayur", "clues": ["Aku adalah sayuran umbi berwarna oranye.", "Aku sangat baik untuk kesehatan mata karena kaya vitamin A.", "Kelinci sangat suka memakanku."]},
-    {"name": "Soekarno", "category": "Tokoh", "clues": ["Aku adalah seorang proklamator.", "Aku adalah presiden pertama Republik Indonesia.", "Makamku berada di Blitar, Jawa Timur."]},
-    {"name": "Monas", "category": "Bangunan", "clues": ["Aku adalah sebuah tugu peringatan.", "Aku berada di jantung ibu kota Indonesia.", "Puncakku dilapisi oleh emas."]},
-    {"name": "Paus", "category": "Hewan", "clues": ["Meskipun hidup di laut, aku adalah mamalia.", "Aku adalah hewan terbesar yang pernah ada di bumi.", "Aku bernapas menggunakan paru-paru, bukan insang."]},
-    {"name": "Durian", "category": "Buah", "clues": ["Kulitku keras dan dipenuhi duri tajam.", "Aromaku sangat kuat dan khas, sebagian orang tidak suka.", "Aku dijuluki sebagai 'Raja dari segala buah'."]},
-    {"name": "Bayam", "category": "Sayur", "clues": ["Aku adalah sayuran daun berwarna hijau.", "Aku kaya akan zat besi.", "Tokoh kartun Popeye menjadi kuat setelah memakanku."]},
-    {"name": "R.A. Kartini", "category": "Tokoh", "clues": ["Aku adalah seorang pahlawan nasional wanita.", "Aku memperjuangkan emansipasi wanita di Indonesia.", "Kumpulan suratku dibukukan dengan judul 'Habis Gelap Terbitlah Terang'."]},
-    {"name": "Borobudur", "category": "Bangunan", "clues": ["Aku adalah sebuah candi.", "Aku merupakan monumen Buddha terbesar di dunia.", "Aku terletak di Magelang, Jawa Tengah."]},
-    {"name": "Komodo", "category": "Hewan", "clues": ["Aku adalah spesies kadal terbesar di dunia.", "Aku adalah hewan endemik Indonesia, tepatnya di Nusa Tenggara Timur.", "Air liurku mengandung bakteri yang mematikan bagi mangsaku."]},
-    {"name": "Semangka", "category": "Buah", "clues": ["Aku berukuran besar dan bulat.", "Kulitku berwarna hijau dengan pola garis-garis.", "Dagingku berwarna merah dan sangat kaya akan air."]},
-    {"name": "Kentang", "category": "Sayur", "clues": ["Aku adalah umbi-umbian yang tumbuh di dalam tanah.", "Aku adalah bahan utama untuk membuat kentang goreng (French Fries).", "Aku sering dijadikan pengganti nasi sebagai sumber karbohidrat."]},
-    {"name": "B.J. Habibie", "category": "Tokoh", "clues": ["Aku adalah seorang insinyur jenius.", "Aku pernah menjabat sebagai presiden ke-3 Indonesia.", "Aku sangat terkenal dengan teori keretakan pesawat terbang."]},
-    {"name": "Gitar", "category": "Benda", "clues": ["Aku adalah alat musik.", "Aku dimainkan dengan cara dipetik.", "Biasanya aku memiliki enam senar."]},
-    {"name": "Ular", "category": "Hewan", "clues": ["Aku adalah reptil yang tidak memiliki kaki.", "Aku bergerak dengan cara melata.", "Beberapa jenisku, seperti Kobra, memiliki bisa yang sangat berbahaya."]},
-    {"name": "Rambutan", "category": "Buah", "clues": ["Namaku berarti 'yang memiliki rambut'.", "Kulitku berwarna merah dan ditumbuhi serabut seperti rambut.", "Daging buahku berwarna putih bening dan manis."]},
-    {"name": "Kangkung", "category": "Sayur", "clues": ["Aku adalah sayuran hijau yang sering ditumis.", "Aku bisa tumbuh di darat maupun di air.", "Masakan 'plecing' adalah salah satu olahan terkenalku."]},
-    {"name": "Mohammad Hatta", "category": "Tokoh", "clues": ["Aku adalah seorang proklamator bersama Soekarno.", "Aku menjabat sebagai wakil presiden pertama Indonesia.", "Aku dikenal sebagai 'Bapak Koperasi Indonesia'."]},
-    {"name": "Keris", "category": "Benda", "clues": ["Aku adalah senjata tikam tradisional.", "Bentuk bilahku seringkali bergelombang atau berkelok.", "Aku dianggap memiliki kekuatan magis dan menjadi warisan budaya UNESCO."]},
-    {"name": "Harimau", "category": "Hewan", "clues": ["Aku adalah spesies kucing terbesar.", "Tubuhku memiliki pola loreng vertikal.", "Jenis Sumatra dariku kini terancam punah."]},
-    {"name": "Mangga", "category": "Buah", "clues": ["Aku adalah buah tropis yang populer.", "Jenis Harum Manis adalah salah satu yang paling terkenal.", "Saat mentah, aku sering dijadikan bahan rujak."]},
-    {"name": "Cabai", "category": "Sayur", "clues": ["Aku adalah bumbu masak.", "Aku memberikan rasa pedas yang membakar lidah.", "Aku adalah bahan utama untuk membuat sambal."]},
-    {"name": "Ki Hajar Dewantara", "category": "Tokoh", "clues": ["Aku adalah pelopor pendidikan bagi kaum pribumi.", "Semboyanku yang terkenal adalah 'Ing ngarsa sung tuladha, ing madya mangun karsa, tut wuri handayani'.", "Aku dikenal sebagai 'Bapak Pendidikan Nasional'."]},
-    {"name": "Angklung", "category": "Benda", "clues": ["Aku adalah alat musik tradisional.", "Aku terbuat dari bambu.", "Aku dimainkan dengan cara digoyangkan."]},
-    {"name": "Jerapah", "category": "Hewan", "clues": ["Aku adalah mamalia tertinggi di dunia.", "Aku memiliki leher yang sangat panjang.", "Pola di kulitku seperti jaring berwarna coklat."]},
-    {"name": "Salak", "category": "Buah", "clues": ["Kulitku berwarna coklat dan bersisik, mirip kulit ular.", "Jenis Pondoh dariku sangat terkenal.", "Daging buahku renyah dan manis."]},
-    {"name": "Timun", "category": "Sayur", "clues": ["Aku panjang dan berwarna hijau.", "Aku kaya akan air dan menyegarkan.", "Aku sering dijadikan lalapan atau bahan pembuat acar."]},
-    {"name": "Cut Nyak Dien", "category": "Tokoh", "clues": ["Aku adalah pahlawan nasional wanita dari Aceh.", "Aku memimpin perang gerilya melawan Belanda.", "Aku berjuang bersama suamiku, Teuku Umar."]},
-    {"name": "Batik", "category": "Benda", "clues": ["Aku adalah sebuah kain tradisional.", "Proses pembuatanku menggunakan lilin (malam) dan canting.", "Aku telah diakui oleh UNESCO sebagai Warisan Kemanusiaan untuk Budaya."]},
-    {"name": "Lumba-lumba", "category": "Hewan", "clues": ["Aku adalah mamalia laut yang cerdas.", "Aku berkomunikasi menggunakan suara ultrasonik.", "Aku sering terlihat melompat-lompat dengan gembira di permukaan laut."]},
-    {"name": "Nanas", "category": "Buah", "clues": ["Aku memiliki 'mahkota' di bagian atasku.", "Kulitku memiliki pola seperti mata.", "Tokoh kartun Spongebob tinggal di dalam rumah yang berbentuk sepertiku."]},
-    {"name": "Terong", "category": "Sayur", "clues": ["Aku biasanya berwarna ungu dan berbentuk lonjong.", "Aku sering dimasak menjadi balado.", "Meskipun sayuran, secara teknis aku adalah buah beri."]},
-    {"name": "Pangeran Diponegoro", "category": "Tokoh", "clues": ["Aku adalah seorang pahlawan nasional.", "Aku memimpin Perang Jawa melawan Belanda.", "Aku identik dengan pakaian serba putih dan sorban."]},
-    {"name": "Wayang", "category": "Benda", "clues": ["Aku adalah bentuk teater pertunjukan tradisional.", "Ada jenis kulit, golek, dan orang.", "Seorang dalang adalah orang yang memainkanku di balik layar."]},
-    {"name": "Kura-kura", "category": "Hewan", "clues": ["Aku adalah reptil yang bergerak sangat lambat.", "Aku membawa 'rumah' atau cangkang keras di punggungku.", "Aku bisa hidup hingga ratusan tahun."]},
-    {"name": "Alpukat", "category": "Buah", "clues": ["Aku memiliki biji yang besar di tengah.", "Dagingku berwarna hijau lembut dan kaya akan lemak baik.", "Aku sering dijadikan jus kental yang lezat."]},
-    {"name": "Jagung", "category": "Sayur", "clues": ["Aku adalah biji-bijian yang tumbuh di dalam tongkol.", "Aku memiliki 'rambut' di ujungku.", "Aku sering dibakar atau direbus sebagai camilan."]},
-    {"name": "Sudirman", "category": "Tokoh", "clues": ["Aku adalah seorang jenderal besar.", "Aku memimpin perang gerilya meskipun dalam kondisi sakit parah.", "Patungku yang sedang hormat berdiri tegak di banyak kota di Indonesia."]},
-    {"name": "Rendang", "category": "Makanan", "clues": ["Aku adalah sebuah masakan.", "Aku berasal dari Minangkabau, Sumatra Barat.", "Aku pernah dinobatkan sebagai makanan terlezat di dunia."]},
-    {"name": "Buaya", "category": "Hewan", "clues": ["Aku adalah reptil predator yang ganas.", "Aku sering ditemukan di sungai dan rawa.", "Istilah 'air mata ...' digunakan untuk menggambarkan kesedihan palsu."]},
-    {"name": "Kelapa", "category": "Buah", "clues": ["Pohonku sering tumbuh di tepi pantai.", "Airku menyegarkan untuk diminum.", "Dagingku diperas untuk menghasilkan santan."]},
-    {"name": "Sawi", "category": "Sayur", "clues": ["Aku adalah sayuran daun berwarna hijau.", "Aku adalah pelengkap wajib dalam semangkuk mie ayam atau bakso.", "Ada jenis putih dariku yang disebut Pakcoy."]},
-    {"name": "Gajah Mada", "category": "Tokoh", "clues": ["Aku adalah seorang Mahapatih.", "Aku mengabdi pada Kerajaan Majapahit.", "Aku terkenal dengan Sumpah Palapa-ku untuk menyatukan Nusantara."]},
-    {"name": "Candi Prambanan", "category": "Bangunan", "clues": ["Aku adalah kompleks candi Hindu terbesar di Indonesia.", "Aku didedikasikan untuk Trimurti: Brahma, Wisnu, dan Siwa.", "Aku sering dikaitkan dengan legenda Roro Jonggrang."]},
-    {"name": "Kucing", "category": "Hewan", "clues": ["Aku adalah hewan peliharaan yang sangat populer.", "Musuh bebuyutanku adalah tikus.", "Aku berkomunikasi dengan suara 'meong'."]},
-    {"name": "Jambu", "category": "Buah", "clues": ["Ada jenis 'air' dan 'biji' dariku.", "Jenis 'biji' merahku kaya akan Vitamin C dan dipercaya menaikkan trombosit.", "Daunku dapat digunakan untuk mengobati diare."]},
-    {"name": "Bawang Merah", "category": "Sayur", "clues": ["Aku adalah bumbu dapur utama.", "Saat diiris, aku bisa membuatmu menangis.", "Aku sering digoreng untuk dijadikan taburan."]},
-    {"name": "Fatmawati", "category": "Tokoh", "clues": ["Aku adalah Ibu Negara pertama Indonesia.", "Aku adalah istri dari Presiden Soekarno.", "Aku yang menjahit Bendera Pusaka Merah Putih."]},
-    {"name": "Kulkas", "category": "Benda", "clues": ["Aku adalah perabotan elektronik.", "Tugasku adalah untuk mendinginkan makanan dan minuman.", "Aku sering disebut juga sebagai lemari es."]},
-    {"name": "Ayam", "category": "Hewan", "clues": ["Aku adalah unggas yang tidak bisa terbang jauh.", "Jantan dariku berkokok di pagi hari.", "Daging dan telurku adalah sumber protein populer."]},
-    {"name": "Stroberi", "category": "Buah", "clues": ["Aku berwarna merah dengan bintik-bintik di luar.", "Rasaku manis dan sedikit asam.", "Aku sering tumbuh di daerah dataran tinggi seperti Bandung atau Bedugul."]},
-    {"name": "Kecambah", "category": "Sayur", "clues": ["Aku adalah tumbuhan yang baru tumbuh.", "Aku berasal dari biji kacang hijau.", "Aku sering disebut juga sebagai tauge."]},
-    {"name": "Tuanku Imam Bonjol", "category": "Tokoh", "clues": ["Aku adalah seorang ulama dan pahlawan nasional.", "Aku memimpin Perang Padri di Sumatra Barat.", "Wajahku diabadikan dalam pecahan uang kertas lima ribu rupiah."]},
-    {"name": "Komputer", "category": "Benda", "clues": ["Aku adalah perangkat elektronik untuk mengolah data.", "Aku memiliki komponen seperti CPU, monitor, dan keyboard.", "Versi portabelku disebut laptop."]},
-    {"name": "Panda", "category": "Hewan", "clues": ["Aku adalah beruang yang berasal dari Tiongkok.", "Warna tubuhku hitam dan putih.", "Makanan kesukaanku adalah bambu."]},
-    {"name": "Manggis", "category": "Buah", "clues": ["Kulitku tebal berwarna ungu gelap.", "Daging buahku putih, manis, dan beruas-ruas.", "Kulitku juga memiliki banyak manfaat kesehatan."]},
-    {"name": "Kubis", "category": "Sayur", "clues": ["Aku berbentuk bulat dan padat.", "Aku terdiri dari lapisan-lapisan daun.", "Aku sering dijadikan lalapan atau bahan utama dalam capcay."]},
-    {"name": "Sultan Hasanuddin", "category": "Tokoh", "clues": ["Aku adalah seorang Raja dari Gowa, Sulawesi Selatan.", "Aku gigih melawan VOC.", "Aku dijuluki 'Ayam Jantan dari Timur'."]},
-    {"name": "Televisi", "category": "Benda", "clues": ["Aku adalah sebuah kotak yang bisa menampilkan gambar bergerak dan suara.", "Aku memiliki banyak saluran atau channel.", "Aku sering menjadi pusat perhatian di ruang keluarga."]},
-    {"name": "Kelinci", "category": "Hewan", "clues": ["Aku memiliki telinga yang panjang dan gigi depan yang besar.", "Aku bergerak dengan cara melompat.", "Wortel adalah makanan favoritku dalam cerita."]},
-    {"name": "Sirsak", "category": "Buah", "clues": ["Kulitku hijau dengan duri-duri lunak.", "Dagingku putih berserat dengan rasa asam manis.", "Aku sering diolah menjadi jus atau es."]},
-    {"name": "Pare", "category": "Sayur", "clues": ["Aku terkenal dengan rasaku yang sangat pahit.", "Bentukku lonjong dengan permukaan kulit yang keriput.", "Aku sering menjadi isian dalam siomay."]},
-    {"name": "Abdurrahman Wahid", "category": "Tokoh", "clues": ["Aku adalah seorang ulama dan cendekiawan.", "Aku adalah presiden ke-4 Indonesia.", "Aku lebih dikenal dengan sapaan Gus Dur."]},
-    {"name": "Piano", "category": "Benda", "clues": ["Aku adalah alat musik yang besar.", "Aku memiliki tuts berwarna hitam dan putih.", "Aku dimainkan dengan cara ditekan oleh jari."]},
-    {"name": "Kambing", "category": "Hewan", "clues": ["Aku adalah hewan ternak.", "Aku memiliki janggut dan suara 'mbeee'.", "Dagingku sering diolah menjadi sate atau gulai."]},
-    {"name": "Anggur", "category": "Buah", "clues": ["Aku tumbuh bergerombol di dalam satu tangkai.", "Aku bisa berwarna merah, ungu, atau hijau.", "Aku dapat difermentasi menjadi minuman anggur (wine)."]},
-    {"name": "Petai", "category": "Sayur", "clues": ["Aku adalah sejenis polong-polongan.", "Aku memiliki bau yang sangat khas dan menyengat.", "Aku sering dimakan sebagai lalapan atau dimasak dengan sambal."]},
-    {"name": "Megawati Soekarnoputri", "category": "Tokoh", "clues": ["Ayahku adalah presiden pertama Indonesia.", "Aku adalah presiden ke-5 Indonesia.", "Aku adalah presiden wanita pertama di Indonesia."]},
-    {"name": "Radio", "category": "Benda", "clues": ["Aku hanya bisa mengeluarkan suara, tanpa gambar.", "Aku menangkap sinyal melalui gelombang frekuensi.", "Sebelum ada TV, aku sangat populer."]},
-    {"name": "Anjing", "category": "Hewan", "clues": ["Aku adalah hewan peliharaan yang setia.", "Aku dikenal sebagai 'sahabat terbaik manusia'.", "Aku berkomunikasi dengan cara menggonggong."]},
-    {"name": "Belimbing", "category": "Buah", "clues": ["Jika diiris melintang, bentukku seperti bintang.", "Aku berwarna kuning kehijauan.", "Rasaku asam dan kaya akan air."]},
-    {"name": "Jengkol", "category": "Sayur", "clues": ["Seperti petai, aku memiliki bau yang sangat kuat.", "Aku sering diolah menjadi semur atau rendang.", "Terlalu banyak memakanku bisa menyebabkan masalah kesehatan."]},
-    {"name": "Joko Widodo", "category": "Tokoh", "clues": ["Aku memulai karir politikku sebagai walikota Solo.", "Aku pernah menjabat sebagai Gubernur DKI Jakarta.", "Aku adalah presiden ke-7 Republik Indonesia."]},
-    {"name": "Kamera", "category": "Benda", "clues": ["Tugasku adalah untuk mengabadikan momen.", "Aku menangkap cahaya untuk menghasilkan gambar.", "Versi modernku ada di setiap smartphone."]},
-    {"name": "Badak", "category": "Hewan", "clues": ["Aku memiliki cula di hidungku.", "Kulitku sangat tebal dan keras.", "Salah satu jenisku dari Jawa hanya memiliki satu cula."]},
-    {"name": "Sawo", "category": "Buah", "clues": ["Kulitku berwarna coklat dan tipis.", "Daging buahku berwarna coklat dan sangat manis.", "Tekstur dagingku sedikit berpasir."]},
-    {"name": "Jamur", "category": "Sayur", "clues": ["Aku bukan tumbuhan, tapi fungi.", "Aku tumbuh di tempat-tempat yang lembab.", "Jenis Tiram dan Kancing dariku sering dimasak."]},
-    {"name": "Pattimura", "category": "Tokoh", "clues": ["Aku adalah pahlawan nasional dari Maluku.", "Aku memimpin perlawanan melawan Belanda.", "Wajahku ada di uang kertas seribu rupiah."]},
-    {"name": "Helm", "category": "Benda", "clues": ["Aku wajib dipakai saat berkendara sepeda motor.", "Fungsiku adalah untuk melindungi kepala.", "Jika tidak memakainya, bisa ditilang polisi."]},
-    {"name": "Kerbau", "category": "Hewan", "clues": ["Aku adalah hewan pekerja yang kuat.", "Aku sering digunakan untuk membajak sawah.", "Aku suka berendam di lumpur."]},
-    {"name": "Duku", "category": "Buah", "clues": ["Kulitku tipis berwarna kuning langsat.", "Dagingku bening dan rasanya manis.", "Jenis Palembang adalah yang paling terkenal."]},
-    {"name": "Daun Singkong", "category": "Sayur", "clues": ["Aku adalah daun dari tanaman umbi.", "Bentukku seperti jari-jari tangan.", "Aku sering dimasak gulai atau direbus untuk lalapan."]},
-    {"name": "Susilo Bambang Yudhoyono", "category": "Tokoh", "clues": ["Aku adalah seorang purnawirawan jenderal TNI.", "Aku adalah presiden ke-6 Indonesia.", "Aku menjabat selama dua periode."]},
-    {"name": "Sepeda", "category": "Benda", "clues": ["Aku adalah kendaraan beroda dua.", "Aku digerakkan dengan cara dikayuh menggunakan pedal.", "Aku tidak memerlukan bahan bakar."]},
-    {"name": "Lebah", "category": "Hewan", "clues": ["Aku adalah serangga yang bisa terbang.", "Aku menghasilkan cairan manis yang disebut madu.", "Aku hidup berkoloni dan memiliki seorang ratu."]},
-    {"name": "Srikaya", "category": "Buah", "clues": ["Kulitku hijau dan berbenjol-benjol.", "Daging buahku putih, manis, dan lembut.", "Namaku mirip dengan nama seorang dewi dalam pewayangan."]},
-    {"name": "Ubi Jalar", "category": "Sayur", "clues": ["Aku adalah umbi-umbian yang manis.", "Ada jenisku yang berwarna ungu, kuning, dan putih.", "Aku sering diolah menjadi bola-bola atau digoreng."]},
-    {"name": "Martha Christina Tiahahu", "category": "Tokoh", "clues": ["Aku adalah pahlawan wanita dari Maluku.", "Aku berjuang melawan Belanda pada usia yang sangat muda.", "Aku adalah putri dari Kapitan Paulus Tiahahu."]},
-    {"name": "Laptop", "category": "Benda", "clues": ["Aku adalah versi portabel dari komputer.", "Aku bisa dilipat dan dibawa kemana-mana.", "Aku menggunakan baterai sebagai sumber daya."]},
-    {"name": "Tupai", "category": "Hewan", "clues": ["Aku adalah hewan pengerat yang lincah.", "Aku pandai melompat dari satu pohon ke pohon lainnya.", "Aku suka memakan kacang dan biji-bijian."]},
-    {"name": "Kedondong", "category": "Buah", "clues": ["Rasaku sangat asam dan renyah.", "Bijiku memiliki serabut yang tajam.", "Aku sering dijadikan bahan dalam rujak."]},
-    {"name": "Daun Bawang", "category": "Sayur", "clues": ["Aku berbentuk seperti pipa hijau panjang.", "Aku sering digunakan sebagai taburan pada masakan.", "Aku memberikan aroma yang khas pada martabak telur."]},
-    {"name": "Sutan Sjahrir", "category": "Tokoh", "clues": ["Aku adalah seorang intelektual dan revolusioner.", "Aku adalah perdana menteri pertama Indonesia.", "Aku pernah diasingkan ke Boven Digoel."]},
-    {"name": "Jam Tangan", "category": "Benda", "clues": ["Aku dipakai di pergelangan tangan.", "Fungsiku adalah untuk menunjukkan waktu.", "Ada versi digital dan analog dariku."]},
-    {"name": "Cacing", "category": "Hewan", "clues": ["Aku hidup di dalam tanah.", "Tubuhku panjang, lunak, dan beruas-ruas.", "Aku membantu menyuburkan tanah."]},
-    {"name": "Bengkuang", "category": "Buah", "clues": ["Aku adalah umbi yang dimakan sebagai buah.", "Dagingku berwarna putih, renyah, dan banyak air.", "Aku sering menjadi bahan asinan atau rujak."]},
-    {"name": "Kecipir", "category": "Sayur", "clues": ["Aku adalah sayuran polong.", "Bentukku unik, persegi empat dengan 'sayap' bergelombang di setiap sisinya.", "Aku sering direbus dan dijadikan urap atau lalapan."]},
-    {"name": "Agus Salim", "category": "Tokoh", "clues": ["Aku adalah seorang diplomat ulung.", "Aku menguasai banyak bahasa asing.", "Aku dikenal dengan julukan 'The Grand Old Man'."]},
-    {"name": "Ponsel", "category": "Benda", "clues": ["Aku adalah alat komunikasi genggam.", "Selain menelepon, aku bisa digunakan untuk internet dan fotografi.", "Hampir semua orang memilikiku saat ini."]},
-    {"name": "Orangutan", "category": "Hewan", "clues": ["Aku adalah kera besar yang hidup di pohon.", "Aku memiliki rambut berwarna kemerahan.", "Aku adalah hewan endemik dari Pulau Sumatra dan Kalimantan."]},
-    {"name": "Markisa", "category": "Buah", "clues": ["Aku harus dibiarkan mengerut agar rasanya lebih manis.", "Di dalamku terdapat banyak biji yang diselimuti cairan asam manis.", "Aku sering diolah menjadi sirup khas."]},
-    {"name": "Selada", "category": "Sayur", "clues": ["Aku adalah sayuran daun yang renyah.", "Aku adalah bahan utama dalam hidangan salad.", "Aku sering menjadi isian dalam burger atau kebab."]},
-    {"name": "Tan Malaka", "category": "Tokoh", "clues": ["Aku adalah seorang pemikir dan revolusioner.", "Aku menulis buku terkenal berjudul 'Madilog'.", "Aku dijuluki sebagai 'Bapak Republik Indonesia'."]},
-    {"name": "Buku", "category": "Benda", "clues": ["Aku terdiri dari lembaran-lembaran kertas.", "Aku berisi tulisan, gambar, atau keduanya.", "Aku adalah jendela dunia."]},
-    {"name": "Zebra", "category": "Hewan", "clues": ["Aku adalah hewan dari Afrika.", "Pola tubuhku belang hitam dan putih.", "Aku mirip kuda tapi tidak bisa ditunggangi."]},
-    {"name": "Ceri", "category": "Buah", "clues": ["Aku kecil, bulat, dan berwarna merah terang.", "Aku sering menjadi hiasan di atas kue tart atau es krim.", "Aku biasanya dijual dengan tangkainya."]},
-    {"name": "Lobak", "category": "Sayur", "clues": ["Aku adalah umbi berwarna putih.", "Bentukku panjang dan besar.", "Aku sering ditemukan dalam soto atau masakan berkuah lainnya."]},
-    {"name": "Albert Einstein", "category": "Tokoh", "clues": ["Aku adalah seorang ilmuwan fisika.", "Aku terkenal dengan rambutku yang khas dan acak-acakan.", "Rumusku yang paling terkenal adalah E=mc²."]},
-    {"name": "Sepatu", "category": "Benda", "clues": ["Aku dipakai di kaki.", "Aku berfungsi untuk melindungi kaki saat berjalan.", "Ada banyak jenisku, seperti olahraga, formal, dan santai."]},
-    {"name": "Koala", "category": "Hewan", "clues": ["Aku adalah mamalia berkantung dari Australia.", "Aku menghabiskan sebagian besar waktuku untuk tidur di pohon.", "Makanan utamaku adalah daun eukaliptus."]},
-    {"name": "Kiwi", "category": "Buah", "clues": ["Kulitku berwarna coklat dan berbulu tipis.", "Daging buahku berwarna hijau cerah dengan biji-biji hitam kecil.", "Namaku sama dengan nama seekor burung yang tidak bisa terbang."]},
-    {"name": "Paprika", "category": "Sayur", "clues": ["Aku sering dikira cabai besar.", "Aku memiliki rasa manis dan bisa berwarna merah, kuning, atau hijau.", "Aku sering digunakan dalam masakan pizza atau tumisan."]},
-    {"name": "Cristiano Ronaldo", "category": "Tokoh", "clues": ["Aku adalah seorang pemain sepak bola.", "Aku berasal dari Portugal.", "Aku terkenal dengan selebrasi 'Siuuu' ku."]},
-    {"name": "Meja", "category": "Benda", "clues": ["Aku adalah perabotan rumah tangga.", "Aku memiliki permukaan datar dan biasanya empat kaki.", "Aku digunakan untuk menaruh barang, makan, atau belajar."]},
-    {"name": "Penguin", "category": "Hewan", "clues": ["Aku adalah burung yang tidak bisa terbang.", "Aku sangat pandai berenang.", "Aku hidup di daerah kutub yang sangat dingin."]},
-    {"name": "Leci", "category": "Buah", "clues": ["Kulitku tipis, kasar, dan berwarna merah.", "Daging buahku putih bening, manis, dan berair.", "Aku sering dijual dalam bentuk minuman kalengan."]},
-    {"name": "Kembang Kol", "category": "Sayur", "clues": ["Aku berwarna putih dan berbentuk seperti bunga padat.", "Aku adalah kerabat dekat brokoli.", "Aku sering dimasak dalam hidangan capcay."]},
-    {"name": "Isaac Newton", "category": "Tokoh", "clues": ["Aku adalah seorang ilmuwan legendaris.", "Aku menemukan hukum gravitasi setelah melihat apel jatuh.", "Aku juga merumuskan tiga hukum gerak."]},
-    {"name": "Kursi", "category": "Benda", "clues": ["Aku adalah perabotan untuk diduduki.", "Aku biasanya memiliki sandaran punggung.", "Aku selalu berpasangan dengan meja."]},
-    {"name": "Unta", "category": "Hewan", "clues": ["Aku hidup di lingkungan gurun yang panas.", "Aku memiliki punuk di punggungku untuk menyimpan lemak.", "Aku mampu bertahan lama tanpa minum air."]},
-    {"name": "Buah Naga", "category": "Buah", "clues": ["Kulitku berwarna merah muda cerah dengan 'sirip' hijau.", "Dagingku bisa berwarna putih atau ungu dengan bintik-bintik hitam.", "Namaku terdengar seperti makhluk mitologi."]},
-    {"name": "Mentimun", "category": "Sayur", "clues": ["Aku sama dengan timun.", "Aku sering dijadikan masker wajah karena menyegarkan.", "Aku adalah lalapan wajib di warung pecel lele."]},
-    {"name": "Lionel Messi", "category": "Tokoh", "clues": ["Aku adalah seorang pemain sepak bola.", "Aku berasal dari Argentina.", "Aku telah memenangkan banyak penghargaan Ballon d'Or."]},
-    {"name": "Pintu", "category": "Benda", "clues": ["Aku adalah akses untuk masuk dan keluar dari sebuah ruangan.", "Aku bisa terbuat dari kayu, besi, atau kaca.", "Jika diketuk, biasanya ada orang yang akan membukanya."]},
-    {"name": "Rubah", "category": "Hewan", "clues": ["Aku adalah mamalia karnivora.", "Aku dikenal cerdik dalam dongeng.", "Aku memiliki ekor yang tebal dan mengembang."]},
-    {"name": "Delima", "category": "Buah", "clues": ["Aku memiliki 'mahkota' di ujungku.", "Daging buahku adalah biji-biji kecil berwarna merah seperti permata.", "Aku dianggap buah surga dalam beberapa kepercayaan."]},
-    {"name": "Asparagus", "category": "Sayur", "clues": ["Aku berbentuk batang panjang dan ramping berwarna hijau.", "Ujungku berbentuk seperti tombak kecil.", "Aku sering dianggap sebagai sayuran mewah."]},
-    {"name": "Bill Gates", "category": "Tokoh", "clues": ["Aku adalah seorang pionir di dunia teknologi komputer.", "Aku adalah pendiri perusahaan Microsoft.", "Aku sekarang lebih fokus pada kegiatan filantropi."]},
-    {"name": "Jendela", "category": "Benda", "clues": ["Aku berada di dinding sebuah bangunan.", "Fungsiku adalah untuk masuknya cahaya dan sirkulasi udara.", "Aku biasanya memiliki kaca."]},
-    {"name": "Gurita", "category": "Hewan", "clues": ["Aku adalah hewan laut yang cerdas.", "Aku memiliki delapan lengan.", "Aku bisa menyemprotkan tinta untuk melarikan diri dari predator."]},
-    {"name": "Zaitun", "category": "Buah", "clues": ["Aku berukuran kecil dan berwarna hijau atau hitam.", "Aku diperas untuk menghasilkan minyak yang sehat.", "Aku sering ditemukan dalam masakan Mediterania."]},
-    {"name": "Seledri", "category": "Sayur", "clues": ["Aku memiliki aroma yang sangat khas.", "Batang dan daunku sering menjadi taburan pada sup atau bakso.", "Aku sering dijual bersama dengan daun bawang."]},
-    {"name": "Mark Zuckerberg", "category": "Tokoh", "clues": ["Aku adalah seorang programmer dan pengusaha internet.", "Aku menciptakan sebuah platform media sosial yang sangat besar.", "Perusahaanku sekarang bernama Meta."]},
-    {"name": "Lampu", "category": "Benda", "clues": ["Aku berfungsi untuk menerangi kegelapan.", "Aku membutuhkan listrik untuk menyala.", "Penemuku yang terkenal adalah Thomas Edison."]},
-    {"name": "Hamster", "category": "Hewan", "clues": ["Aku adalah hewan pengerat kecil yang sering dijadikan peliharaan.", "Aku suka berlari di dalam roda putar.", "Aku suka menyimpan makanan di dalam pipiku."]},
-    {"name": "Kurma", "category": "Buah", "clues": ["Aku adalah buah yang sangat populer saat bulan Ramadhan.", "Rasaku sangat manis dan teksturku lembut.", "Aku berasal dari daerah Timur Tengah."]},
-    {"name": "Kacang Polong", "category": "Sayur", "clues": ["Aku adalah biji-bijian kecil berwarna hijau.", "Aku berada di dalam sebuah kulit polong.", "Aku sering menjadi campuran dalam nasi goreng atau sup."]},
-    {"name": "Doraemon", "category": "Tokoh", "clues": ["Aku adalah sebuah robot kucing.", "Aku datang dari abad ke-22.", "Aku memiliki kantong ajaib di perutku."]},
-    {"name": "Kasur", "category": "Benda", "clues": ["Aku adalah perabotan di kamar tidur.", "Aku digunakan sebagai alas untuk tidur.", "Aku biasanya empuk dan nyaman."]},
-    {"name": "Cumi-cumi", "category": "Hewan", "clues": ["Aku adalah hewan laut.", "Aku memiliki tentakel dan bisa menyemprotkan tinta hitam.", "Aku sering digoreng dengan tepung menjadi calamari."]},
-    {"name": "Matoa", "category": "Buah", "clues": ["Aku adalah buah khas dari Papua.", "Rasaku unik, seperti perpaduan kelengkeng, rambutan, dan durian.", "Kulitku keras saat matang dan berwarna hijau atau kemerahan."]},
-    {"name": "Buncis", "category": "Sayur", "clues": ["Aku adalah sayuran polong berwarna hijau.", "Bentukku mirip kacang panjang tapi lebih pendek dan berisi.", "Aku sering ditumis atau direbus sebagai teman makan steak."]},
-    {"name": "Gatotkaca", "category": "Tokoh", "clues": ["Aku adalah tokoh dalam pewayangan Mahabharata.", "Aku dikenal dengan julukan 'otot kawat tulang besi'.", "Aku bisa terbang dan sangat sakti."]},
-    {"name": "Sapu", "category": "Benda", "clues": ["Aku adalah alat kebersihan.", "Aku digunakan untuk membersihkan lantai dari debu dan kotoran.", "Ada jenis ijuk, lidi, dan plastik dariku."]},
-    {"name": "Ikan Cupang", "category": "Hewan", "clues": ["Aku adalah ikan hias air tawar.", "Aku dikenal karena siripku yang indah dan warnaku yang cerah.", "Jantan dariku sangat agresif dan suka bertarung."]},
-    {"name": "Kelengkeng", "category": "Buah", "clues": ["Kulitku tipis berwarna coklat.", "Daging buahku bening, manis, dan berair.", "Namaku yang lain adalah 'longan' atau 'mata kucing'."]},
-    {"name": "Kailan", "category": "Sayur", "clues": ["Aku adalah sayuran daun hijau gelap.", "Batangku tebal dan renyah.", "Aku sering dimasak dengan saus tiram di restoran Chinese."]},
-    {"name": "Spongebob Squarepants", "category": "Tokoh", "clues": ["Aku adalah sebuah spons laut.", "Aku tinggal di dalam rumah nanas di bawah laut.", "Aku bekerja sebagai koki di Krusty Krab."]},
-    {"name": "Panci", "category": "Benda", "clues": ["Aku adalah peralatan masak.", "Aku digunakan untuk merebus air, sup, atau mie instan.", "Aku biasanya terbuat dari logam."]},
-    {"name": "Kecoak", "category": "Hewan", "clues": ["Aku adalah serangga yang dianggap hama.", "Aku sering ditemukan di tempat yang kotor dan lembab.", "Banyak orang, terutama wanita, takut padaku."]},
-    {"name": "Pir", "category": "Buah", "clues": ["Aku adalah buah yang kaya akan air.", "Bentukku khas, membesar di bagian bawah.", "Tekstur dagingku renyah dan sedikit kasar."]},
-    {"name": "Okra", "category": "Sayur", "clues": ["Aku berbentuk seperti cabai hijau besar.", "Saat dimasak, aku mengeluarkan lendir.", "Aku sering disebut juga sebagai 'lady's fingers'."]},
-    {"name": "Naruto", "category": "Tokoh", "clues": ["Aku adalah seorang ninja dari Desa Konoha.", "Cita-citaku adalah menjadi Hokage.", "Jurus andalanku adalah Rasengan."]},
-    {"name": "Cermin", "category": "Benda", "clues": ["Aku bisa memantulkan bayangan.", "Aku digunakan untuk melihat penampilan diri.", "Frasa '... tak pernah berdusta' sering dikaitkan denganku."]},
-    {"name": "Landak", "category": "Hewan", "clues": ["Tubuhku dipenuhi oleh duri yang tajam.", "Saat terancam, aku akan menggulungkan badanku menjadi bola.", "Aku adalah hewan pengerat."]},
-    {"name": "Plum", "category": "Buah", "clues": ["Aku mirip buah persik tapi lebih kecil dan halus.", "Warna kulitku bisa ungu, merah, atau kuning.", "Saat dikeringkan, aku menjadi 'prune'."]},
-    {"name": "Labu Siam", "category": "Sayur", "clues": ["Aku berbentuk seperti buah pir dan berwarna hijau.", "Di tengahku terdapat getah putih.", "Aku adalah bahan utama dalam sayur asem."]},
-    {"name": "Elon Musk", "category": "Tokoh", "clues": ["Aku adalah seorang pengusaha teknologi.", "Aku adalah pendiri SpaceX dan CEO Tesla.", "Aku membeli platform media sosial Twitter dan mengganti namanya menjadi X."]},
-    {"name": "Guling", "category": "Benda", "clues": ["Aku adalah 'teman' tidur.", "Bentukku panjang dan silindris.", "Aku digunakan untuk dipeluk saat tidur."]},
-    {"name": "Kupu-kupu", "category": "Hewan", "clues": ["Aku memiliki sayap yang indah dan berwarna-warni.", "Sebelum menjadi sepertiku, aku adalah seekor ulat.", "Aku mengalami proses yang disebut metamorfosis."]},
-    {"name": "Cempedak", "category": "Buah", "clues": ["Aku mirip dengan buah nangka.", "Aromaku lebih kuat dan menyengat daripada nangka.", "Daging buahku sering digoreng dengan tepung."]},
-    {"name": "Genjer", "category": "Sayur", "clues": ["Aku adalah tumbuhan yang hidup di rawa atau sawah.", "Aku menjadi populer karena sebuah lagu lawas.", "Aku sering ditumis dengan oncom."]},
-    {"name": "Nyi Roro Kidul", "category": "Tokoh", "clues": ["Aku adalah tokoh legenda dari Indonesia.", "Aku dipercaya sebagai Ratu Laut Selatan.", "Aku identik dengan warna hijau."]},
-    {"name": "Dompet", "category": "Benda", "clues": ["Aku adalah tempat untuk menyimpan uang dan kartu.", "Aku biasanya terbuat dari kulit atau kain.", "Aku ditaruh di saku celana atau di dalam tas."]},
-    {"name": "Udang", "category": "Hewan", "clues": ["Aku adalah hewan air.", "Tubuhku melengkung dan berwarna oranye saat dimasak.", "Aku sering menjadi bahan dalam rempeyek atau sambal."]},
-    {"name": "Sukun", "category": "Buah", "clues": ["Aku tidak memiliki biji.", "Teksturku seperti roti saat sudah dimasak.", "Aku sering digoreng tipis menjadi keripik."]},
-    {"name": "Rebung", "category": "Sayur", "clues": ["Aku adalah tunas atau anakan dari bambu.", "Aku adalah isian khas dalam lumpia Semarang.", "Aku harus diolah dengan benar agar tidak berbau pesing."]},
-    {"name": "Si Kancil", "category": "Tokoh", "clues": ["Aku adalah tokoh dalam cerita dongeng anak-anak.", "Aku dikenal karena kecerdikanku.", "Aku sering menipu buaya untuk menyeberangi sungai."]},
-    {"name": "Payung", "category": "Benda", "clues": ["Aku digunakan saat cuaca tidak menentu.", "Aku melindungimu dari hujan dan panas matahari.", "Aku bisa dilipat menjadi kecil."]},
-    {"name": "Kepiting", "category": "Hewan", "clues": ["Aku adalah hewan bercapit.", "Aku berjalan dengan cara menyamping.", "Tokoh kartun teman Spongebob ada yang sepertiku dan sangat pelit."]},
-    {"name": "Bidara", "category": "Buah", "clues": ["Aku kecil dan bulat seperti apel mini.", "Rasaku renyah dan manis.", "Daunku sering digunakan untuk keperluan ruqyah."]},
-    {"name": "Kluwek", "category": "Sayur", "clues": ["Aku adalah bumbu dapur.", "Aku memberikan warna hitam pekat pada masakan.", "Aku adalah bumbu utama untuk membuat Rawon."]},
-    {"name": "Hanoman", "category": "Tokoh", "clues": ["Aku adalah tokoh dalam pewayangan Ramayana.", "Aku adalah seekor kera putih yang sakti.", "Tugasku adalah membantu Rama menyelamatkan Sinta."]},
-    {"name": "Handuk", "category": "Benda", "clues": ["Aku terbuat dari kain yang menyerap air.", "Aku digunakan untuk mengeringkan badan setelah mandi.", "Ada versi besar untuk badan dan kecil untuk wajah atau rambut."]},
-    {"name": "Sate", "category": "Makanan", "clues": ["Aku adalah potongan daging yang ditusuk.", "Aku biasanya disajikan dengan bumbu kacang atau kecap.", "Aku dibakar di atas bara api."]},
-    {"name": "Nasi Goreng", "category": "Makanan", "clues": ["Aku adalah nasi yang dimasak kembali dengan bumbu.", "Aku sering menjadi menu sarapan atau makan malam.", "Aku dianggap sebagai salah satu makanan nasional Indonesia."]},
-    {"name": "Bakso", "category": "Makanan", "clues": ["Bentukku bulat dan terbuat dari daging giling.", "Aku disajikan dengan kuah kaldu panas dan mie.", "Presiden Obama pernah menyebut namaku dalam sebuah pidato."]},
-    {"name": "Indomie", "category": "Benda", "clues": ["Aku adalah sebuah merek mi instan.", "Sloganku yang terkenal adalah '... Seleraku'.", "Rasa soto dan kari ayamku sangat populer."]},
-    {"name": "Kopi", "category": "Minuman", "clues": ["Aku adalah minuman berwarna hitam.", "Aku terkenal bisa membuat orang tidak mengantuk.", "Aku terbuat dari biji yang disangrai dan digiling."]},
-    {"name": "Teh", "category": "Minuman", "clues": ["Aku adalah minuman yang terbuat dari seduhan daun.", "Aku bisa disajikan panas atau dingin dengan es.", "Jenis melati adalah salah satu yang paling umum di Indonesia."]},
-    {"name": "Gado-gado", "category": "Makanan", "clues": ["Aku adalah 'salad'-nya orang Indonesia.", "Aku terdiri dari berbagai sayuran rebus yang disiram saus kacang.", "Aku sering disajikan dengan lontong dan kerupuk."]},
-    {"name": "Soto", "category": "Makanan", "clues": ["Aku adalah sup berkuah kuning karena menggunakan kunyit.", "Ada banyak versi dariku, seperti dari Lamongan, Betawi, atau Medan.", "Aku biasanya ditaburi koya atau bawang goreng."]},
-    {"name": "Es Cendol", "category": "Minuman", "clues": ["Aku adalah minuman manis tradisional.", "Aku terdiri dari butiran hijau kenyal, santan, dan gula merah cair.", "Aku sering disebut juga dawet."]},
-    {"name": "Martabak", "category": "Makanan", "clues": ["Aku adalah jajanan yang populer di malam hari.", "Ada versi manis (tebal dengan isian coklat/keju) dan asin (berisi telur dan daging).", "Versi asin dariku sering disebut juga 'martabak mesir'."]},
-    {"name": "Bebek", "category": "Hewan", "clues": ["Aku adalah unggas yang suka berenang.", "Suaraku adalah 'kwek, kwek'.", "Leherku lebih panjang daripada ayam."]},
-    {"name": "Singa", "category": "Hewan", "clues": ["Aku adalah kucing besar dari Afrika.", "Aku dijuluki sebagai 'Raja Hutan'.", "Jantan dariku memiliki rambut tebal di sekitar leher yang disebut surai."]},
-    {"name": "Nyamuk", "category": "Hewan", "clues": ["Aku adalah serangga kecil yang suka menggigit di malam hari.", "Aku menghisap darah untuk bertelur.", "Jenis Aedes Aegypti dariku bisa menyebabkan demam berdarah."]},
-    {"name": "Lalat", "category": "Hewan", "clues": ["Aku adalah serangga yang suka hinggap di tempat kotor dan makanan.", "Aku sering menggosok-gosokkan 'tanganku'.", "Aku bisa menjadi penyebar penyakit."]},
-    {"name": "Ikan Mas", "category": "Hewan", "clues": ["Aku adalah ikan air tawar yang populer.", "Aku sering dipelihara di kolam atau akuarium.", "Warnaku seringkali keemasan atau oranye."]},
-    {"name": "Beruang", "category": "Hewan", "clues": ["Aku adalah mamalia besar yang bisa berdiri dengan dua kaki.", "Aku suka memakan ikan dan madu.", "Beberapa jenisku melakukan hibernasi atau tidur panjang saat musim dingin."]},
-    {"name": "Tikus", "category": "Hewan", "clues": ["Aku adalah hewan pengerat yang sering dianggap hama.", "Aku adalah musuh bebuyutan kucing.", "Aku sering ditemukan di selokan atau loteng rumah."]},
-    {"name": "Cicak", "category": "Hewan", "clues": ["Aku adalah reptil kecil yang merayap di dinding.", "Aku bisa memutuskan ekorku untuk mengelabui musuh.", "Aku suka memakan nyamuk."]},
-    {"name": "Kuda", "category": "Hewan", "clues": ["Aku adalah hewan mamalia yang kuat.", "Manusia sering menunggangiku untuk transportasi atau olahraga.", "Delman adalah kendaraan yang ditarik olehku."]},
-    {"name": "Domba", "category": "Hewan", "clues": ["Aku adalah hewan ternak yang berbulu tebal.", "Suaraku adalah 'mbeee'.", "Buluku diolah menjadi benang wol."]},
-    {"name": "Uang", "category": "Benda", "clues": ["Aku adalah alat tukar yang sah.", "Aku ada dalam bentuk kertas dan koin.", "Aku digunakan untuk membeli barang dan jasa."]},
-    {"name": "Pensil", "category": "Benda", "clues": ["Aku adalah alat tulis.", "Isiku terbuat dari grafit dan kayu.", "Tulisanku bisa dihapus dengan mudah."]},
-    {"name": "Penghapus", "category": "Benda", "clues": ["Aku adalah pasangan setia pensil.", "Aku terbuat dari karet.", "Tugasku adalah untuk menghilangkan kesalahan tulisan."]},
-    {"name": "Gunting", "category": "Benda", "clues": ["Aku adalah alat untuk memotong.", "Aku memiliki dua bilah tajam yang digerakkan berlawanan.", "Aku digunakan untuk kertas, kain, atau rambut."]},
-    {"name": "Sisir", "category": "Benda", "clues": ["Aku adalah alat untuk merapikan rambut.", "Aku memiliki banyak 'gigi' yang berderet.", "Aku ada dalam berbagai bentuk dan ukuran."]},
-    {"name": "Sabun", "category": "Benda", "clues": ["Aku digunakan saat mandi untuk membersihkan tubuh.", "Aku bisa menghasilkan banyak busa.", "Ada bentuk batangan dan cair dariku."]},
-    {"name": "Sikat Gigi", "category": "Benda", "clues": ["Aku digunakan untuk membersihkan gigi.", "Aku dipakai bersama dengan pasta gigi.", "Disarankan untuk menggantiku setiap 3 bulan sekali."]},
-    {"name": "Sendok", "category": "Benda", "clues": ["Aku adalah alat makan.", "Aku digunakan untuk menyuap makanan, terutama yang berkuah.", "Pasanganku adalah garpu."]},
-    {"name": "Garpu", "category": "Benda", "clues": ["Aku adalah alat makan.", "Aku memiliki beberapa 'gigi' untuk menusuk makanan.", "Aku sering digunakan untuk makan mie atau daging."]},
-    {"name": "Piring", "category": "Benda", "clues": ["Aku adalah alas untuk menaruh makanan.", "Bentukku umumnya bulat dan ceper.", "Aku bisa terbuat dari keramik, kaca, atau plastik."]},
-    {"name": "Gelas", "category": "Benda", "clues": ["Aku adalah wadah untuk minum.", "Aku biasanya transparan dan terbuat dari kaca.", "Aku digunakan untuk menampung air, jus, atau susu."]},
-    {"name": "Kunci", "category": "Benda", "clues": ["Aku terbuat dari logam dan memiliki bentuk unik.", "Tugasku adalah untuk membuka atau mengunci sesuatu.", "Aku selalu berpasangan dengan gembok atau lubang kunci."]},
-    {"name": "Tas", "category": "Benda", "clues": ["Aku adalah wadah untuk membawa barang-barang.", "Aku bisa digendong di punggung atau diselempangkan di bahu.", "Anak sekolah selalu memakaku untuk membawa buku."]},
-    {"name": "Remote TV", "category": "Benda", "clues": ["Aku adalah alat untuk mengontrol dari jarak jauh.", "Aku digunakan untuk mengganti saluran televisi.", "Aku membutuhkan baterai untuk bekerja."]},
-    {"name": "AC", "category": "Benda", "clues": ["Aku adalah alat elektronik yang dipasang di dinding.", "Tugasku adalah mendinginkan suhu ruangan.", "Aku sering disebut juga sebagai pendingin udara atau penyejuk udara."]},
-    {"name": "Soeharto", "category": "Tokoh", "clues": ["Aku adalah presiden kedua Republik Indonesia.", "Masa pemerintahanku dikenal sebagai Orde Baru.", "Aku dikenal sebagai 'Bapak Pembangunan'."]},
-    {"name": "Nabi Muhammad", "category": "Tokoh", "clues": ["Aku adalah nabi terakhir dalam ajaran Islam.", "Aku menerima wahyu Al-Qur'an.", "Aku lahir di kota Mekah."]},
-    {"name": "Yesus Kristus", "category": "Tokoh", "clues": ["Aku adalah tokoh sentral dalam agama Kristen.", "Kelahiranku dirayakan pada hari Natal.", "Menurut Alkitab, aku disalibkan di Golgota."]},
-    {"name": "Upin & Ipin", "category": "Tokoh", "clues": ["Kami adalah sepasang anak kembar dari Malaysia.", "Kami berkepala botak dan tinggal bersama nenek dan kakak kami.", "Kata-kata kami yang terkenal adalah 'Betul, betul, betul!'."]},
-    {"name": "Steve Jobs", "category": "Tokoh", "clues": ["Aku adalah seorang visioner teknologi.", "Aku adalah salah satu pendiri perusahaan Apple.", "Aku dikenal sering memakai kaus turtleneck hitam."]},
-    {"name": "Raden Saleh", "category": "Tokoh", "clues": ["Aku adalah pelukis Indonesia yang mempelopori seni modern.", "Salah satu karyaku yang paling terkenal adalah 'Penangkapan Pangeran Diponegoro'.", "Aku banyak belajar dan berkarya di Eropa."]},
-    {"name": "Chairil Anwar", "category": "Tokoh", "clues": ["Aku adalah seorang penyair terkemuka dari Angkatan '45.", "Salah satu puisiku yang paling terkenal berjudul 'Aku'.", "Aku dijuluki 'Si Binatang Jalang'."]},
-    {"name": "W.R. Supratman", "category": "Tokoh", "clues": ["Aku adalah seorang komponis dan pahlawan nasional.", "Aku menciptakan lagu kebangsaan Indonesia.", "Wajahku pernah menghiasi uang kertas Rp 50.000."]},
-    {"name": "Thomas Edison", "category": "Tokoh", "clues": ["Aku adalah seorang penemu yang sangat produktif.", "Aku memegang ribuan paten atas namaku.", "Penemuanku yang paling mengubah dunia adalah bola lampu pijar."]},
-    {"name": "Nelson Mandela", "category": "Tokoh", "clues": ["Aku adalah seorang aktivis anti-apartheid.", "Aku pernah dipenjara selama 27 tahun.", "Aku menjadi presiden kulit hitam pertama di Afrika Selatan."]},
-    {"name": "Jakarta", "category": "Tempat", "clues": ["Aku adalah ibu kota negara Indonesia.", "Aku adalah kota metropolitan terbesar di negara ini.", "Monumen Nasional (Monas) adalah ikonku yang paling terkenal."]},
-    {"name": "Bali", "category": "Tempat", "clues": ["Aku adalah sebuah provinsi di Indonesia yang berupa pulau.", "Aku sangat terkenal sebagai tujuan wisata dunia.", "Aku dijuluki 'Pulau Dewata'."]},
-    {"name": "Jawa", "category": "Tempat", "clues": ["Aku adalah pulau dengan penduduk terpadat di dunia.", "Ibu kota Indonesia berada di atasku.", "Candi Borobudur dan Prambanan ada di wilayahku."]},
-    {"name": "Kalimantan", "category": "Tempat", "clues": ["Aku adalah pulau terbesar ketiga di dunia.", "Sebagian wilayahku adalah milik Malaysia dan Brunei.", "Aku dijuluki 'Pulau Seribu Sungai'."]},
-    {"name": "Sumatra", "category": "Tempat", "clues": ["Aku adalah pulau paling barat di Indonesia.", "Danau Toba, danau vulkanik terbesar di dunia, ada padaku.", "Masakan Rendang berasal dari wilayahku."]},
-    {"name": "Papua", "category": "Tempat", "clues": ["Aku adalah pulau paling timur di Indonesia.", "Aku menjadi rumah bagi burung Cendrawasih.", "Puncak Jaya, gunung tertinggi di Indonesia, ada padaku."]},
-    {"name": "Gunung Everest", "category": "Tempat", "clues": ["Aku adalah bagian dari pegunungan Himalaya.", "Aku adalah titik tertinggi di permukaan bumi.", "Pendakian ke puncaku adalah impian banyak pendaki dunia."]},
-    {"name": "Sungai Nil", "category": "Tempat", "clues": ["Aku mengalir di benua Afrika.", "Peradaban Mesir Kuno berkembang di sepanjang aliranku.", "Aku adalah sungai terpanjang di dunia."]},
-    {"name": "Gurun Sahara", "category": "Tempat", "clues": ["Aku adalah padang pasir panas terbesar di dunia.", "Aku membentang luas di sebagian besar Afrika Utara.", "Unta adalah hewan yang sering melintasiku."]},
-    {"name": "Jepang", "category": "Tempat", "clues": ["Aku adalah negara kepulauan di Asia Timur.", "Aku terkenal dengan bunga sakura dan Gunung Fuji.", "Aku dikenal sebagai 'Negeri Matahari Terbit'."]},
-    {"name": "Amerika Serikat", "category": "Tempat", "clues": ["Aku adalah negara adidaya.", "Hollywood, pusat industri film dunia, berada di negaraku.", "Patung Liberty adalah salah satu simbolku yang paling terkenal."]},
-    {"name": "Tembok Besar Tiongkok", "category": "Bangunan", "clues": ["Aku adalah rangkaian benteng yang sangat panjang.", "Aku dibangun untuk melindungi kekaisaran dari serangan musuh.", "Aku adalah salah satu dari Tujuh Keajaiban Dunia."]},
-    {"name": "Piramida Giza", "category": "Bangunan", "clues": ["Aku adalah struktur kuno di Mesir.", "Aku dibangun sebagai makam untuk para Firaun.", "Aku dijaga oleh Sphinx, patung singa berkepala manusia."]},
-    {"name": "Menara Eiffel", "category": "Bangunan", "clues": ["Aku adalah menara besi yang menjadi ikon kota Paris.", "Aku dibangun oleh Gustave Eiffel.", "Aku adalah salah satu bangunan paling terkenal di dunia."]},
-    {"name": "Samudra Pasifik", "category": "Tempat", "clues": ["Aku adalah kumpulan air asin terbesar di Bumi.", "Namaku berarti 'damai'.", "Aku memisahkan benua Asia dan Australia dari benua Amerika."]},
-    {"name": "Internet", "category": "Istilah", "clues": ["Aku adalah jaringan yang menghubungkan komputer di seluruh dunia.", "Aku memungkinkan adanya email, website, dan media sosial.", "Google adalah mesin pencariku yang paling populer."]},
-    {"name": "Listrik", "category": "Istilah", "clues": ["Aku adalah bentuk energi.", "Aku menyalakan lampu, televisi, dan ponselmu.", "Jika padam, seluruh kota bisa menjadi gelap."]},
-    {"name": "Gravitasi", "category": "Istilah", "clues": ["Aku adalah gaya tarik-menarik antar benda bermassa.", "Aku yang membuat semua benda jatuh ke bawah.", "Hukum tentangku dirumuskan oleh Isaac Newton."]},
-    {"name": "Fotosintesis", "category": "Istilah", "clues": ["Aku adalah proses yang dilakukan oleh tumbuhan hijau.", "Aku mengubah karbondioksida dan air menjadi makanan.", "Aku membutuhkan cahaya matahari untuk terjadi."]},
-    {"name": "Hujan", "category": "Istilah", "clues": ["Aku adalah tetesan air yang jatuh dari awan.", "Aku adalah bagian penting dari siklus air.", "Sebelum aku turun, langit seringkali mendung."]},
-    {"name": "Api", "category": "Istilah", "clues": ["Aku adalah elemen yang panas dan bercahaya.", "Aku bisa digunakan untuk memasak, tapi juga bisa membakar hutan.", "Manusia purba menggunakanku untuk menghangatkan diri."]},
-    {"name": "Oksigen", "category": "Istilah", "clues": ["Aku adalah gas yang tidak berwarna dan tidak berbau.", "Semua makhluk hidup membutuhkanku untuk bernapas.", "Rumus kimiaku adalah O2."]},
-    {"name": "Waktu", "category": "Istilah", "clues": ["Aku terus berjalan maju dan tidak bisa diulang.", "Aku diukur dalam satuan detik, menit, dan jam.", "Alat untuk mengukurku adalah arloji atau jam."]},
-    {"name": "Bahasa", "category": "Istilah", "clues": ["Aku adalah sistem komunikasi yang digunakan manusia.", "Aku bisa dalam bentuk lisan, tulisan, atau isyarat.", "Bahasa Inggris adalah salah satu contohku yang paling universal."]},
-    {"name": "Matahari", "category": "Benda", "clues": ["Aku adalah sebuah bintang.", "Aku adalah pusat dari tata surya kita.", "Aku terbit di timur dan terbenam di barat."]}
+    {
+        "name": "Albert Einstein",
+        "category": "Tokoh Sains",
+        "clues": [
+            "Aku adalah fisikawan jenius yang lahir di Jerman.",
+            "Aku terkenal dengan teori relativitas dan rumus E=mc².",
+            "Foto ikonikku memperlihatkan aku sedang menjulurkan lidah."
+        ]
+    },
+    {
+        "name": "Steve Jobs",
+        "category": "Tokoh Teknologi",
+        "clues": [
+            "Aku adalah pendiri salah satu perusahaan teknologi terbesar di dunia.",
+            "Aku selalu tampil khas mengenakan turtleneck hitam dan celana jeans.",
+            "Aku memperkenalkan iPhone dan Macintosh ke dunia."
+        ]
+    },
+    {
+        "name": "Elon Musk",
+        "category": "Tokoh Bisnis",
+        "clues": [
+            "Aku adalah pengusaha eksentrik yang bercita-cita mengkoloni Mars.",
+            "Perusahaanku memproduksi mobil listrik Tesla dan roket SpaceX.",
+            "Aku juga sempat membeli platform media sosial Twitter dan mengubah namanya jadi X."
+        ]
+    },
+    {
+        "name": "Nikola Tesla",
+        "category": "Tokoh Sains",
+        "clues": [
+            "Aku adalah penemu jenius yang mengembangkan sistem arus bolak-balik (AC).",
+            "Namaku diabadikan menjadi unit medan magnet dan merek mobil listrik.",
+            "Aku memiliki visi transmisi energi nirkabel secara global."
+        ]
+    },
+    {
+        "name": "Leonardo da Vinci",
+        "category": "Tokoh Seni & Sains",
+        "clues": [
+            "Aku adalah manusia serba bisa (polymath) dari era Renaisans Italia.",
+            "Aku melukis mahakarya terkenal 'Mona Lisa' dan 'The Last Supper'.",
+            "Buku catatanku penuh dengan sketsa helikopter dan mesin perang purba."
+        ]
+    },
+    {
+        "name": "Bill Gates",
+        "category": "Tokoh Teknologi",
+        "clues": [
+            "Aku adalah salah satu orang terkaya di dunia dari industri perangkat lunak.",
+            "Aku mendirikan Microsoft bersama Paul Allen.",
+            "Sistem operasi Windows buatanku digunakan oleh miliaran komputer."
+        ]
+    },
+    {
+        "name": "Mark Zuckerberg",
+        "category": "Tokoh Teknologi",
+        "clues": [
+            "Aku mendirikan platform media sosial dari kamar asrama Harvard.",
+            "Perusahaanku kini bernama Meta dan mengelola Instagram serta WhatsApp.",
+            "Aku mempopulerkan konsep Metaverse."
+        ]
+    },
+    {
+        "name": "Iron Man",
+        "category": "Karakter Fiksi",
+        "clues": [
+            "Aku adalah miliarder, jenius, playboy, dan dermawan bernama Tony Stark.",
+            "Aku mengenakan zirah besi berteknologi canggih berwarna merah dan emas.",
+            "Jantung buatanku ditenagai oleh Arc Reactor di dada."
+        ]
+    },
+    {
+        "name": "Batman",
+        "category": "Karakter Fiksi",
+        "clues": [
+            "Nama asliku adalah Bruce Wayne, pengusaha kaya raya dari Gotham City.",
+            "Aku tidak memiliki kekuatan super, hanya mengandalkan kecerdasan dan gadget canggih.",
+            "Simbolku adalah kelelawar dan aku beroperasi di kegelapan malam."
+        ]
+    },
+    {
+        "name": "Spider-Man",
+        "category": "Karakter Fiksi",
+        "clues": [
+            "Nama asliku adalah Peter Parker, seorang remaja yang hobi fotografi.",
+            "Aku mendapat kekuatan setelah digigit oleh laba-laba radioaktif.",
+            "Prinsip hidupku: 'Dengan kekuatan besar, datang pula tanggung jawab yang besar'."
+        ]
+    },
+    {
+        "name": "Naruto",
+        "category": "Karakter Anime",
+        "clues": [
+            "Aku adalah ninja dari desa Konohagakure yang bercita-cita menjadi Hokage.",
+            "Di dalam tubuhku disegel monster rubah ekor sembilan (Kurama).",
+            "Jurus andalanku adalah Rasengan dan Kage Bunshin no Jutsu."
+        ]
+    },
+    {
+        "name": "Monkey D Luffy",
+        "category": "Karakter Anime",
+        "clues": [
+            "Aku adalah kapten bajak laut Topi Jerami.",
+            "Tubuhku memiliki sifat lentur seperti karet setelah memakan Buah Iblis.",
+            "Impian besarku adalah menemukan harta karun One Piece dan menjadi Raja Bajak Laut."
+        ]
+    },
+    {
+        "name": "Son Goku",
+        "category": "Karakter Anime",
+        "clues": [
+            "Aku adalah bangsa Saiya yang dikirim ke bumi sejak bayi.",
+            "Aku sangat gemar makan banyak, berlatih bela diri, dan mencari lawan kuat.",
+            "Jurus pemungkasku adalah Kamehameha dan Genkidama."
+        ]
+    },
+    {
+        "name": "Doraemon",
+        "category": "Karakter Anime",
+        "clues": [
+            "Aku adalah robot kucing berwarna biru dari abad ke-22.",
+            "Aku sangat takut dengan tikus dan suka sekali makan dorayaki.",
+            "Aku memiliki kantong ajaib empat dimensi di perutku."
+        ]
+    },
+    {
+        "name": "Pikachu",
+        "category": "Karakter Game",
+        "clues": [
+            "Aku adalah monster saku (Pokemon) bertipe listrik berwarna kuning.",
+            "Pipiku memiliki kantong merah yang bisa memancarkan sengatan listrik.",
+            "Aku adalah partner setia Ash Ketchum yang selalu menolak masuk Pokeball."
+        ]
+    },
+    {
+        "name": "Mario",
+        "category": "Karakter Game",
+        "clues": [
+            "Aku adalah tukang ledeng berkumis tebal dari Kerajaan Jamur.",
+            "Aku selalu berusaha menyelamatkan Putri Peach dari cengkeraman Bowser.",
+            "Aku mengenakan topi dan baju merah dengan celana kodok biru."
+        ]
+    },
+    {
+        "name": "Lionel Messi",
+        "category": "Atlet Sepak Bola",
+        "clues": [
+            "Aku dijuluki 'La Pulga' karena tubuhku yang mungil namun lincah.",
+            "Aku memenangkan 8 trofi Ballon d'Or dan membawa Argentina juara Piala Dunia 2022.",
+            "Sebagian besar karier gemilangku dihabiskan bersama FC Barcelona."
+        ]
+    },
+    {
+        "name": "Cristiano Ronaldo",
+        "category": "Atlet Sepak Bola",
+        "clues": [
+            "Aku adalah megabintang sepak bola asal Portugal bernomor punggung 7.",
+            "Aku terkenal dengan selebrasi ikonik lompat memutar sambil meneriakkan 'SIUUU!'.",
+            "Aku memegang rekor pencetak gol internasional terbanyak sepanjang sejarah."
+        ]
+    },
+    {
+        "name": "Michael Jordan",
+        "category": "Atlet Basket",
+        "clues": [
+            "Aku dianggap sebagai pemain bola basket terhebat sepanjang masa (GOAT).",
+            "Aku memimpin Chicago Bulls meraih enam gelar juara NBA di era 90-an.",
+            "Siluet aksiku melompat menjadi logo sepatu olahraga terkenal 'Jumpman'."
+        ]
+    },
+    {
+        "name": "Muhammad Ali",
+        "category": "Atlet Tinju",
+        "clues": [
+            "Aku adalah legenda tinju kelas berat dunia asal Amerika Serikat.",
+            "Gaya bertarungku digambarkan: 'Melayang seperti kupu-kupu, menyengat seperti lebah'.",
+            "Sebelum berganti nama, nama asliku adalah Cassius Clay."
+        ]
+    },
+    {
+        "name": "Borobudur",
+        "category": "Bangunan Bersejarah",
+        "clues": [
+            "Aku adalah monumen candi Buddha terbesar di dunia.",
+            "Aku terletak di Magelang, Jawa Tengah, dan dibangun pada abad ke-8.",
+            "Aku memiliki banyak stupa berundak dan relief batu yang megah."
+        ]
+    },
+    {
+        "name": "Menara Eiffel",
+        "category": "Bangunan Ikonik",
+        "clues": [
+            "Aku adalah menara besi kisi yang berdiri kokoh di tepi sungai Seine.",
+            "Awalnya aku dibangun sebagai pintu masuk Pameran Dunia 1889 di Paris.",
+            "Aku menjadi simbol paling romantis dan terkenal dari negara Prancis."
+        ]
+    },
+    {
+        "name": "Piramida Giza",
+        "category": "Keajaiban Dunia",
+        "clues": [
+            "Aku adalah bangunan makam kuno megah peninggalan para Firaun.",
+            "Aku dijaga oleh patung berkepala manusia bertubuh singa bernama Sphinx.",
+            "Aku adalah satu-satunya dari Tujuh Keajaiban Dunia Kuno yang masih berdiri utuh."
+        ]
+    },
+    {
+        "name": "Tembok Besar Cina",
+        "category": "Keajaiban Dunia",
+        "clues": [
+            "Aku adalah struktur pertahanan militer terpanjang yang pernah dibangun manusia.",
+            "Panjangku membentang ribuan kilometer melewati pegunungan utara Tiongkok.",
+            "Awal pembangunanku dimulai pada era kaisar Qin Shi Huang."
+        ]
+    },
+    {
+        "name": "Colosseum",
+        "category": "Bangunan Bersejarah",
+        "clues": [
+            "Aku adalah amfiteater batu raksasa peninggalan Kekaisaran Romawi.",
+            "Di masaku, ribuan penonton bersorak menyaksikan pertarungan para gladiator.",
+            "Aku terletak di pusat kota Roma, Italia."
+        ]
+    },
+    {
+        "name": "Taj Mahal",
+        "category": "Bangunan Bersejarah",
+        "clues": [
+            "Aku adalah mahakarya arsitektur marmer putih berkilau di tepi sungai Yamuna.",
+            "Aku dibangun oleh Kaisar Shah Jahan sebagai monumen cinta abadi untuk istrinya.",
+            "Aku terletak di kota Agra, India."
+        ]
+    },
+    {
+        "name": "Patung Liberty",
+        "category": "Monumen Terkenal",
+        "clues": [
+            "Aku adalah patung raksasa dewi kebebasan yang memegang obor dan plakat.",
+            "Aku merupakan hadiah persahabatan dari rakyat Prancis untuk Amerika Serikat.",
+            "Aku berdiri menyambut para pendatang di pelabuhan New York."
+        ]
+    },
+    {
+        "name": "Monas",
+        "category": "Ikon Indonesia",
+        "clues": [
+            "Aku adalah tugu peringatan setinggi 132 meter di jantung ibu kota Jakarta.",
+            "Puncak lidah apiku dilapisi oleh puluhan kilogram emas murni.",
+            "Aku dibangun atas gagasan Presiden Soekarno untuk mengenang perjuangan kemerdekaan."
+        ]
+    },
+    {
+        "name": "Gunung Everest",
+        "category": "Geografi & Alam",
+        "clues": [
+            "Aku adalah titik daratan tertinggi di atas permukaan laut di planet bumi.",
+            "Puncakku berada di pegunungan Himalaya di perbatasan Nepal dan Tibet.",
+            "Sir Edmund Hillary dan Tenzing Norgay adalah orang pertama yang menaklukkanku."
+        ]
+    },
+    {
+        "name": "Palung Mariana",
+        "category": "Geografi & Alam",
+        "clues": [
+            "Aku adalah titik terdalam di seluruh samudera planet bumi.",
+            "Kedalamanku mencapai hampir 11.000 meter di bawah permukaan laut.",
+            "Tekanan air di duniaku ratusan kali lebih kuat dari permukaan dan abadi dalam kegelapan."
+        ]
+    },
+    {
+        "name": "Hutan Amazon",
+        "category": "Geografi & Alam",
+        "clues": [
+            "Aku adalah hutan hujan tropis terluas di dunia yang membentang di Amerika Selatan.",
+            "Sungai besarku mengalirkan debit air tawar terbesar ke samudera.",
+            "Aku sering dijuluki sebagai 'Paru-paru Dunia'."
+        ]
+    },
+    {
+        "name": "Gurun Sahara",
+        "category": "Geografi & Alam",
+        "clues": [
+            "Aku adalah gurun panas terluas di muka bumi yang membentang di Afrika Utara.",
+            "Hamparan pasir, oasis langka, dan suhu ekstrem adalah ciri khasku.",
+            "Unta adalah hewan transportasi tradisional yang paling tangguh di wilayahu."
+        ]
+    },
+    {
+        "name": "Wi-Fi",
+        "category": "Teknologi",
+        "clues": [
+            "Aku adalah teknologi nirkabel yang memancarkan sinyal radio frekuensi 2.4 GHz atau 5 GHz.",
+            "Tanpa keberadaanku, ponsel pintar dan laptopmu harus colok kabel LAN untuk berinternet.",
+            "Logo gelombang sinyalku selalu dicari-cari saat nongkrong di kafe."
+        ]
+    },
+    {
+        "name": "Bluetooth",
+        "category": "Teknologi",
+        "clues": [
+            "Aku adalah protokol nirkabel jarak pendek untuk menghubungkan perangkat.",
+            "Namaku diambil dari nama raja Skandinavia abad ke-10, Harald Gormsson.",
+            "Logoku merupakan kombinasi dua huruf rune kuno Nordik."
+        ]
+    },
+    {
+        "name": "Internet",
+        "category": "Teknologi",
+        "clues": [
+            "Awal mulaku adalah jaringan ARPANET yang dikembangkan militer Amerika.",
+            "Aku menghubungkan miliaran komputer dan perangkat di seluruh penjuru bumi.",
+            "Melaluiku, informasi, web, dan komunikasi digital dapat diakses dalam sekejap."
+        ]
+    },
+    {
+        "name": "ChatGPT",
+        "category": "Teknologi & AI",
+        "clues": [
+            "Aku adalah model kecerdasan buatan berbasis Large Language Model dari OpenAI.",
+            "Aku bisa menjawab pertanyaan, menulis kode pemrograman, hingga membuat puisi.",
+            "Peluncuranku pada akhir 2022 memicu revolusi kecerdasan buatan global."
+        ]
+    },
+    {
+        "name": "Bitcoin",
+        "category": "Kripto & Finansial",
+        "clues": [
+            "Aku adalah mata uang digital terdesentralisasi pertama di dunia berbasis blockchain.",
+            "Penciptaku menggunakan nama samaran misterius 'Satoshi Nakamoto'.",
+            "Jumlah total koin yang bisa ditambang dibatasi hanya 21 juta keping."
+        ]
+    },
+    {
+        "name": "Komodo",
+        "category": "Fauna Indonesia",
+        "clues": [
+            "Aku adalah spesies kadal purba terbesar yang masih hidup di bumi.",
+            "Aku hanya dapat ditemukan di kepulauan Nusa Tenggara Timur, Indonesia.",
+            "Gigitanku mengandung kelenjar racun dan bakteri yang melumpuhkan mangsa."
+        ]
+    },
+    {
+        "name": "Paus Biru",
+        "category": "Fauna Dunia",
+        "clues": [
+            "Aku adalah hewan terbesar yang pernah hidup di bumi, bahkan mengalahkan dinosaurus.",
+            "Meskipun hidup di laut, aku bernapas menggunakan paru-paru dan menyusui.",
+            "Makanan utamaku adalah krill kecil yang kusaring menggunakan balin."
+        ]
+    },
+    {
+        "name": "Kopi",
+        "category": "Kuliner & Budaya",
+        "clues": [
+            "Aku berasal dari biji tanaman genus Coffea yang disangrai dan diseduh.",
+            "Kandungan kafein di dalamku sangat ampuh mengusir kantuk dan menemani begadang.",
+            "Varian popularku antara lain Arabika, Robusta, Espresso, dan Latte."
+        ]
+    },
+    {
+        "name": "Mi Instan",
+        "category": "Kuliner Populer",
+        "clues": [
+            "Aku diciptakan pertama kali oleh Momofuku Ando di Jepang.",
+            "Cukup direbus selama 3 menit dan dicampur bumbu, aku siap dinikmati.",
+            "Di Indonesia, salah satu merekku sudah mendunia dan jadi makanan anak kos."
+        ]
+    },
+    {
+        "name": "Rendang",
+        "category": "Kuliner Nusantara",
+        "clues": [
+            "Aku adalah masakan daging tradisional khas Minangkabau, Sumatera Barat.",
+            "Proses memasakku membutuhkan waktu berjam-jam menggunakan santan dan rempah kaya.",
+            "Aku pernah dinobatkan sebagai makanan terlezat di dunia versi survei CNN."
+        ]
+    },
+    {
+        "name": "B.J. Habibie",
+        "category": "Tokoh Nasional",
+        "clues": [
+            "Aku adalah insinyur dirgantara jenius dan presiden ke-3 Republik Indonesia.",
+            "Aku dijuluki 'Mr. Crack' karena menemukan rumus keretakan pada sayap pesawat.",
+            "Aku memimpin perancangan pesawat terbang buatan anak bangsa N-250 Gatotkaca."
+        ]
+    },
+    {
+        "name": "Soekarno",
+        "category": "Tokoh Nasional",
+        "clues": [
+            "Aku adalah Proklamator Kemerdekaan dan presiden pertama Republik Indonesia.",
+            "Pidatoku yang berapi-api mampu membakar semangat rakyat melawan penjajah.",
+            "Aku mencetuskan nama Pancasila sebagai dasar falsafah negara Indonesia."
+        ]
+    },
+    {
+        "name": "Joker",
+        "category": "Karakter Fiksi",
+        "clues": [
+            "Aku adalah musuh bebuyutan Batman di Gotham City.",
+            "Wajahku dicat putih dengan riasan senyum badut merah yang menyeramkan.",
+            "Kutipan terkenalku antara lain: 'Why so serious?'."
+        ]
+    },
+    {
+        "name": "Thanos",
+        "category": "Karakter Fiksi",
+        "clues": [
+            "Aku adalah bangsa Titan berbadan ungu raksasa dari jagat Marvel.",
+            "Tujuanku adalah melenyapkan separuh populasi alam semesta demi keseimbangan.",
+            "Aku mengumpulkan enam Infinity Stones dan memasangnya di Infinity Gauntlet."
+        ]
+    },
+    {
+        "name": "Geralt of Rivia",
+        "category": "Karakter Game",
+        "clues": [
+            "Aku adalah seorang Witcher berambut putih dari klan Serigala.",
+            "Profesi utamaku adalah pemburu monster bayaran dengan dua pedang di punggung.",
+            "Game yang menceritakan petualanganku adalah 'The Witcher 3: Wild Hunt'."
+        ]
+    },
+    {
+        "name": "Kratos",
+        "category": "Karakter Game",
+        "clues": [
+            "Aku adalah pejuang Sparta yang membantai para dewa Olimpus di Yunani.",
+            "Tubuhku pucat berlumuran abu keluargaku dan memiliki tato merah di kulit.",
+            "Dalam petualangan baruku di mitologi Nordik, aku membawa kapak Leviathan."
+        ]
+    },
+    {
+        "name": "Arthur Morgan",
+        "category": "Karakter Game",
+        "clues": [
+            "Aku adalah koboi anggota geng Van der Linde di era senjakala Wild West.",
+            "Aku adalah protagonis utama dalam mahakarya game Red Dead Redemption 2.",
+            "Aku menunggang kuda melintasi padang rumput dan berjuang mencari penebusan dosa."
+        ]
+    },
+    {
+        "name": "Master Chief",
+        "category": "Karakter Game",
+        "clues": [
+            "Nama kodeku adalah John-117, seorang prajurit super Spartan-II.",
+            "Aku mengenakan zirah tempur hijau berhelm emas yang menutupi seluruh wajah.",
+            "Aku didampingi oleh AI setia bernama Cortana dalam franchise game Halo."
+        ]
+    },
+    {
+        "name": "R.A. Kartini",
+        "category": "Pahlawan Nasional",
+        "clues": [
+            "Aku adalah pelopor emansipasi wanita pribumi di Indonesia.",
+            "Kumpulan surat-suratku diterbitkan dalam buku berjudul Habis Gelap Terbitlah Terang.",
+            "Hari lahirku diperingati setiap tanggal 21 April di seluruh Indonesia."
+        ]
+    },
+    {
+        "name": "Thomas Alva Edison",
+        "category": "Ilmuwan & Penemu",
+        "clues": [
+            "Aku memegang lebih dari 1.000 hak paten atas berbagai penemuanku.",
+            "Aku terkenal dengan kutipan bahwa jenius adalah 1% inspirasi dan 99% kerja keras.",
+            "Penemuanku yang paling mengubah peradaban malam dunia adalah lampu pijar listrik komersial."
+        ]
+    },
+    {
+        "name": "Isaac Newton",
+        "category": "Fisikawan & Matematikawan",
+        "clues": [
+            "Aku lahir di Inggris dan menulis mahakarya ilmiah Philosophiae Naturalis Principia Mathematica.",
+            "Kisah legendaris menceritakan aku merumuskan hukum alam setelah melihat apel jatuh dari pohon.",
+            "Aku merumuskan tiga Hukum Gerak dan Hukum Gravitasi Universal."
+        ]
+    },
+    {
+        "name": "Marie Curie",
+        "category": "Ilmuwan Sains",
+        "clues": [
+            "Aku adalah wanita pertama yang memenangkan Penghargaan Nobel.",
+            "Aku adalah satu-satunya orang yang memenangkan Nobel dalam dua bidang ilmu berbeda: Fisika dan Kimia.",
+            "Penelitianku berfokus pada fenomena radioaktivitas dan aku menemukan unsur Polonium serta Radium."
+        ]
+    },
+    {
+        "name": "Galileo Galilei",
+        "category": "Astronom & Fisikawan",
+        "clues": [
+            "Aku dijuluki sebagai Bapak Astronomi Observasional modern dari Italia.",
+            "Aku menyempurnakan teleskop untuk mengamati empat bulan terbesar yang mengorbit planet Yupiter.",
+            "Aku mendukung teori heliosentrisme yang menyatakan bumi mengelilingi matahari hingga diadili oleh inkuisisi."
+        ]
+    },
+    {
+        "name": "Alexander Graham Bell",
+        "category": "Penemu & Teknologi",
+        "clues": [
+            "Aku lahir di Skotlandia dan sangat peduli pada pendidikan bagi penyandang tunarungu.",
+            "Kata pertama yang kuucapkan melalui alat temuanku adalah: Mr. Watson, come here, I want to see you.",
+            "Aku mematenkan alat komunikasi suara jarak jauh pertama yang kita sebut Telepon."
+        ]
+    },
+    {
+        "name": "Neil Armstrong",
+        "category": "Astronot & Penjelajah",
+        "clues": [
+            "Aku adalah pilot uji coba dan astronaut asal Amerika Serikat yang menaiki wahana Apollo 11.",
+            "Kalimat terkenalku: Satu langkah kecil bagi manusia, satu lompatan raksasa bagi umat manusia.",
+            "Aku adalah manusia pertama dalam sejarah yang berhasil menginjakkan kaki di permukaan Bulan."
+        ]
+    },
+    {
+        "name": "Alan Turing",
+        "category": "Matematikawan & Komputer",
+        "clues": [
+            "Aku adalah ahli kriptografi asal Inggris yang bekerja di Bletchley Park selama Perang Dunia II.",
+            "Aku merancang mesin Bombe untuk memecahkan kode sandi rahasia Enigma milik militer Jerman.",
+            "Aku dianggap sebagai bapak ilmu komputer modern dan kecerdasan buatan (AI)."
+        ]
+    },
+    {
+        "name": "Pangeran Diponegoro",
+        "category": "Pahlawan Nasional",
+        "clues": [
+            "Aku adalah bangsawan Kesultanan Yogyakarta yang memimpin perlawanan besar melawan penjajah Belanda.",
+            "Perang yang kupimpin berlangsung selama lima tahun (1825-1830) dan menguras kas keuangan kolonial.",
+            "Aku ditangkap Belanda di Magelang setelah dijebak dalam sebuah perundingan damai."
+        ]
+    },
+    {
+        "name": "Ki Hajar Dewantara",
+        "category": "Pahlawan Pendidikan",
+        "clues": [
+            "Nama asliku adalah Raden Mas Soewardi Soerjaningrat.",
+            "Aku mendirikan lembaga pendidikan Perguruan Nasional Tamansiswa bagi rakyat pribumi.",
+            "Semboyan ajaranku yang abadi hingga kini adalah: Ing Ngarsa Sung Tuladha, Ing Madya Mangun Karsa, Tut Wuri Handayani."
+        ]
+    },
+    {
+        "name": "Gajah Mada",
+        "category": "Tokoh Sejarah Nusantara",
+        "clues": [
+            "Aku adalah Mahapatih legendaris dari Kerajaan Majapahit pada masa kejayaan Hayam Wuruk.",
+            "Aku bersumpah tidak akan menikmati kenikmatan dunia sebelum berhasil menyatukan seluruh Nusantara.",
+            "Sumpah terkenalku di hadapan para pembesar kerajaan dinamakan Sumpah Palapa."
+        ]
+    },
+    {
+        "name": "Jenderal Soedirman",
+        "category": "Pahlawan Militer",
+        "clues": [
+            "Aku adalah Panglima Besar Tentara Keamanan Rakyat (TKR) pertama di Indonesia.",
+            "Meskipun paru-paruku sedang sakit parah, aku tetap memimpin pasukanku bertempur di hutan.",
+            "Aku memimpin taktik perang gerilya dengan ditandu oleh prajurit-prajurit setiaku."
+        ]
+    },
+    {
+        "name": "Lumba-lumba",
+        "category": "Mamalia Air",
+        "clues": [
+            "Aku bernapas dengan paru-paru dan melahirkan anak, bukan bertelur.",
+            "Aku menggunakan sistem ekolokasi (pantulan suara klik ultrasonik) untuk bernavigasi dan mencari makan.",
+            "Aku dikenal sangat cerdas, ramah kepada manusia, dan sering melompat akrobatik di atas permukaan air."
+        ]
+    },
+    {
+        "name": "Bunglon",
+        "category": "Reptil & Hewan",
+        "clues": [
+            "Mataku dapat bergerak ke dua arah yang berbeda secara bersamaan dan independen.",
+            "Lidahku sangat panjang dan lengket, dapat melesat cepat untuk menangkap serangga.",
+            "Kulitku memiliki sel kromatofora yang mampu mengubah warna tubuh sesuai suasana hati dan kamuflase."
+        ]
+    },
+    {
+        "name": "Pinguin",
+        "category": "Unggas & Hewan",
+        "clues": [
+            "Aku termasuk golongan burung, tetapi sayapku bermutasi menjadi sirip dan tidak bisa terbang di udara.",
+            "Aku adalah perenang dan penyelam handal di perairan dingin bersalju.",
+            "Bulu hitam-putihku terlihat seperti setelan jas tuksedo yang sangat rapi."
+        ]
+    },
+    {
+        "name": "Kelelawar",
+        "category": "Mamalia Nokturnal",
+        "clues": [
+            "Aku adalah satu-satunya mamalia sejati yang memiliki kemampuan terbang aktif.",
+            "Aku aktif berburu buah atau serangga di malam hari dan tidur bergelantungan terbalik di siang hari.",
+            "Aku memanfaatkan pantulan gelombang suara ultrasonik (ekolokasi) untuk terbang di kegelapan gua."
+        ]
+    },
+    {
+        "name": "Gurita",
+        "category": "Fauna Laut",
+        "clues": [
+            "Tubuhku tidak memiliki tulang punggung dan memiliki tiga buah jantung.",
+            "Aku memiliki darah berwarna biru dan delapan lengan tentakel dengan mangkuk penghisap.",
+            "Jika terancam bahaya, aku menyemprotkan cairan tinta hitam pekat untuk melarikan diri."
+        ]
+    },
+    {
+        "name": "Cheetah",
+        "category": "Mamalia Darat",
+        "clues": [
+            "Tubuhku ramping dengan cakar semi-retraktil yang berfungsi seperti paku sepatu atlet lari.",
+            "Aku memiliki pola garis hitam unik seperti tetesan air mata dari sudut mata hingga mulut.",
+            "Aku adalah hewan darat tercepat di dunia yang bisa melesat dari 0 hingga 100 km/jam dalam 3 detik."
+        ]
+    },
+    {
+        "name": "Unta",
+        "category": "Mamalia Gurun",
+        "clues": [
+            "Aku memiliki bulu mata panjang lentik dan lubang hidung yang dapat menutup rapat dari badai pasir.",
+            "Aku sanggup berjalan ratusan kilometer di padang pasir terik tanpa minum air selama berminggu-minggu.",
+            "Punggungku memiliki satu atau dua punuk yang menyimpan cadangan lemak energi."
+        ]
+    },
+    {
+        "name": "Kunang-kunang",
+        "category": "Serangga Unik",
+        "clues": [
+            "Aku termasuk jenis kumbang nokturnal bersayap kecil.",
+            "Perut bagian bawahku mengandung senyawa luciferin yang bereaksi dengan oksigen.",
+            "Tubuhku menghasilkan cahaya kelap-kelip kehijauan yang indah di malam hari (bioluminesensi)."
+        ]
+    },
+    {
+        "name": "Kompas",
+        "category": "Alat Navigasi",
+        "clues": [
+            "Aku adalah penemuan kuno dari peradaban Tiongkok pada masa Dinasti Han.",
+            "Aku tidak membutuhkan baterai listrik dan selalu berorientasi pada medan geomagnetik bumi.",
+            "Jarum magnetisku yang runcing selalu setia menunjuk ke arah utara dan selatan."
+        ]
+    },
+    {
+        "name": "Mikroskop",
+        "category": "Alat Laboratorium",
+        "clues": [
+            "Aku menggunakan susunan lensa okuler dan objektif untuk membengkokkan berkas cahaya.",
+            "Aku ditaruh di meja laboratorium biologi bersama kaca preparat dan cairan pewarna.",
+            "Fungsiku adalah memperbesar penampakan benda-benda mikroskopis seperti bakteri, virus, dan sel tubuh."
+        ]
+    },
+    {
+        "name": "Teleskop",
+        "category": "Alat Astronomi",
+        "clues": [
+            "Aku terdiri dari tabung optik panjang dengan lensa cembung atau cermin cekung raksasa.",
+            "Contoh terkenal diriku yang mengorbit di luar angkasa adalah Hubble dan James Webb.",
+            "Fungsiku adalah mengamati bintang, nebula, kawah bulan, dan galaksi jauh di langit malam."
+        ]
+    },
+    {
+        "name": "Satelit",
+        "category": "Teknologi Antariksa",
+        "clues": [
+            "Bulan adalah contoh alami diriku, sedangkan buatanku diluncurkan roket ke orbit bumi.",
+            "Aku membawa panel surya lebar dan antena parabola untuk mengirim data komunikasi.",
+            "Fungsiku memancarkan sinyal GPS, siaran televisi, dan memantau cuaca dari luar angkasa."
+        ]
+    },
+    {
+        "name": "Mercusuar",
+        "category": "Bangunan Navigasi",
+        "clues": [
+            "Aku adalah bangunan menara tinggi yang biasanya dibangun kokoh di tebing karang pantai terpencil.",
+            "Salah satu keajaiban dunia kuno di Iskandariyah (Alexandria) adalah bangunan jenisku.",
+            "Puncakkuku memiliki lampu sorot berputar dengan lensa Fresnel untuk memandu kapal laut di malam hari."
+        ]
+    },
+    {
+        "name": "Jam Pasir",
+        "category": "Alat Tradisional",
+        "clues": [
+            "Tubuhku terbuat dari dua bola kaca bening yang saling terhubung oleh leher sempit di tengah.",
+            "Aku tidak membutuhkan roda gigi, per, ataupun daya baterai untuk mengukur interval waktu.",
+            "Aku harus dibalik agar butiran pasir halus di bagian atas dapat mengalir turun perlahan."
+        ]
+    },
+    {
+        "name": "Kapal Selam",
+        "category": "Kendaraan Bahari",
+        "clues": [
+            "Lambung kapal tebalku dirancang khusus untuk menahan tekanan hidrostatik air yang sangat kuat.",
+            "Aku mengisi tangki ballast dengan air untuk menyelam dan mengosongkannya untuk mengapung kembali.",
+            "Aku menjelajah di kedalaman dasar samudera tanpa terlihat dari permukaan air."
+        ]
+    },
+    {
+        "name": "Cermin",
+        "category": "Benda Sehari-hari",
+        "clues": [
+            "Permukaanku terbuat dari kaca datar dengan lapisan tipis perak atau aluminium di bagian belakang.",
+            "Dalam dongeng Putri Salju, ratu jahat selalu mengajakku berbicara setiap pagi.",
+            "Jika kamu berdiri di depanku, aku akan memantulkan bayangan wajahmu secara terbalik kiri dan kanan."
+        ]
+    },
+    {
+        "name": "Payung",
+        "category": "Benda Sehari-hari",
+        "clues": [
+            "Tubuhku terdiri dari rangka jari-jari kawat, kain tahan air, dan pegangan melengkung.",
+            "Ada peribahasa bijak: Sedia aku sebelum turun hujan.",
+            "Aku dibuka saat cuaca hujan agar bajumu tidak basah kuyup, atau saat terik matahari panas."
+        ]
+    },
+    {
+        "name": "Termometer",
+        "category": "Alat Ukur",
+        "clues": [
+            "Aku memiliki pipa kapiler tipis dengan skala Celcius atau Fahrenheit di sisinya.",
+            "Versi klasikku memanfaatkan pemuaian cairan air raksa merah atau alkohol.",
+            "Aku diselipkan di ketiak atau mulut dokter untuk mengukur derajat panas atau demam tubuh pasien."
+        ]
+    },
+    {
+        "name": "Lampu Lalu Lintas",
+        "category": "Fasilitas Publik",
+        "clues": [
+            "Aku berdiri tegak di tiang besi pada setiap persimpangan jalan raya kota.",
+            "Aku memiliki tiga lensa bundar dengan warna merah, kuning, dan hijau.",
+            "Fungsiku adalah mengatur giliran kendaraan berhenti, bersiap, dan melaju agar tidak terjadi tabrakan."
+        ]
+    },
+    {
+        "name": "Balon Udara",
+        "category": "Wahana Terbang",
+        "clues": [
+            "Aku adalah teknologi penerbangan berawak tertua yang diciptakan oleh Montgolfier bersaudara.",
+            "Aku membawa keranjang anyaman rotan besar di bawah kantung kain nilon raksasaku.",
+            "Aku mengandalkan semburan api gas propana untuk memanaskan udara di dalam kantung agar terangkat ke langit."
+        ]
+    },
+    {
+        "name": "Aurora",
+        "category": "Fenomena Alam",
+        "clues": [
+            "Aku terjadi akibat tabrakan partikel angin matahari bermuatan listrik dengan atom gas atmosfer bumi.",
+            "Medan magnet bumi menarik partikel-partikel ini menuju daerah kutub utara dan selatan.",
+            "Aku tampak sebagai tirai cahaya bergelombang warna hijau, ungu, dan merah yang menari di langit malam kutub."
+        ]
+    },
+    {
+        "name": "Pelangi",
+        "category": "Fenomena Optik",
+        "clues": [
+            "Aku terjadi karena proses pembiasan, pemantulan, dan dispersi cahaya matahari oleh butiran tetes air hujan.",
+            "Urutan spektrum warnaku sering disingkat menjadi Me-Ji-Ku-Hi-Bi-Ni-U.",
+            "Aku muncul sebagai busur lingkaran spektakuler warna-warni di langit setelah hujan reda."
+        ]
+    },
+    {
+        "name": "Gerhana Matahari",
+        "category": "Fenomena Astronomi",
+        "clues": [
+            "Peristiwaku hanya bisa terjadi pada fase bulan baru di siang hari yang cerah.",
+            "Bulan berada tepat sejajar di antara matahari dan bumi sehingga menutupi berkas cahaya matahari.",
+            "Siang hari mendadak berubah menjadi gelap gulita selama beberapa menit dan mahkota korona matahari terlihat."
+        ]
+    },
+    {
+        "name": "Tsunami",
+        "category": "Bencana Alam",
+        "clues": [
+            "Namaku berasal dari bahasa Jepang yang memiliki arti harfiah: Ombak besar di pelabuhan.",
+            "Penyebab utamaku adalah pergeseran lempeng bumi akibat gempa megathrust bawah laut.",
+            "Aku adalah gelombang laut raksasa dengan kecepatan ratusan km/jam yang menyapu daratan pesisir."
+        ]
+    },
+    {
+        "name": "Candi Borobudur",
+        "category": "Warisan Budaya",
+        "clues": [
+            "Aku dibangun pada masa kejayaan Dinasti Syailendra sekitar abad ke-8 Masehi di Magelang, Jawa Tengah.",
+            "Struktur batu andesitku tersusun dari tiga tingkatan spiritual: Kamadhatu, Rupadhatu, dan Arupadhatu.",
+            "Aku adalah monumen candi Buddha terbesar di dunia yang dihiasi ratusan stupa dan ribuan panel relief."
+        ]
+    },
+    {
+        "name": "Gitar",
+        "category": "Alat Musik",
+        "clues": [
+            "Tubuhku memiliki lubang resonansi suara atau pick-up elektrik magnetik di badanku.",
+            "Aku memiliki leher panjang (fretboard) dengan biasanya 6 buah senar nilon atau kawat baja.",
+            "Cara memainkanku adalah dengan dipetik atau digenjreng menggunakan jari atau plektrum."
+        ]
+    },
+    {
+        "name": "Piano",
+        "category": "Alat Musik Klasik",
+        "clues": [
+            "Aku diciptakan oleh Bartolomeo Cristofori di Italia pada awal abad ke-18.",
+            "Di dalam kotak kayuku terdapat palu-palu kecil yang memukul dawai logam saat tuts ditekan.",
+            "Aku memiliki 88 buah tuts berwarna hitam dan putih yang dimainkan dengan kedua tangan."
+        ]
+    },
+    {
+        "name": "Sepatu Kaca Cinderella",
+        "category": "Kisah Dongeng",
+        "clues": [
+            "Aku dibuat dari sihir ajaib ibu peri untuk seorang gadis malang yang menghadiri pesta dansa istana.",
+            "Sihirku akan memudar saat jam dinding kerajaan berdentang tepat pada pukul 12 malam.",
+            "Aku tertinggal di tangga istana dan digunakan sang pangeran untuk mencari jodoh sejati pemilik kakiku."
+        ]
+    },
+    {
+        "name": "Kaca Pembesar",
+        "category": "Alat Optik",
+        "clues": [
+            "Aku terdiri dari selembar lensa cembung tebal yang dibingkai lingkaran dengan pegangan gagang.",
+            "Jika diarahkan ke bawah terik matahari, titik fokus cahayaku mampu membakar daun kering.",
+            "Aku adalah senjata andalan detektif Sherlock Holmes untuk mencari jejak remah bukti di TKP."
+        ]
+    },
+    {
+        "name": "Garam Dapur",
+        "category": "Senyawa Kimia",
+        "clues": [
+            "Rumus molekul kimiamu adalah NaCl (Natrium Klorida).",
+            "Aku dipanen dari penguapan air laut di tambak pesisir pantai.",
+            "Aku memberikan rasa gurih dan asin pada semua masakan di dapur ibumu."
+        ]
+    },
+    {
+        "name": "Batu Bara",
+        "category": "Sumber Daya Alam",
+        "clues": [
+            "Aku terbentuk dari fosil tumbuhan purba yang terpendam di perut bumi selama ratusan juta tahun.",
+            "Warnaku hitam legam dan mudah terbakar menghasilkan energi panas tinggi.",
+            "Aku adalah bahan bakar fosil padat yang banyak digunakan untuk pembangkit listrik tenaga uap (PLTU)."
+        ]
+    },
+    {
+        "name": "Berlian",
+        "category": "Mineral & Permata",
+        "clues": [
+            "Aku tersusun murni dari atom karbon yang terkompresi di bawah suhu dan tekanan ekstrem mantel bumi.",
+            "Aku menempati skala 10 (skala tertinggi) pada skala kekerasan mineral Mohs.",
+            "Aku adalah batu permata berkilau paling keras di dunia yang biasa dipasang di cincin pertunangan."
+        ]
+    },
+    {
+        "name": "Lebah Madu",
+        "category": "Serangga Penghasil",
+        "clues": [
+            "Aku hidup berkelompok dalam hierarki sarang dengan satu ratu dan ribuan pekerja.",
+            "Aku menghisap nektar bunga dan menghasilkan cairan manis kental kaya khasiat obat.",
+            "Sengatanku bisa membuat bengkak, tetapi produk cairanku dinamakan madu murni."
+        ]
+    },
+    {
+        "name": "Jembatan Suramadu",
+        "category": "Infrastruktur Indonesia",
+        "clues": [
+            "Panjang bentang jembatanku mencapai 5,4 kilometer melintasi perairan selat.",
+            "Konstruksi gantung dan kabel penahanku diresmikan oleh Presiden SBY pada tahun 2009.",
+            "Namaku adalah singkatan dari dua daerah yang kuhubungkan: Surabaya dan Madura."
+        ]
+    },
+    {
+        "name": "Badak Jawa",
+        "category": "Satwa Langka Indonesia",
+        "clues": [
+            "Kulit tebalku berlipat-lipat seperti memakai baju zirah perang lapis baja.",
+            "Berbeda dengan saudaraku di Afrika, kepalaku hanya memiliki satu cula kecil.",
+            "Populasi liarku yang tersisa di dunia hanya bertahan hidup di Taman Nasional Ujung Kulon, Banten."
+        ]
+    },
+    {
+        "name": "Kaktus",
+        "category": "Flora Gurun",
+        "clues": [
+            "Batang tebal berhijau daunku berfungsi menyimpan cadangan air dan melakukan fotosintesis.",
+            "Daun-daunku bermutasi menjadi duri tajam untuk mengurangi penguapan dan menolak hewan pemangsa.",
+            "Aku adalah tanaman sukulen khas gurun pasir yang sanggup bertahan di lingkungan sangat kering."
+        ]
+    },
+    {
+        "name": "Gembok",
+        "category": "Perangkat Keamanan",
+        "clues": [
+            "Aku terbuat dari besi tuang padat dengan tangkai melengkung berbentuk huruf U.",
+            "Aku dipasang di pagar rumah, pintu gudang, atau rantai sepeda agar tidak dicuri orang.",
+            "Aku hanya bisa dibuka dan dikunci menggunakan pasangan anak kunciku yang bergerigi khusus."
+        ]
+    },
+    {
+        "name": "Jantung",
+        "category": "Organ Tubuh Manusia",
+        "clues": [
+            "Ukuranku kira-kira sebesar kepalan tangan pemiliknya dan terletak di rongga dada sebelah kiri.",
+            "Otot khususku bekerja memompa darah secara otomatis tanpa pernah berhenti istirahat barang sedetik pun.",
+            "Detak ritmisku berdentang sekitar 60-100 kali per menit saat kamu sedang beristirahat santai."
+        ]
+    },
+    {
+        "name": "Otak",
+        "category": "Organ Tubuh Manusia",
+        "clues": [
+            "Aku dilindungi oleh tengkorak kepala yang sangat keras dan cairan serebrospinal.",
+            "Aku tersusun dari sekitar 86 miliar sel saraf (neuron) yang saling berkomunikasi dengan sinyal listrik.",
+            "Aku adalah pusat kendali pikiran, memori, emosi, dan seluruh pergerakan tubuh manusiaku."
+        ]
+    },
+    {
+        "name": "Paru-paru",
+        "category": "Organ Pernapasan",
+        "clues": [
+            "Aku terdiri dari sepasang kantung spons yang berada di dalam rongga dada dilindungi tulang rusuk.",
+            "Di dalamku terdapat jutaan kantung udara mikroskopis bernama alveolus tempat pertukaran gas.",
+            "Fungsiku adalah menyerap oksigen dari udara dan membuang karbon dioksida saat kamu bernapas."
+        ]
+    },
+    {
+        "name": "Gitar Listrik",
+        "category": "Instrumen Musik Rock",
+        "clues": [
+            "Tubuh papanku padat (solid body) dan membutuhkan kabel colokan jack audio.",
+            "Aku mengandalkan pick-up elektromagnetik dan efek distorsi untuk menghasilkan nada melengking keras.",
+            "Aku adalah alat musik utama para musisi band rock dan metal di atas panggung konser."
+        ]
+    },
+    {
+        "name": "BJ Habibie",
+        "category": "Tokoh Indonesia",
+        "clues": [
+            "Aku adalah insinyur dirgantara jenius asal Parepare, Sulawesi Selatan.",
+            "Aku dijuluki 'Mr. Crack' karena berhasil merumuskan teori perambatan retakan pada sayap pesawat terbang.",
+            "Aku memimpin pembuatan pesawat N-250 Gatotkaca dan menjabat sebagai Presiden ke-3 Republik Indonesia."
+        ]
+    },
+    {
+        "name": "Mohammad Hatta",
+        "category": "Pahlawan Nasional",
+        "clues": [
+            "Aku adalah negarawan tenang dan pemikir ekonomi kelahiran Bukittinggi, Sumatera Barat.",
+            "Aku dijuluki sebagai 'Bapak Koperasi Indonesia'.",
+            "Aku adalah Wakil Presiden pertama Republik Indonesia yang mendampingi Bung Karno."
+        ]
+    },
+    {
+        "name": "Raden Ajeng Kartini",
+        "category": "Pahlawan Nasional",
+        "clues": [
+            "Aku adalah pahlawan wanita asal Jepara yang memperjuangkan emansipasi pendidikan perempuan.",
+            "Surat-surat pemikiranku kepada sahabat penaku di Belanda dibukukan menjadi 'Habis Gelap Terbitlah Terang'.",
+            "Hari lahirku diperingati setiap tanggal 21 April di seluruh Indonesia."
+        ]
+    },
+    {
+        "name": "Monkey D. Luffy",
+        "category": "Karakter Anime",
+        "clues": [
+            "Aku bercita-cita menjadi Raja Bajak Laut dan menemukan harta karun legendaris.",
+            "Tubuhku elastis seperti karet setelah memakan Buah Iblis Gomu Gomu no Mi.",
+            "Aku adalah kapten Bajak Laut Topi Jerami dan sangat tergila-gila dengan daging."
+        ]
+    },
+    {
+        "name": "Naruto Uzumaki",
+        "category": "Karakter Anime",
+        "clues": [
+            "Di dalam tubuhku disegel monster Rubah Ekor Sembilan (Kyuubi).",
+            "Makanan favoritku adalah ramen Ichiraku dan jurus andalanku adalah Kage Bunshin serta Rasengan.",
+            "Meskipun dulunya dijauhi warga desa, impianku akhirnya terwujud menjadi Hokage Ketujuh Konohagakure."
+        ]
+    },
+    {
+        "name": "Goku",
+        "category": "Karakter Anime",
+        "clues": [
+            "Aku adalah seorang bangsa Saiyan yang dikirim ke Bumi saat masih bayi.",
+            "Aku gemar berlatih bela diri, mencari tujuh bola naga, dan jurus pamungkasku adalah Kamehameha.",
+            "Rambutku bisa berubah warna menjadi kuning keemasan saat bertransformasi menjadi Super Saiyan."
+        ]
+    },
+    {
+        "name": "Sherlock Holmes",
+        "category": "Karakter Fiksi",
+        "clues": [
+            "Aku adalah detektif konsultan ciptaan Sir Arthur Conan Doyle yang tinggal di 221B Baker Street, London.",
+            "Aku memiliki kemampuan observasi dan logika deduksi luar biasa serta sering mengisap pipa tembakau.",
+            "Sahabat karib sekaligus pencatat kisah petualanganku adalah Dr. John Watson."
+        ]
+    },
+    {
+        "name": "Burung Cendrawasih",
+        "category": "Hewan Endemik",
+        "clues": [
+            "Aku dijuluki sebagai 'Bird of Paradise' atau Burung dari Surga karena keindahan buluku.",
+            "Pejantan dari bangsaku melakukan tarian memikat yang luar biasa indah untuk menarik perhatian betina.",
+            "Aku adalah satwa endemik yang menjadi lambang kebanggaan pulau Papua."
+        ]
+    },
+    {
+        "name": "Kancil",
+        "category": "Hewan & Cerita Rakyat",
+        "clues": [
+            "Aku adalah mamalia bertubuh kecil pemakan tumbuhan yang sangat lincah.",
+            "Dalam dongeng nusantara, aku diceritakan cerdik dan lihai memperdaya buaya untuk menyeberangi sungai.",
+            "Ada lagu anak-anak terkenal yang menyebutku 'anak nakal suka mencuri mentimun'."
+        ]
+    },
+    {
+        "name": "Gunung Bromo",
+        "category": "Geografi & Alam",
+        "clues": [
+            "Aku adalah gunung berapi aktif yang terletak di dalam kaldera raksasa di Jawa Timur.",
+            "Aku dikelilingi oleh hamparan lautan pasir bisik yang sangat luas seluas 10 kilometer persegi.",
+            "Suku Tengger yang mendiami sekitarku rutin menggelar upacara Yadnya Kasada dengan melempar sesaji ke kawahku."
+        ]
+    },
+    {
+        "name": "Rafflesia Arnoldii",
+        "category": "Tumbuhan Langka",
+        "clues": [
+            "Aku adalah tumbuhan parasit obligat tanpa akar, daun, maupun batang sejati.",
+            "Saat mekar, kelopakkuku mengeluarkan bau busuk menyengat menyerupai bangkai untuk menarik serangga penyerbuk.",
+            "Aku memegang rekor sebagai bunga tunggal terbesar di dunia dan ditemukan di hutan Bengkulu dan Sumatera."
+        ]
+    },
+    {
+        "name": "Angklung",
+        "category": "Alat Musik Tradisional",
+        "clues": [
+            "Aku terbuat dari beberapa bilah tabung bambu yang disusun pada rangka bambu berukuran berbeda.",
+            "Suaraku yang merdu dan khas dihasilkan dengan cara digoyangkan atau digetarkan dengan tangan.",
+            "Aku adalah warisan budaya takbenda UNESCO asal tanah Sunda, Jawa Barat."
+        ]
+    },
+    {
+        "name": "Jam Dinding",
+        "category": "Benda Sehari-hari",
+        "clues": [
+            "Aku memiliki angka 1 sampai 12 yang melingkari permukaan wajahku.",
+            "Aku memiliki dua atau tiga jarum yang berputar terus-menerus tanpa pernah lelah.",
+            "Tugasku adalah memberi tahu kamu waktu dan pengingat saat kamu menjalani aktivitas sehari-hari."
+        ]
+    },
+    {
+        "name": "Kulkas",
+        "category": "Peralatan Rumah Tangga",
+        "clues": [
+            "Tubuhku berbentuk lemari besar berbahan logam yang selalu terhubung dengan listrik.",
+            "Bagian dalamku memiliki suhu sangat rendah berkat zat pendingin refrigerant.",
+            "Tugasku adalah mendinginkan minuman dan mengawetkan bahan makanan agar tidak cepat membusuk."
+        ]
+    },
+    {
+        "name": "Sepatu",
+        "category": "Pakaian & Sandang",
+        "clues": [
+            "Aku selalu hadir berpasangan untuk kaki kanan dan kaki kiri.",
+            "Aku memiliki sol karet tebal, bodi kanvas atau kulit, dan sering kali dilengkapi dengan tali.",
+            "Tugasku adalah melindungi telapak kakimu dari jalanan kasar saat berjalan atau berolahraga."
+        ]
+    },
+    {
+        "name": "Bulan",
+        "category": "Tata Surya",
+        "clues": [
+            "Aku tidak memiliki atmosfer dan permukaanku dipenuhi kawah akibat hantaman meteorit.",
+            "Gravitasi yang kutimbulkan mempengaruhi pasang surut air laut di planet Bumi.",
+            "Aku adalah satu-satunya satelit alami yang setia mengorbit planet Bumi."
+        ]
+    },
+    {
+        "name": "Matahari",
+        "category": "Tata Surya",
+        "clues": [
+            "Aku adalah bola gas plasma raksasa yang terdiri dari hidrogen dan helium.",
+            "Di inti tubuhku terjadi reaksi fusi termonuklir yang menghasilkan energi panas dan cahaya dahsyat.",
+            "Aku adalah pusat dari sistem Tata Surya yang dikelilingi oleh delapan planet."
+        ]
+    },
+    {
+        "name": "Mars",
+        "category": "Tata Surya",
+        "clues": [
+            "Aku adalah planet keempat dari Matahari dalam sistem Tata Surya.",
+            "Permukaanku kaya akan oksida besi yang membuatku tampak kemerahan di langit malam.",
+            "Aku dijuluki 'Planet Merah' dan menjadi target utama eksplorasi manusia untuk koloni masa depan."
+        ]
+    },
+    {
+        "name": "Saturnus",
+        "category": "Tata Surya",
+        "clues": [
+            "Aku adalah raksasa gas terbesar kedua di Tata Surya setelah Jupiter.",
+            "Kerapatan massaku sangat rendah, bahkan jika ada kolam air yang cukup besar, aku akan mengapung.",
+            "Ciri khas utamaku yang paling memukau adalah sistem cincin es dan debu spektakuler yang mengitariku."
+        ]
+    },
+    {
+        "name": "Samudra Pasifik",
+        "category": "Geografi Dunia",
+        "clues": [
+            "Aku menutupi lebih dari 30 persen permukaan Bumi, lebih luas dari seluruh daratan di planet ini digabungkan.",
+            "Di kedalamanku terdapat Palung Mariana, titik terdalam di seluruh permukaan planet Bumi.",
+            "Aku adalah samudra terluas dan terdalam di dunia yang memisahkan benua Asia dan Amerika."
+        ]
+    },
+    {
+        "name": "Sungai Nil",
+        "category": "Geografi Dunia",
+        "clues": [
+            "Aku mengalir dari selatan ke utara melintasi sebelas negara di benua Afrika.",
+            "Lembah subur di tepian aliranku menjadi tempat lahirnya peradaban Mesir Kuno beribu tahun lalu.",
+            "Aku bersaing dengan Sungai Amazon sebagai salah satu sungai terpanjang di planet Bumi."
+        ]
+    },
+    {
+        "name": "Tembok Besar China",
+        "category": "Landmark Dunia",
+        "clues": [
+            "Pembangunanku dimulai pada era Dinasti Qin untuk membendung serangan suku pengembara dari utara.",
+            "Bentanganku memanjang lebih dari 21.000 kilometer melintasi pegunungan, lembah, dan padang gurun.",
+            "Aku adalah struktur buatan tangan manusia terpanjang yang pernah dibangun dalam sejarah peradaban."
+        ]
+    },
+    {
+        "name": "Statue of Liberty",
+        "category": "Landmark Dunia",
+        "clues": [
+            "Tubuhku terbuat dari lembaran tembaga yang seiring waktu teroksidasi menjadi berwarna hijau toska.",
+            "Aku diberikan sebagai hadiah persahabatan dari rakyat Prancis kepada Amerika Serikat pada abad ke-19.",
+            "Aku memegang obor di tangan kanan dan memegang prasasti di tangan kiri, berdiri megah di Pelabuhan New York."
+        ]
+    },
+    {
+        "name": "Monalisa",
+        "category": "Karya Seni",
+        "clues": [
+            "Aku dilukis menggunakan cat minyak di atas papan kayu poplar oleh maestro Leonardo da Vinci.",
+            "Senyuman tipisku yang penuh misteri membuat para pengamat seni berdebat selama berabad-abad.",
+            "Kini aku dipajang di balik kaca antipeluru di Museum Louvre, Paris, dan dilihat jutaan orang tiap tahun."
+        ]
+    },
+    {
+        "name": "Kamera",
+        "category": "Teknologi & Elektronik",
+        "clues": [
+            "Prinsip kerjaku berawal dari fenomena optik kamera obskura berabad-abad yang lalu.",
+            "Aku memiliki lensa dan sensor digital (atau film) untuk menangkap berkas cahaya yang masuk.",
+            "Tugasku adalah membekukan momen berharga menjadi sebuah gambar diam atau rekaman video."
+        ]
+    },
+    {
+        "name": "Helikopter",
+        "category": "Kendaraan Transportasi",
+        "clues": [
+            "Aku adalah jenis pesawat udara bersayap putar (rotor) yang digerakkan oleh mesin turbin.",
+            "Aku memiliki kemampuan unik untuk lepas landas dan mendarat secara vertikal serta melayang diam di udara.",
+            "Aku sering digunakan untuk evakuasi darurat medis, penyelamatan SAR, dan misi tempur militer."
+        ]
+    },
+    {
+        "name": "Kereta Cepat",
+        "category": "Kendaraan Transportasi",
+        "clues": [
+            "Aku meluncur di atas rel khusus dengan kecepatan operasional melampaui 300 kilometer per jam.",
+            "Di Jepang aku dikenal sebagai Shinkansen, dan di Indonesia jalur pertamaku menghubungkan Jakarta ke Bandung dengan nama Whoosh.",
+            "Aku adalah salah satu transportasi darat massal paling efisien, aman, dan modern di dunia."
+        ]
+    },
+    {
+        "name": "Antartika",
+        "category": "Geografi & Alam",
+        "clues": [
+            "Aku adalah benua paling selatan di planet Bumi yang hampir seluruhnya tertutup lapisan es abadi setebal ribuan meter.",
+            "Aku memegang rekor tempat paling dingin, paling kering, dan paling berangin di seluruh permukaan planet ini.",
+            "Aku tidak memiliki penduduk tetap selain para ilmuwan di stasiun penelitian dan koloni pinguin kaisar."
+        ]
+    },
+    {
+        "name": "Kupu-Kupu",
+        "category": "Fauna & Serangga",
+        "clues": [
+            "Daur hidupku melalui proses metamorfosis sempurna: dari telur, ulat pemakan daun, hingga kepompong yang terdiam.",
+            "Sayapku yang lebar dilapisi ribuan sisik mikroskopis berwarna-warni memukau.",
+            "Aku terbang dari bunga ke bunga mengisap nektar sekaligus membantu proses penyerbukan tanaman."
+        ]
+    },
+    {
+        "name": "Wright Bersaudara",
+        "category": "Penemu",
+        "clues": [
+            "Kami adalah kakak beradik Orville dan Wilbur.",
+            "Kami terobsesi dengan mekanika mesin dan sayap burung.",
+            "Kami berhasil menciptakan dan menerbangkan pesawat terbang bermesin pertama."
+        ]
+    },
+    {
+        "name": "Walt Disney",
+        "category": "Tokoh Hiburan",
+        "clues": [
+            "Aku pelopor industri animasi global.",
+            "Aku menciptakan karakter Mickey Mouse dan Donal Bebek.",
+            "Aku mendirikan taman hiburan Disneyland yang mendunia."
+        ]
+    },
+    {
+        "name": "Tim Berners-Lee",
+        "category": "Ilmuwan Komputer",
+        "clues": [
+            "Aku ilmuwan komputer asal Inggris di lab CERN.",
+            "Aku merancang sistem hypertext pertama di dunia.",
+            "Aku adalah penemu World Wide Web (WWW)."
+        ]
+    },
+    {
+        "name": "Charles Darwin",
+        "category": "Ilmuwan Biologi",
+        "clues": [
+            "Aku naturalis dan ahli geologi asal Inggris.",
+            "Aku berlayar mengelilingi dunia menaiki kapal HMS Beagle.",
+            "Aku merumuskan teori evolusi melalui seleksi alam dalam buku On the Origin of Species."
+        ]
+    },
+    {
+        "name": "Stephen Hawking",
+        "category": "Fisikawan",
+        "clues": [
+            "Aku fisikawan teoretis yang mengidap penyakit ALS sejak muda.",
+            "Aku meneliti sifat gravitasi, ruang-waktu, dan radiasi lubang hitam.",
+            "Bukuku yang terkenal berjudul A Brief History of Time."
+        ]
+    },
+    {
+        "name": "Pelé",
+        "category": "Legenda Olahraga",
+        "clues": [
+            "Aku legenda sepak bola dunia asal Brasil berjuluk O Rei.",
+            "Aku satu-satunya pemain yang memenangkan 3 trofi Piala Dunia FIFA.",
+            "Aku mencetak lebih dari seribu gol sepanjang karier profesional."
+        ]
+    },
+    {
+        "name": "Diego Maradona",
+        "category": "Legenda Olahraga",
+        "clues": [
+            "Aku maestro sepak bola jenius asal Argentina bernomor punggung 10.",
+            "Golku ke gawang Inggris tahun 1986 dijuluki Gol Tangan Tuhan.",
+            "Aku membawa Napoli dan timnas Argentina juara dunia."
+        ]
+    },
+    {
+        "name": "Usain Bolt",
+        "category": "Legenda Olahraga",
+        "clues": [
+            "Aku manusia tercepat di bumi asal Jamaika.",
+            "Aku memegang rekor dunia lari 100 meter dengan catatan 9,58 detik.",
+            "Gaya selebrasiku menyerupai panah petir menunjuk ke langit."
+        ]
+    },
+    {
+        "name": "Kobe Bryant",
+        "category": "Legenda Olahraga",
+        "clues": [
+            "Aku bintang bola basket NBA yang menghabiskan seluruh karier di LA Lakers.",
+            "Julukanku adalah Black Mamba dengan etos kerja tak tertandingi.",
+            "Aku memenangkan 5 cincin juara NBA dan 2 medali emas Olimpiade."
+        ]
+    },
+    {
+        "name": "LeBron James",
+        "category": "Atlet Basket",
+        "clues": [
+            "Aku pebasket berjuluk King James.",
+            "Aku memimpin Cleveland, Miami Heat, dan LA Lakers meraih juara NBA.",
+            "Aku pencetak poin terbanyak sepanjang sejarah liga NBA."
+        ]
+    },
+    {
+        "name": "J.K. Rowling",
+        "category": "Penulis",
+        "clues": [
+            "Aku penulis asal Inggris yang menulis di kafe saat mengalami masa sulit.",
+            "Aku menciptakan dunia sihir Hogwarts dan kementerian sihir.",
+            "Karyaku tentang Harry Potter menjadi salah satu serial buku terlaris di dunia."
+        ]
+    },
+    {
+        "name": "George Lucas",
+        "category": "Sutradara/Produser",
+        "clues": [
+            "Aku sineas pembuat saga luar angkasa legendaris.",
+            "Aku menciptakan Darth Vader, Jedi, dan Lightsaber.",
+            "Aku pendiri waralaba Star Wars dan Indiana Jones."
+        ]
+    },
+    {
+        "name": "Stan Lee",
+        "category": "Kreator Komik",
+        "clues": [
+            "Aku editor dan penulis komik legendaris di Marvel Comics.",
+            "Aku menciptakan Spider-Man, Iron Man, Thor, Hulk, dan X-Men.",
+            "Aku selalu muncul sebagai cameo jenaka di film-film MCU."
+        ]
+    },
+    {
+        "name": "Hayao Miyazaki",
+        "category": "Sutradara Animasi",
+        "clues": [
+            "Aku sutradara anime legendaris dari Studio Ghibli Jepang.",
+            "Karyaku meliputi Spirited Away, My Neighbor Totoro, dan Princess Mononoke.",
+            "Karyaku memenangkan piala Oscar untuk Film Animasi Terbaik."
+        ]
+    },
+    {
+        "name": "Akira Toriyama",
+        "category": "Mangaka",
+        "clues": [
+            "Aku mangaka legendaris asal Nagoya Jepang.",
+            "Aku menggambar kisah petualangan Son Goku dan Dr. Slump.",
+            "Karyaku Dragon Ball menjadi inspirasi generasi komik shonen dunia."
+        ]
+    },
+    {
+        "name": "Keanu Reeves",
+        "category": "Aktor",
+        "clues": [
+            "Aku aktor Hollywood berkarisma yang terkenal sangat rendah hati.",
+            "Aku memerankan Neo di The Matrix dan pembunuh bayaran John Wick.",
+            "Banyak kisah viral tentang kedermawananku kepada kru film dan orang asing."
+        ]
+    },
+    {
+        "name": "Tom Cruise",
+        "category": "Aktor",
+        "clues": [
+            "Aku aktor laga papan atas Hollywood yang terkenal tanpa pemeran pengganti (stuntman).",
+            "Aku memanjat gedung Burj Khalifa dan bergelantungan di badan pesawat terbang.",
+            "Aku membintangi seri Mission: Impossible dan Top Gun."
+        ]
+    },
+    {
+        "name": "Leonardo DiCaprio",
+        "category": "Aktor",
+        "clues": [
+            "Aku aktor peraih Oscar yang memulai popularitas dari film Titanic.",
+            "Aku membintangi film Inception, The Wolf of Wall Street, dan The Revenant.",
+            "Aku juga aktif sebagai aktivis penyelamatan lingkungan global."
+        ]
+    },
+    {
+        "name": "Beyoncé",
+        "category": "Musisi",
+        "clues": [
+            "Aku diva musik R&B dan pop berjuluk Queen Bey.",
+            "Awal karierku melejit lewat grup Destiny's Child.",
+            "Aku musisi penerima piala Grammy terbanyak sepanjang sejarah."
+        ]
+    },
+    {
+        "name": "Taylor Swift",
+        "category": "Musisi",
+        "clues": [
+            "Aku penyanyi-penulis lagu peraih 4 kali Album of the Year Grammy.",
+            "Konser tur duniaku The Eras Tour mencetak rekor pendapatan terbesar.",
+            "Fandom setiaku di seluruh dunia dikenal dengan sebutan Swifties."
+        ]
+    },
+    {
+        "name": "Eminem",
+        "category": "Rapper",
+        "clues": [
+            "Aku rapper kulit putih berjuluk Slim Shady dari Detroit.",
+            "Aku memecahkan rekor dunia rap tercepat di lagu Rap God.",
+            "Laguku Lose Yourself menjadi lagu rap pertama pemenang Oscar."
+        ]
+    },
+    {
+        "name": "Jenderal Sudirman",
+        "category": "Pahlawan Nasional",
+        "clues": [
+            "Aku panglima besar pertama Tentara Nasional Indonesia.",
+            "Aku memimpin pertempuran gerilya melawan Belanda dalam keadaan sakit paru-paru.",
+            "Aku ditandu keluar masuk hutan demi mempertahankan kedaulatan RI."
+        ]
+    },
+    {
+        "name": "Bung Tomo",
+        "category": "Pahlawan Nasional",
+        "clues": [
+            "Aku tokoh pemuda dengan orasi menggelegar melalui siaran radio.",
+            "Kalimat takbir dan orasiku membakar semangat arek-arek Surabaya melawan sekutu.",
+            "Peristiwa 10 November 1945 diabadikan sebagai Hari Pahlawan Nasional."
+        ]
+    },
+    {
+        "name": "Raden Saleh",
+        "category": "Pelukis Legendaris",
+        "clues": [
+            "Aku pelopor seni lukis modern Indonesia bergaya Romantisisme.",
+            "Aku berguru dan melukis untuk keluarga kerajaan di Eropa.",
+            "Lukisanku yang paling terkenal adalah Penangkapan Pangeran Diponegoro."
+        ]
+    },
+    {
+        "name": "Maudy Ayunda",
+        "category": "Figur Publik/Musisi",
+        "clues": [
+            "Aku artis, penyanyi, dan cendekiawan muda Indonesia.",
+            "Aku lulus S1 dari Universitas Oxford dan meraih gelar ganda magister dari Stanford University.",
+            "Aku membintangi film Perahu Kertas dan Habibie & Ainun 3."
+        ]
+    },
+    {
+        "name": "Gita Gutawa",
+        "category": "Penyanyi",
+        "clues": [
+            "Aku penyanyi wanita bersuara sopran tinggi putri musisi Erwin Gutawa.",
+            "Aku memenangkan festival lagu anak internasional di Kairo Mesir.",
+            "Aku meraih gelar magister dari London School of Economics (LSE)."
+        ]
+    },
+    {
+        "name": "Najwa Shihab",
+        "category": "Jurnalis",
+        "clues": [
+            "Aku jurnalis perempuan kritis dan pembawa acara bincang politik terkemuka.",
+            "Aku terkenal dengan pertanyaan tajam yang kerap membuat pejabat terdiam.",
+            "Aku adalah pendiri perusahaan media narasi.tv."
+        ]
+    },
+    {
+        "name": "Deddy Corbuzier",
+        "category": "Kreator Konten",
+        "clues": [
+            "Awalnya aku dikenal sebagai mentalis pesulap serba hitam.",
+            "Aku mempopulerkan metode diet OCD dan memiliki lisensi bela diri.",
+            "Kini aku pemilik program podcast YouTube terbesar di Indonesia: Close The Door."
+        ]
+    },
+    {
+        "name": "Raffi Ahmad",
+        "category": "Figur Publik",
+        "clues": [
+            "Aku dijuluki Sultan Andara karena gurita bisnis entertainmentku.",
+            "Aku mendirikan RANS Entertainment bersama istriku Nagita Slavina.",
+            "Aku mengawali karier dari artis sinetron dan presenter musik Dahsyat."
+        ]
+    }
 ]
-

@@ -1,804 +1,1056 @@
 {
-  "questions": [
-    {
-      "emoji": "🐶🐾",
-      "answer": "anjing berjalan"
-    },
-    {
-      "emoji": "🐱😺",
-      "answer": "kucing bahagia"
-    },
-    {
-      "emoji": "☕📖",
-      "answer": "ngopi sambil baca"
-    },
-    {
-      "emoji": "🚗💨",
-      "answer": "mobil melaju cepat"
-    },
-    {
-      "emoji": "🍕😍",
-      "answer": "cinta pizza"
-    },
-    {
-      "emoji": "🎧🎶",
-      "answer": "musik favorit"
-    },
-    {
-      "emoji": "📱📲",
-      "answer": "menggunakan telepon"
-    },
-    {
-      "emoji": "🎥🍿",
-      "answer": "nonton film"
-    },
-    {
-      "emoji": "🛌💤",
-      "answer": "tidur nyenyak"
-    },
-    {
-      "emoji": "📚🧠",
-      "answer": "belajar giat"
-    },
-    {
-      "emoji": "👨‍🍳🍜",
-      "answer": "masak mie"
-    },
-    {
-      "emoji": "👩‍⚕️💉",
-      "answer": "dokter menyuntik"
-    },
-    {
-      "emoji": "🚿🧼",
-      "answer": "mandi bersih"
-    },
-    {
-      "emoji": "🏃‍♂️💨",
-      "answer": "lari cepat"
-    },
-    {
-      "emoji": "🧹🧼",
-      "answer": "membersihkan rumah"
-    },
-    {
-      "emoji": "🎓📚",
-      "answer": "kuliah serius"
-    },
-    {
-      "emoji": "💻⌨️",
-      "answer": "bekerja di laptop"
-    },
-    {
-      "emoji": "🛍️💳",
-      "answer": "belanja online"
-    },
-    {
-      "emoji": "🍔🍟",
-      "answer": "makan cepat"
-    },
-    {
-      "emoji": "🐔🥚",
-      "answer": "telur ayam"
-    },
-    {
-      "emoji": "🐟🍚",
-      "answer": "nasi ikan"
-    },
-    {
-      "emoji": "🍎🍏",
-      "answer": "apel segar"
-    },
-    {
-      "emoji": "🥕🥦",
-      "answer": "sayuran sehat"
-    },
-    {
-      "emoji": "🍇🍉",
-      "answer": "buah segar"
-    },
-    {
-      "emoji": "🍞🥖",
-      "answer": "roti segar"
-    },
-    {
-      "emoji": "🌧️☔",
-      "answer": "hujan deras"
-    },
-    {
-      "emoji": "⛄❄️",
-      "answer": "salju dingin"
-    },
-    {
-      "emoji": "🌞😎",
-      "answer": "hari cerah"
-    },
-    {
-      "emoji": "🌜🌟",
-      "answer": "malam berbintang"
-    },
-    {
-      "emoji": "🌈☁️",
-      "answer": "pelangi indah"
-    },
-    {
-      "emoji": "🎁🎂",
-      "answer": "hadiah ulang tahun"
-    },
-    {
-      "emoji": "💌💍",
-      "answer": "cinta sejati"
-    },
-    {
-      "emoji": "🏖️🌊",
-      "answer": "pantai indah"
-    },
-    {
-      "emoji": "🏕️🔥",
-      "answer": "kemah api"
-    },
-    {
-      "emoji": "🎄🎅",
-      "answer": "natal ceria"
-    },
-    {
-      "emoji": "🎃👻",
-      "answer": "halloween seru"
-    },
-    {
-      "emoji": "🕌🌙",
-      "answer": "idul fitri"
-    },
-    {
-      "emoji": "🙏🕌",
-      "answer": "berdoa bersama"
-    },
-    {
-      "emoji": "⛪📖",
-      "answer": "ibadah gereja"
-    },
-    {
-      "emoji": "🏫📓",
-      "answer": "sekolah belajar"
-    },
-    {
-      "emoji": "🧑‍🏫📋",
-      "answer": "guru mengajar"
-    },
-    {
-      "emoji": "🧮📏",
-      "answer": "alat matematika"
-    },
-    {
-      "emoji": "🎨🖌️",
-      "answer": "melukis seni"
-    },
-    {
-      "emoji": "🎼🎷",
-      "answer": "musik jazz"
-    },
-    {
-      "emoji": "🎸🥁",
-      "answer": "band rock"
-    },
-    {
-      "emoji": "⚽🥅",
-      "answer": "main sepak bola"
-    },
-    {
-      "emoji": "🏀⛹️",
-      "answer": "main basket"
-    },
-    {
-      "emoji": "🏸🎾",
-      "answer": "tenis raket"
-    },
-    {
-      "emoji": "🚴‍♀️🌳",
-      "answer": "bersepeda di taman"
-    },
-    {
-      "emoji": "🚂🚉",
-      "answer": "kereta api"
-    },
-    {
-      "emoji": "✈️🛫",
-      "answer": "pesawat terbang"
-    },
-    {
-      "emoji": "🛳️⚓",
-      "answer": "kapal laut"
-    },
-    {
-      "emoji": "🚌🚏",
-      "answer": "bus halte"
-    },
-    {
-      "emoji": "🚦🚗",
-      "answer": "lampu lalu lintas"
-    },
-    {
-      "emoji": "🧭🗺️",
-      "answer": "peta arah"
-    },
-    {
-      "emoji": "💡🔋",
-      "answer": "lampu menyala"
-    },
-    {
-      "emoji": "🔧🔩",
-      "answer": "alat bengkel"
-    },
-    {
-      "emoji": "🪑🛋️",
-      "answer": "kursi dan sofa"
-    },
-    {
-      "emoji": "🖼️🪟",
-      "answer": "gambar di jendela"
-    },
-    {
-      "emoji": "🧸🎈",
-      "answer": "boneka balon"
-    },
-    {
-      "emoji": "🎀🎉",
-      "answer": "hiasan ulang tahun"
-    },
-    {
-      "emoji": "🕰️📅",
-      "answer": "jam kalender"
-    },
-    {
-      "emoji": "🛎️🧳",
-      "answer": "koper hotel"
-    },
-    {
-      "emoji": "📦📬",
-      "answer": "paket pos"
-    },
-    {
-      "emoji": "📞☎️",
-      "answer": "telepon berbunyi"
-    },
-    {
-      "emoji": "🎙️📻",
-      "answer": "radio berbicara"
-    },
-    {
-      "emoji": "📺📹",
-      "answer": "tv dan kamera"
-    },
-    {
-      "emoji": "🔍📖",
-      "answer": "mencari buku"
-    },
-    {
-      "emoji": "🔒🔑",
-      "answer": "kunci dan gembok"
-    },
-    {
-      "emoji": "💣🔥",
-      "answer": "bom meledak"
-    },
-    {
-      "emoji": "🕵️‍♂️🧩",
-      "answer": "detektif menyelidiki"
-    },
-    {
-      "emoji": "🧪🧬",
-      "answer": "ilmu sains"
-    },
-    {
-      "emoji": "🩺💊",
-      "answer": "obat kesehatan"
-    },
-    {
-      "emoji": "🧼🦠",
-      "answer": "cuci tangan"
-    },
-    {
-      "emoji": "🧴🌞",
-      "answer": "sunscreen perlindungan"
-    },
-    {
-      "emoji": "📖📝",
-      "answer": "buku catatan"
-    },
-    {
-      "emoji": "🤔💭",
-      "answer": "pikir dalam"
-    },
-    {
-      "emoji": "😴⏰",
-      "answer": "tidur siang"
-    },
-    {
-      "emoji": "😱🔥",
-      "answer": "api menakutkan"
-    },
-    {
-      "emoji": "😭💔",
-      "answer": "patah hati"
-    },
-    {
-      "emoji": "😎🌴",
-      "answer": "liburan santai"
-    },
-    {
-      "emoji": "😂🤣",
-      "answer": "tertawa bahagia"
-    },
-    {
-      "emoji": "😡💢",
-      "answer": "marah mendidih"
-    },
-    {
-      "emoji": "😍😘",
-      "answer": "cinta mendalam"
-    },
-    {
-      "emoji": "🤢🤮",
-      "answer": "mual berat"
-    },
-    {
-      "emoji": "🥵🌡️",
-      "answer": "demam tinggi"
-    },
-    {
-      "emoji": "🤒🏥",
-      "answer": "sakit di rumah"
-    },
-    {
-      "emoji": "🛠️🏗️",
-      "answer": "alat bangunan"
-    },
-    {
-      "emoji": "🧰🪛",
-      "answer": "kotak alat"
-    },
-    {
-      "emoji": "📁🗂️",
-      "answer": "file dokumen"
-    },
-    {
-      "emoji": "🔗🧷",
-      "answer": "klip sambung"
-    },
-    {
-      "emoji": "🖋️📝",
-      "answer": "tulis dengan pena"
-    },
-    {
-      "emoji": "📌📍",
-      "answer": "tanda lokasi"
-    },
-    {
-      "emoji": "🧾💼",
-      "answer": "nota kerja"
-    },
-    {
-      "emoji": "📊📈",
-      "answer": "grafik naik"
-    },
-    {
-      "emoji": "💳🏦",
-      "answer": "kartu bank"
-    },
-    {
-      "emoji": "💰💸",
-      "answer": "uang habis"
-    },
-    {
-      "emoji": "💼🧳",
-      "answer": "koper kerja"
-    },
-    {
-      "emoji": "👟👞",
-      "answer": "sepatu olahraga"
-    },
-    {
-      "emoji": "👗👠",
-      "answer": "gaun dan sepatu"
-    },
-    {
-      "emoji": "👔🕶️",
-      "answer": "dasi dan kacamata"
-    },
-    {
-      "emoji": "👘🎎",
-      "answer": "baju jepang"
-    },
-    {
-      "emoji": "🧥🧣",
-      "answer": "jaket dan syal"
-    },
-    {
-      "emoji": "🧦🥿",
-      "answer": "kaos kaki"
-    },
-    {
-      "emoji": "🎒📚",
-      "answer": "tas sekolah"
-    }, 
-    {
-      "emoji": "🌽🍿",
-      "answer": "jagung popcorn"
-    },
-    {
-      "emoji": "🌳🏞️",
-      "answer": "hutan indah"
-    },
-    {
-      "emoji": "📅🎉",
-      "answer": "tanggal penting"
-    },
-    {
-      "emoji": "🍓🍰",
-      "answer": "strawberry kue"
-    },
-    {
-      "emoji": "🥗🍴",
-      "answer": "salad siap"
-    },
-    {
-      "emoji": "🏊‍♂️🌊",
-      "answer": "berenang di laut"
-    },
-    {
-      "emoji": "🎸🎤",
-      "answer": "konser musik"
-    },
-    {
-      "emoji": "🍂🍁",
-      "answer": "daun jatuh"
-    },
-    {
-      "emoji": "🛹🏙️",
-      "answer": "skateboard kota"
-    },
-    {
-      "emoji": "🧳✈️",
-      "answer": "perjalanan jauh"
-    },
-    {
-      "emoji": "🏡🌼",
-      "answer": "rumah cantik"
-    },
-    {
-      "emoji": "🚴‍♂️🌄",
-      "answer": "sepeda gunung"
-    },
-    {
-      "emoji": "🍳🥓",
-      "answer": "telur goreng"
-    },
-    {
-      "emoji": "🦁🌍",
-      "answer": "singa liar"
-    },
-    {
-      "emoji": "🌌✨",
-      "answer": "langit malam"
-    },
-    {
-      "emoji": "🧚‍♀️🌷",
-      "answer": "peri bunga"
-    },
-    {
-      "emoji": "👨‍🚀🌕",
-      "answer": "astronot bulan"
-    },
-    {
-      "emoji": "🚀🌌",
-      "answer": "roket luar angkasa"
-    },
-    {
-      "emoji": "🥥🥤",
-      "answer": "kelapa muda"
-    },
-    {
-      "emoji": "👩‍🎤🎶",
-      "answer": "penyanyi rock"
-    },
-    {
-      "emoji": "🐉🔥",
-      "answer": "naga api"
-    },
-    {
-      "emoji": "🦋🌼",
-      "answer": "kupu-kupu bunga"
-    },
-    {
-      "emoji": "🧙‍♂️📚",
-      "answer": "penyihir belajar"
-    },
-    {
-      "emoji": "🌈🦄",
-      "answer": "pelangi unicorn"
-    },
-    {
-      "emoji": "🐾🌲",
-      "answer": "jejak hewan"
-    },
-    {
-      "emoji": "🍉🌞",
-      "answer": "semangat musim panas"
-    },
-    {
-      "emoji": "👨‍👩‍👦🍽️",
-      "answer": "keluarga makan"
-    },
-    {
-      "emoji": "🌌🚶‍♂️",
-      "answer": "berjalan malam"
-    },
-    {
-      "emoji": "🎢🎡",
-      "answer": "taman hiburan"
-    },
-    {
-      "emoji": "🌊🏄‍♀️",
-      "answer": "berselancar ombak"
-    },
-    {
-      "emoji": "🕶️🏖️",
-      "answer": "liburan pantai"
-    },
-    {
-      "emoji": "📷🌅",
-      "answer": "foto matahari terbenam"
-    },
-    {
-      "emoji": "🍺🍻",
-      "answer": "bir dingin"
-    },
-    {
-      "emoji": "🧗‍♀️🏔️",
-      "answer": "memanjat gunung"
-    },
-    {
-      "emoji": "🎉🎊",
-      "answer": "pesta meriah"
-    },
-    {
-      "emoji": "📖🧙‍♂️",
-      "answer": "buku sihir"
-    },
-    {
-      "emoji": "🥳🎈",
-      "answer": "perayaan ulang tahun"
-    },
-    {
-      "emoji": "🏞️🌅",
-      "answer": "pemandangan indah"
-    },
-    {
-      "emoji": "🚶‍♂️🏞️",
-      "answer": "jalan-jalan"
-    },
-    {
-      "emoji": "🛳️🌊",
-      "answer": "kapal pelayaran"
-    },
-    {
-      "emoji": "🌍🐾",
-      "answer": "jejak bumi"
-    },
-    {
-      "emoji": "🍫🍰",
-      "answer": "kue coklat"
-    },
-    {
-      "emoji": "🎡🎠",
-      "answer": "taman bermain"
-    },
-    {
-      "emoji": "🍋🥤",
-      "answer": "lemon segar"
-    },
-    {
-      "emoji": "🦄🌈",
-      "answer": "unicorn pelangi"
-    },
-    {
-      "emoji": "🌺🌴",
-      "answer": "pulau tropis"
-    },
-    {
-      "emoji": "🐔🍗",
-      "answer": "daging ayam"
-    },
-    {
-      "emoji": "🦐🍤",
-      "answer": "udang goreng"
-    },
-    {
-      "emoji": "🍍🍕",
-      "answer": "pizza nanas"
-    },
-    {
-      "emoji": "🏰🌌",
-      "answer": "kastil malam"
-    },
-    {
-      "emoji": "🚴‍♂️💨",
-      "answer": "bersepeda cepat"
-    },
-    {
-      "emoji": "🐢🌊",
-      "answer": "penyu laut"
-    },
-    {
-      "emoji": "🌅🏖️",
-      "answer": "matahari terbenam"
-    },
-    {
-      "emoji": "🧗‍♂️🏔️",
-      "answer": "pendaki gunung"
-    },
-    {
-      "emoji": "🍇🍷",
-      "answer": "anggur wine"
-    },
-    {
-      "emoji": "👩‍🎤🎸",
-      "answer": "rockstar wanita"
-    },
-    {
-      "emoji": "🌌🚀",
-      "answer": "luar angkasa"
-    },
-    {
-      "emoji": "🕶️🌞",
-      "answer": "hari panas"
-    },
-    {
-      "emoji": "🥭🍧",
-      "answer": "mangga es krim"
-    },
-    {
-      "emoji": "🐾🦊",
-      "answer": "jejak rubah"
-    },
-    {
-      "emoji": "🧁🍭",
-      "answer": "kue manis"
-    },
-    {
-      "emoji": "🎶🎤",
-      "answer": "nyanyi lagu"
-    },
-    {
-      "emoji": "🌊🏄‍♂️",
-      "answer": "berselancar ombak"
-    },
-    {
-      "emoji": "🍦🍪",
-      "answer": "es krim kue"
-    },
-    {
-      "emoji": "🏖️🌅",
-      "answer": "pantai sore"
-    },
-    {
-      "emoji": "🌼🐝",
-      "answer": "bunga dan lebah"
-    },
-    {
-      "emoji": "🧗‍♀️🏞️",
-      "answer": "memanjat tebing"
-    },
-    {
-      "emoji": "🎉🍾",
-      "answer": "perayaan pesta"
-    },
-    {
-      "emoji": "🍓🥛",
-      "answer": "strawberry susu"
-    },
-    {
-      "emoji": "🐬🌊",
-      "answer": "lumba-lumba laut"
-    },
-    {
-      "emoji": "🛶🏞️",
-      "answer": "perahu di danau"
-    },
-    {
-      "emoji": "🌧️🌈",
-      "answer": "hujan pelangi"
-    },
-    {
-      "emoji": "👩‍🍳🍰",
-      "answer": "chef kue"
-    },
-    {
-      "emoji": "🍉🍹",
-      "answer": "semangka jus"
-    },
-    {
-      "emoji": "🎨🖍️",
-      "answer": "melukis dengan crayon"
-    },
-    {
-      "emoji": "🚲🌳",
-      "answer": "sepeda di taman"
-    },
-    {
-      "emoji": "🍋🎂",
-      "answer": "kue lemon"
-    },
-    {
-      "emoji": "🦙🌄",
-      "answer": "lama di pegunungan"
-    },
-    {
-      "emoji": "🌶️🍲",
-      "answer": "sup pedas"
-    },
-    {
-      "emoji": "🍺🍕",
-      "answer": "bir dan pizza"
-    },
-    {
-      "emoji": "🐻🌲",
-      "answer": "beruang hutan"
-    },
-    {
-      "emoji": "🍇🍏",
-      "answer": "anggur hijau"
-    },
-    {
-      "emoji": "🔦🌌",
-      "answer": "senter malam"
-    },
-    {
-      "emoji": "🎊🥳",
-      "answer": "merayakan ulang tahun"
-    },
-    {
-      "emoji": "🚗🏞️",
-      "answer": "mobil di alam"
-    },
-    {
-      "emoji": "🍏🥗",
-      "answer": "salad apel"
-    },
-    {
-      "emoji": "🦋🌺",
-      "answer": "kupu-kupu bunga"
-    },
-    {
-      "emoji": "🍕🍔",
-      "answer": "makanan cepat saji"
-    },
-    {
-      "emoji": "🍞🍓",
-      "answer": "roti dengan strawberry"
-    },
-    {
-      "emoji": "⚽🏆",
-      "answer": "juara sepak bola"
-    },
-    {
-      "emoji": "🚀🌌",
-      "answer": "roket luar angkasa"
-    },
-    {
-      "emoji": "🥖🍽️",
-      "answer": "roti siap saji"
-    },
-    {
-      "emoji": "🍬🍭",
-      "answer": "permen manis"
-    },
-    {
-      "emoji": "🎮👾",
-      "answer": "permainan video"
-    },
-    {
-      "emoji": "🌺🐠",
-      "answer": "ikan di terumbu"
-    }
-  ]
+    "questions": [
+        {
+            "emoji": "🕷️🕸️🏙️",
+            "answer": "spiderman"
+        },
+        {
+            "emoji": "🚢🧊💔",
+            "answer": "titanic"
+        },
+        {
+            "emoji": "⚡🧙‍♂️👓",
+            "answer": "harry potter"
+        },
+        {
+            "emoji": "🦖🌴🚙",
+            "answer": "jurassic park"
+        },
+        {
+            "emoji": "🧽🍍🍔",
+            "answer": "spongebob"
+        },
+        {
+            "emoji": "🦇🌃🃏",
+            "answer": "batman"
+        },
+        {
+            "emoji": "🏴‍☠️👒🍖",
+            "answer": "one piece"
+        },
+        {
+            "emoji": "⛏️🧱💎",
+            "answer": "minecraft"
+        },
+        {
+            "emoji": "🐉⭐🥋",
+            "answer": "dragon ball"
+        },
+        {
+            "emoji": "🤖🚗🌌",
+            "answer": "transformers"
+        },
+        {
+            "emoji": "🪐🚀⏳",
+            "answer": "interstellar"
+        },
+        {
+            "emoji": "🕶️💊💻",
+            "answer": "the matrix"
+        },
+        {
+            "emoji": "👻🚫🔫",
+            "answer": "ghostbusters"
+        },
+        {
+            "emoji": "👨‍🍳🐀🍲",
+            "answer": "ratatouille"
+        },
+        {
+            "emoji": "🦑🔴🔺⏹️",
+            "answer": "squid game"
+        },
+        {
+            "emoji": "🧸🤠🚀",
+            "answer": "toy story"
+        },
+        {
+            "emoji": "🤡🎈🎈",
+            "answer": "it"
+        },
+        {
+            "emoji": "🔫🐶✏️",
+            "answer": "john wick"
+        },
+        {
+            "emoji": "🍫🏭🎩",
+            "answer": "wonka"
+        },
+        {
+            "emoji": "🍌👓🟡",
+            "answer": "minions"
+        },
+        {
+            "emoji": "🐼🥢🥋",
+            "answer": "kung fu panda"
+        },
+        {
+            "emoji": "🦸‍♂️🔴🔵",
+            "answer": "superman"
+        },
+        {
+            "emoji": "🧊❄️👸",
+            "answer": "frozen"
+        },
+        {
+            "emoji": "🧞‍♂️🪔🕌",
+            "answer": "aladdin"
+        },
+        {
+            "emoji": "🏎️🏁💨",
+            "answer": "fast and furious"
+        },
+        {
+            "emoji": "🍄👑🐢",
+            "answer": "super mario"
+        },
+        {
+            "emoji": "🦔💨💍",
+            "answer": "sonic"
+        },
+        {
+            "emoji": "⚔️🛡️🏛️",
+            "answer": "gladiator"
+        },
+        {
+            "emoji": "🧙💍🌋",
+            "answer": "the lord of the rings"
+        },
+        {
+            "emoji": "🧟‍♂️🔫🧠",
+            "answer": "resident evil"
+        },
+        {
+            "emoji": "🛸👽🚲",
+            "answer": "et"
+        },
+        {
+            "emoji": "🐱🚪⏳",
+            "answer": "doraemon"
+        },
+        {
+            "emoji": "🦊🍜🌀",
+            "answer": "naruto"
+        },
+        {
+            "emoji": "👨‍🚀🚀🌕",
+            "answer": "apollo 11"
+        },
+        {
+            "emoji": "🩸🧛‍♂️🦇",
+            "answer": "dracula"
+        },
+        {
+            "emoji": "🧟🧠🏃",
+            "answer": "the walking dead"
+        },
+        {
+            "emoji": "🎭💸🏦",
+            "answer": "money heist"
+        },
+        {
+            "emoji": "📻📼🚲",
+            "answer": "stranger things"
+        },
+        {
+            "emoji": "☢️💣👨‍🔬",
+            "answer": "oppenheimer"
+        },
+        {
+            "emoji": "💖🎀👠",
+            "answer": "barbie"
+        },
+        {
+            "emoji": "🔪🩸🚿",
+            "answer": "psycho"
+        },
+        {
+            "emoji": "🎮🎧🔥",
+            "answer": "gamers"
+        },
+        {
+            "emoji": "☕💻🌙",
+            "answer": "lembur malam"
+        },
+        {
+            "emoji": "😴⏰🏃",
+            "answer": "kesiangan"
+        },
+        {
+            "emoji": "🍕🛵🏠",
+            "answer": "delivery pizza"
+        },
+        {
+            "emoji": "🍳🥓☕",
+            "answer": "sarapan pagi"
+        },
+        {
+            "emoji": "🎤🎸🥁",
+            "answer": "konser musik"
+        },
+        {
+            "emoji": "⛺🔥🌲",
+            "answer": "kemah"
+        },
+        {
+            "emoji": "🌧️☕🛋️",
+            "answer": "hujan syahdu"
+        },
+        {
+            "emoji": "🏋️‍♂️💪🥗",
+            "answer": "pola hidup sehat"
+        },
+        {
+            "emoji": "🎣🐟🚤",
+            "answer": "memancing"
+        },
+        {
+            "emoji": "✈️🧳🏝️",
+            "answer": "liburan"
+        },
+        {
+            "emoji": "🎂🎁🎉",
+            "answer": "ulang tahun"
+        },
+        {
+            "emoji": "🎓📜💐",
+            "answer": "wisuda"
+        },
+        {
+            "emoji": "🍿🥤🎟️",
+            "answer": "nonton bioskop"
+        },
+        {
+            "emoji": "🛒🛍️💳",
+            "answer": "belanja bulanan"
+        },
+        {
+            "emoji": "📷🤳✨",
+            "answer": "foto selfie"
+        },
+        {
+            "emoji": "🚑🚨🏥",
+            "answer": "ambulans"
+        },
+        {
+            "emoji": "🚒🔥💦",
+            "answer": "pemadam kebakaran"
+        },
+        {
+            "emoji": "💈✂️💇",
+            "answer": "potong rambut"
+        },
+        {
+            "emoji": "🧼🚿🛁",
+            "answer": "mandi bersih"
+        },
+        {
+            "emoji": "📱🔋🔌",
+            "answer": "cas handphone"
+        },
+        {
+            "emoji": "📮💌📬",
+            "answer": "surat cinta"
+        },
+        {
+            "emoji": "🍜🥢🥟",
+            "answer": "makan ramen"
+        },
+        {
+            "emoji": "🏃💨🐕",
+            "answer": "dikejar anjing"
+        },
+        {
+            "emoji": "💃🕺🪩",
+            "answer": "pesta dansa"
+        },
+        {
+            "emoji": "🥊🏆🥇",
+            "answer": "juara tinju"
+        },
+        {
+            "emoji": "🏹🎯🎪",
+            "answer": "panahan"
+        },
+        {
+            "emoji": "🏖️🥥🕶️",
+            "answer": "pantai tropis"
+        },
+        {
+            "emoji": "👑🏰🛡️",
+            "answer": "kerajaan"
+        },
+        {
+            "emoji": "🚀🌌🌠",
+            "answer": "astronot"
+        },
+        {
+            "emoji": "🍳🍚🥢",
+            "answer": "nasi goreng"
+        },
+        {
+            "emoji": "🧋🧊✨",
+            "answer": "boba"
+        },
+        {
+            "emoji": "🍔🍟🥤",
+            "answer": "fast food"
+        },
+        {
+            "emoji": "🥟🌶️🍜",
+            "answer": "seblak"
+        },
+        {
+            "emoji": "🍢🥜🍢",
+            "answer": "sate ayam"
+        },
+        {
+            "emoji": "🍧🍨🍓",
+            "answer": "es krim"
+        },
+        {
+            "emoji": "🫓🥩🧅",
+            "answer": "martabak telur"
+        },
+        {
+            "emoji": "🍫🥜🧀",
+            "answer": "martabak manis"
+        },
+        {
+            "emoji": "🥞🍯🍓",
+            "answer": "pancake"
+        },
+        {
+            "emoji": "🧁🍰🎂",
+            "answer": "kue ulang tahun"
+        },
+        {
+            "emoji": "🌮🌯🥑",
+            "answer": "taco"
+        },
+        {
+            "emoji": "🍣🍱🥢",
+            "answer": "sushi"
+        },
+        {
+            "emoji": "🌭🍟🥤",
+            "answer": "hotdog"
+        },
+        {
+            "emoji": "🧊🍋🍹",
+            "answer": "es lemon tea"
+        },
+        {
+            "emoji": "🍉🍌🍇",
+            "answer": "sop buah"
+        },
+        {
+            "emoji": "☕🥛🧊",
+            "answer": "kopi susu"
+        },
+        {
+            "emoji": "🥟🥣🥢",
+            "answer": "bakso kuah"
+        },
+        {
+            "emoji": "🍗🍚🌶️",
+            "answer": "ayam geprek"
+        },
+        {
+            "emoji": "🍲🥬🥕",
+            "answer": "sayur sop"
+        },
+        {
+            "emoji": "🐟🔥🌶️",
+            "answer": "ikan bakar"
+        },
+        {
+            "emoji": "🦐🦑🦀",
+            "answer": "seafood"
+        },
+        {
+            "emoji": "🥪🧀🥓",
+            "answer": "sandwich"
+        },
+        {
+            "emoji": "🍜🥚🥬",
+            "answer": "mie rebus"
+        },
+        {
+            "emoji": "☕🥐🥖",
+            "answer": "croissant"
+        },
+        {
+            "emoji": "🧃🍎🍊",
+            "answer": "jus buah"
+        },
+        {
+            "emoji": "🦹‍♂️🧤💎",
+            "answer": "thanos"
+        },
+        {
+            "emoji": "🛡️⭐🇺🇸",
+            "answer": "captain america"
+        },
+        {
+            "emoji": "🔨⚡🌩️",
+            "answer": "thor"
+        },
+        {
+            "emoji": "🟢😡💥",
+            "answer": "hulk"
+        },
+        {
+            "emoji": "🏹🦅🎯",
+            "answer": "hawkeye"
+        },
+        {
+            "emoji": "🗡️🥷⚔️",
+            "answer": "ninja"
+        },
+        {
+            "emoji": "🐍🪄🏰",
+            "answer": "slytherin"
+        },
+        {
+            "emoji": "🦁🪄🏰",
+            "answer": "gryffindor"
+        },
+        {
+            "emoji": "🦅🪄🏰",
+            "answer": "ravenclaw"
+        },
+        {
+            "emoji": "🦡🪄🏰",
+            "answer": "hufflepuff"
+        },
+        {
+            "emoji": "🥩🔥",
+            "answer": "Sate Bakar"
+        },
+        {
+            "emoji": "🍜🥚",
+            "answer": "Mie Nyemek"
+        },
+        {
+            "emoji": "🍞🧀",
+            "answer": "Roti Bakar"
+        },
+        {
+            "emoji": "🍌🧀",
+            "answer": "Pisang Keju"
+        },
+        {
+            "emoji": "🥑🥛",
+            "answer": "Jus Alpukat"
+        },
+        {
+            "emoji": "🍨🍓",
+            "answer": "Es Krim Stroberi"
+        },
+        {
+            "emoji": "🍲🌶️",
+            "answer": "Seblak Pedas"
+        },
+        {
+            "emoji": "🍢🍢",
+            "answer": "Otak Otak"
+        },
+        {
+            "emoji": "🍤🥟",
+            "answer": "Dimsum Udang"
+        },
+        {
+            "emoji": "🍡🧋",
+            "answer": "Boba Brown Sugar"
+        },
+        {
+            "emoji": "🥞🍯",
+            "answer": "Pancake Madu"
+        },
+        {
+            "emoji": "🕸️🕷️",
+            "answer": "Spider Man"
+        },
+        {
+            "emoji": "🦁👑",
+            "answer": "Lion King"
+        },
+        {
+            "emoji": "🚀🌌",
+            "answer": "Star Wars"
+        },
+        {
+            "emoji": "🏴‍☠️⚓",
+            "answer": "Pirates of the Caribbean"
+        },
+        {
+            "emoji": "🐸🥥",
+            "answer": "Katak Dalam Tempurung"
+        },
+        {
+            "emoji": "🐊💧",
+            "answer": "Air Mata Buaya"
+        },
+        {
+            "emoji": "👂🧱",
+            "answer": "Dinding Punya Telinga"
+        },
+        {
+            "emoji": "🐴👞",
+            "answer": "Kuda Hitam"
+        },
+        {
+            "emoji": "🦹‍♂️💰",
+            "answer": "Cuci Uang"
+        },
+        {
+            "emoji": "🪓🌳",
+            "answer": "Gali Lubang Tutup Lubang"
+        },
+        {
+            "emoji": "🫀💔",
+            "answer": "Patah Hati"
+        },
+        {
+            "emoji": "🧠🧊",
+            "answer": "Otak Beku"
+        },
+        {
+            "emoji": "🤝💸",
+            "answer": "Tangan Kanan"
+        },
+        {
+            "emoji": "🐐⬛",
+            "answer": "Kambing Hitam"
+        },
+        {
+            "emoji": "👨‍🍳🍳",
+            "answer": "Koki Restoran"
+        },
+        {
+            "emoji": "👮‍♂️🚓",
+            "answer": "Polisi Lalu Lintas"
+        },
+        {
+            "emoji": "👨‍🚀🚀",
+            "answer": "Astronot Antariksa"
+        },
+        {
+            "emoji": "👨‍⚕️💉",
+            "answer": "Dokter Bedah"
+        },
+        {
+            "emoji": "🧑‍🌾🌾",
+            "answer": "Petani Padi"
+        },
+        {
+            "emoji": "🧑‍🏫📖",
+            "answer": "Guru Sekolah"
+        },
+        {
+            "emoji": "👨‍✈️✈️",
+            "answer": "Pilot Pesawat"
+        },
+        {
+            "emoji": "🕵️‍♂️🔎",
+            "answer": "Detektif Rahasia"
+        },
+        {
+            "emoji": "🧑‍💻⌨️",
+            "answer": "Programmer Komputer"
+        },
+        {
+            "emoji": "📱🔋",
+            "answer": "Power Bank"
+        },
+        {
+            "emoji": "🎧🎵",
+            "answer": "Headphone Musik"
+        },
+        {
+            "emoji": "📷🌅",
+            "answer": "Kamera Digital"
+        },
+        {
+            "emoji": "🚗⚡",
+            "answer": "Mobil Listrik"
+        },
+        {
+            "emoji": "🏠🔑",
+            "answer": "Kunci Rumah"
+        },
+        {
+            "emoji": "⌚🏃‍♂️",
+            "answer": "Jam Tangan Pintar"
+        },
+        {
+            "emoji": "🚁📦",
+            "answer": "Drone Pengantar"
+        },
+        {
+            "emoji": "🕶️☀️",
+            "answer": "Kacamata Hitam"
+        },
+        {
+            "emoji": "🎮🕹️",
+            "answer": "Konsol Game"
+        },
+        {
+            "emoji": "🚲🌳",
+            "answer": "Sepeda Gunung"
+        },
+        {
+            "emoji": "🏖️🌴",
+            "answer": "Pantai Kuta"
+        },
+        {
+            "emoji": "🏔️🌋",
+            "answer": "Gunung Bromo"
+        },
+        {
+            "emoji": "🏛️🗿",
+            "answer": "Candi Borobudur"
+        },
+        {
+            "emoji": "🗼🇫🇷",
+            "answer": "Menara Eiffel"
+        },
+        {
+            "emoji": "🗽🇺🇸",
+            "answer": "Patung Liberty"
+        },
+        {
+            "emoji": "🏰🎡",
+            "answer": "Disneyland"
+        },
+        {
+            "emoji": "⛺🌌",
+            "answer": "Berkemah Malam"
+        },
+        {
+            "emoji": "🕌🌙",
+            "answer": "Masjid Agung"
+        },
+        {
+            "emoji": "⛩️🌸",
+            "answer": "Kuil Jepang"
+        },
+        {
+            "emoji": "🎣🐟",
+            "answer": "Memancing Ikan"
+        },
+        {
+            "emoji": "🏊‍♂️🌊",
+            "answer": "Berenang di Laut"
+        },
+        {
+            "emoji": "🎤🎶",
+            "answer": "Karaoke Bersama"
+        },
+        {
+            "emoji": "🛹💨",
+            "answer": "Main Skateboard"
+        },
+        {
+            "emoji": "🏸🏸",
+            "answer": "Bulu Tangkis"
+        },
+        {
+            "emoji": "⚽🥅",
+            "answer": "Sepak Bola"
+        },
+        {
+            "emoji": "🧗‍♂️⛰️",
+            "answer": "Panjat Tebing"
+        },
+        {
+            "emoji": "🎨🖌️",
+            "answer": "Melukis Kanvas"
+        },
+        {
+            "emoji": "🏕️🔥",
+            "answer": "Api Unggun"
+        },
+        {
+            "emoji": "🌙✨",
+            "answer": "Malam Bertabur Bintang"
+        },
+        {
+            "emoji": "☀️🌻",
+            "answer": "Bunga Matahari"
+        },
+        {
+            "emoji": "🌧️🌈",
+            "answer": "Pelangi Sehabis Hujan"
+        },
+        {
+            "emoji": "🍂🍁",
+            "answer": "Musim Gugur"
+        },
+        {
+            "emoji": "❄️⛄",
+            "answer": "Boneka Salju"
+        },
+        {
+            "emoji": "🌊🏄‍♂️",
+            "answer": "Berselancar Ombak"
+        },
+        {
+            "emoji": "🐢🐇",
+            "answer": "Kura Kura dan Kelinci"
+        },
+        {
+            "emoji": "🍎🐍",
+            "answer": "Apel Beracun"
+        },
+        {
+            "emoji": "👸👠",
+            "answer": "Sepatu Kaca Cinderella"
+        },
+        {
+            "emoji": "🧞‍♂️🪔",
+            "answer": "Jin Lampu Ajaib"
+        },
+        {
+            "emoji": "🍉🏖️",
+            "answer": "Liburan Musim Panas"
+        },
+        {
+            "emoji": "🧲⚙️",
+            "answer": "Medan Magnet"
+        },
+        {
+            "emoji": "🎪🤹‍♂️",
+            "answer": "Sirkus Akrobat"
+        },
+        {
+            "emoji": "🥋🥇",
+            "answer": "Juara Bela Diri"
+        },
+        {
+            "emoji": "🌌🔭",
+            "answer": "Teropong Bintang"
+        },
+        {
+            "emoji": "🚂🛤️",
+            "answer": "Kereta Api"
+        },
+        {
+            "emoji": "🌲🏕️",
+            "answer": "Hutan Pinus"
+        },
+        {
+            "emoji": "🌋💨",
+            "answer": "Gunung Meletus"
+        },
+        {
+            "emoji": "☕🥞🌅",
+            "answer": "sarapan"
+        },
+        {
+            "emoji": "🌙🛌💤",
+            "answer": "tidur"
+        },
+        {
+            "emoji": "🚿🧼🧴",
+            "answer": "mandi"
+        },
+        {
+            "emoji": "🎒🚌🏫",
+            "answer": "sekolah"
+        },
+        {
+            "emoji": "💼💻🏢",
+            "answer": "kantor"
+        },
+        {
+            "emoji": "🛒🥩🥦",
+            "answer": "pasar"
+        },
+        {
+            "emoji": "🍜🥚🌶️",
+            "answer": "mie instan"
+        },
+        {
+            "emoji": "🥩🍢🔥",
+            "answer": "sate"
+        },
+        {
+            "emoji": "🍲🥥🥩",
+            "answer": "rendang"
+        },
+        {
+            "emoji": "🥗🥜🌶️",
+            "answer": "gado gado"
+        },
+        {
+            "emoji": "🍉🔪🍉",
+            "answer": "semangka"
+        },
+        {
+            "emoji": "🍌🥞🍯",
+            "answer": "pisang goreng"
+        },
+        {
+            "emoji": "🍕🧀🍕",
+            "answer": "pizza"
+        },
+        {
+            "emoji": "🎈🏠👴",
+            "answer": "up"
+        },
+        {
+            "emoji": "🤖🚀🪐",
+            "answer": "wall e"
+        },
+        {
+            "emoji": "⚔️🛡️🏰",
+            "answer": "game of thrones"
+        },
+        {
+            "emoji": "👾🕹️👾",
+            "answer": "pac man"
+        },
+        {
+            "emoji": "🗡️🛡️🧝‍♂️",
+            "answer": "zelda"
+        },
+        {
+            "emoji": "🔫🪂🛩️",
+            "answer": "pubg"
+        },
+        {
+            "emoji": "🏎️🏁🏎️",
+            "answer": "balap mobil"
+        },
+        {
+            "emoji": "🏀⛹️‍♂️🔥",
+            "answer": "bola basket"
+        },
+        {
+            "emoji": "🏊‍♂️🌊🏊‍♂️",
+            "answer": "berenang"
+        },
+        {
+            "emoji": "🚴‍♂️⛰️🌲",
+            "answer": "bersepeda"
+        },
+        {
+            "emoji": "⛺🔥🪵",
+            "answer": "berkemah"
+        },
+        {
+            "emoji": "📸🏞️🌅",
+            "answer": "fotografi"
+        },
+        {
+            "emoji": "🎨🖌️🖼️",
+            "answer": "melukis"
+        },
+        {
+            "emoji": "🎹🎼🎶",
+            "answer": "piano"
+        },
+        {
+            "emoji": "🎸🎤🥁",
+            "answer": "band"
+        },
+        {
+            "emoji": "🎻🎭🎼",
+            "answer": "orkestra"
+        },
+        {
+            "emoji": "🎧📱🎵",
+            "answer": "mendengar lagu"
+        },
+        {
+            "emoji": "🎬🍿🥤",
+            "answer": "bioskop"
+        },
+        {
+            "emoji": "🎪🤹‍♂️🎡",
+            "answer": "sirkus"
+        },
+        {
+            "emoji": "🩺💉🏥",
+            "answer": "dokter"
+        },
+        {
+            "emoji": "👮‍♂️🚨🚔",
+            "answer": "polisi"
+        },
+        {
+            "emoji": "👨‍🏫📚🖊️",
+            "answer": "guru"
+        },
+        {
+            "emoji": "👨‍🌾🌾🚜",
+            "answer": "petani"
+        },
+        {
+            "emoji": "👨‍🍳🍳🔪",
+            "answer": "koki"
+        },
+        {
+            "emoji": "👷‍♂️🏗️🧱",
+            "answer": "arsitek"
+        },
+        {
+            "emoji": "🐕🦴🦮",
+            "answer": "anjing"
+        },
+        {
+            "emoji": "🐈🐟🧶",
+            "answer": "kucing"
+        },
+        {
+            "emoji": "🐘🌿🐘",
+            "answer": "gajah"
+        },
+        {
+            "emoji": "🦒🍃🦒",
+            "answer": "jerapah"
+        },
+        {
+            "emoji": "🐧❄️🧊",
+            "answer": "pinguin"
+        },
+        {
+            "emoji": "🐬🌊🐬",
+            "answer": "lumba lumba"
+        },
+        {
+            "emoji": "🦅⛰️🌲",
+            "answer": "elang"
+        },
+        {
+            "emoji": "🐝🍯🌸",
+            "answer": "lebah"
+        },
+        {
+            "emoji": "🦋🌺🌼",
+            "answer": "kupu kupu"
+        },
+        {
+            "emoji": "🍝🍅🧄",
+            "answer": "Spaghetti",
+            "category": "Makanan",
+            "hint": "Pasta panjang khas Italia"
+        },
+        {
+            "emoji": "🧇🍓🍨",
+            "answer": "Waffle",
+            "category": "Makanan",
+            "hint": "Kue panggang berpola kotak-kotak"
+        },
+        {
+            "emoji": "🥟🥢🥟",
+            "answer": "Dimsum",
+            "category": "Makanan",
+            "hint": "Kudapan kukus khas Tiongkok"
+        },
+        {
+            "emoji": "🍜🥚🥬",
+            "answer": "Ramen",
+            "category": "Makanan",
+            "hint": "Mi kuah gurih ala Jepang"
+        },
+        {
+            "emoji": "🍩🍫🍩",
+            "answer": "Donat",
+            "category": "Makanan",
+            "hint": "Roti goreng bolong di tengah"
+        },
+        {
+            "emoji": "🍮🍮🍮",
+            "answer": "Puding",
+            "category": "Makanan",
+            "hint": "Kudapan manis lembut dari agar-agar"
+        },
+        {
+            "emoji": "🥛🍫🧊",
+            "answer": "Susu Cokelat",
+            "category": "Minuman",
+            "hint": "Susu segar manis rasa kakao"
+        },
+        {
+            "emoji": "🧃🧃🧃",
+            "answer": "Jus Kotak",
+            "category": "Minuman",
+            "hint": "Sari buah kemasan bersedotan"
+        },
+        {
+            "emoji": "🍵🍃🇯🇵",
+            "answer": "Matcha",
+            "category": "Minuman",
+            "hint": "Teh hijau bubuk khas Jepang"
+        },
+        {
+            "emoji": "🥥🌴🧊",
+            "answer": "Es Kelapa",
+            "category": "Minuman",
+            "hint": "Air kelapa muda segar penyejuk dahaga"
+        },
+        {
+            "emoji": "🦁👑🌅",
+            "answer": "The Lion King",
+            "category": "Film",
+            "hint": "Simba raja hutan savana Afrika"
+        },
+        {
+            "emoji": "🕷️🦸‍♂️🕸️",
+            "answer": "Spider-Man",
+            "category": "Film/Karakter",
+            "hint": "Pahlawan laba-laba tetangga ramah"
+        },
+        {
+            "emoji": "📓💀🍎",
+            "answer": "Death Note",
+            "category": "Anime",
+            "hint": "Buku catatan pencabut nyawa milik Shinigami"
+        },
+        {
+            "emoji": "🗡️👹🌸",
+            "answer": "Demon Slayer",
+            "category": "Anime",
+            "hint": "Tanjiro membasmi iblis pembantai keluarganya"
+        },
+        {
+            "emoji": "🥊🩳🥇",
+            "answer": "Tinju",
+            "category": "Olahraga",
+            "hint": "Adu jotos dua atlet di dalam ring"
+        },
+        {
+            "emoji": "🥋🤼‍♂️🥋",
+            "answer": "Judo",
+            "category": "Olahraga",
+            "hint": "Bela diri bantingan khas Jepang"
+        },
+        {
+            "emoji": "🛹🛹🏙️",
+            "answer": "Skateboard",
+            "category": "Olahraga",
+            "hint": "Papan seluncur beroda empat di aspal"
+        },
+        {
+            "emoji": "🛼🛼🛼",
+            "answer": "Sepatu Roda",
+            "category": "Olahraga",
+            "hint": "Meluncur dengan sepatu beroda sejajar atau ganda"
+        },
+        {
+            "emoji": "🎳🎳🎳",
+            "answer": "Bowling",
+            "category": "Olahraga",
+            "hint": "Melempar bola berat menjatuhkan 10 pin kayu"
+        },
+        {
+            "emoji": "🏇🏇🏇",
+            "answer": "Pacuan Kuda",
+            "category": "Olahraga",
+            "hint": "Lomba cepat joki menunggangi kuda balap"
+        }
+    ]
 }

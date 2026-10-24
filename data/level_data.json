@@ -156,7 +156,10 @@
             "level": 0,
             "badges": [],
             "last_active": "2026-02-11T13:46:58.063708",
-            "booster": {}
+            "booster": {},
+            "voice_time": 3,
+            "weekly_voice_time": 3,
+            "longest_single_session": 3
         },
         "1356324328827785499": {
             "exp": 60,
@@ -344,25 +347,25 @@
             "booster": {}
         },
         "1288384740004724758": {
-            "exp": 40076,
+            "exp": 46071,
             "weekly_exp": 190,
-            "level": 11,
+            "level": 13,
             "badges": [],
             "last_active": "2026-01-31T07:30:10.138645",
             "booster": {},
-            "voice_time": 834365,
-            "weekly_voice_time": 834365,
-            "longest_single_session": 66405
+            "voice_time": 927067,
+            "weekly_voice_time": 927067,
+            "longest_single_session": 69161
         },
         "1000737066822410311": {
-            "exp": 1016284,
+            "exp": 1017049,
             "weekly_exp": 590,
             "level": 290,
             "badges": [],
             "last_active": "2026-03-15T12:13:04.052431",
             "booster": {},
-            "voice_time": 167166407,
-            "weekly_voice_time": 167166407,
+            "voice_time": 167175583,
+            "weekly_voice_time": 167175583,
             "longest_single_session": 24190
         },
         "313995564029050881": {
@@ -442,14 +445,14 @@
             "booster": {}
         },
         "766639601413652481": {
-            "exp": 1435,
+            "exp": 3385,
             "weekly_exp": 20,
             "level": 0,
             "badges": [],
             "last_active": "2026-03-20T20:33:33.732098",
             "booster": {},
-            "voice_time": 17239,
-            "weekly_voice_time": 17239,
+            "voice_time": 40530,
+            "weekly_voice_time": 40530,
             "longest_single_session": 11218
         },
         "535404266244800513": {
@@ -589,25 +592,25 @@
             "booster": {}
         },
         "1223367573324697613": {
-            "exp": 143890,
+            "exp": 152270,
             "weekly_exp": 790,
-            "level": 41,
+            "level": 43,
             "badges": [],
             "last_active": "2026-03-20T22:34:57.282914",
             "booster": {},
-            "voice_time": 1719545,
-            "weekly_voice_time": 1719545,
+            "voice_time": 1820122,
+            "weekly_voice_time": 1820122,
             "longest_single_session": 242702
         },
         "453215843258597389": {
-            "exp": 5115,
+            "exp": 5215,
             "weekly_exp": 585,
             "level": 1,
             "badges": [],
             "last_active": "2026-03-20T14:45:50.938806",
             "booster": {},
-            "voice_time": 54715,
-            "weekly_voice_time": 54715,
+            "voice_time": 56056,
+            "weekly_voice_time": 56056,
             "longest_single_session": 12309
         },
         "701333404653977652": {
@@ -623,7 +626,7 @@
             "badges": []
         },
         "404556352367886337": {
-            "exp": 90,
+            "exp": 100,
             "weekly_exp": 20,
             "level": 0,
             "badges": [],
@@ -631,14 +634,14 @@
             "booster": {}
         },
         "1307128782750224507": {
-            "exp": 79780,
+            "exp": 85445,
             "weekly_exp": 580,
-            "level": 22,
+            "level": 24,
             "badges": [],
             "last_active": "2026-03-20T16:08:09.571549",
             "booster": {},
-            "voice_time": 989795,
-            "weekly_voice_time": 989795,
+            "voice_time": 1059840,
+            "weekly_voice_time": 1059840,
             "longest_single_session": 60530
         },
         "1124995547460272169": {
@@ -666,14 +669,14 @@
             "booster": {}
         },
         "1416731005410349177": {
-            "exp": 129930,
+            "exp": 133525,
             "weekly_exp": 770,
-            "level": 37,
+            "level": 38,
             "badges": [],
             "last_active": "2026-03-20T20:47:05.557857",
             "booster": {},
-            "voice_time": 1556863,
-            "weekly_voice_time": 1556863,
+            "voice_time": 1600549,
+            "weekly_voice_time": 1600549,
             "longest_single_session": 159935
         },
         "1434542548164018207": {
@@ -701,54 +704,54 @@
             "booster": {}
         },
         "1307737338570346607": {
-            "exp": 127483,
+            "exp": 135278,
             "weekly_exp": 410,
-            "level": 36,
+            "level": 38,
             "badges": [],
             "last_active": "2026-03-21T01:29:02.274128",
             "booster": {},
-            "voice_time": 1523673,
-            "weekly_voice_time": 1523673,
+            "voice_time": 1617073,
+            "weekly_voice_time": 1617073,
             "longest_single_session": 86157
         },
         "1244261449329807478": {
-            "exp": 6890,
+            "exp": 9265,
             "weekly_exp": 120,
-            "level": 1,
+            "level": 2,
             "badges": [],
             "last_active": "2026-03-21T15:10:31.391964",
             "booster": {},
-            "voice_time": 183542,
-            "weekly_voice_time": 183542,
-            "longest_single_session": 10695
+            "voice_time": 211997,
+            "weekly_voice_time": 211997,
+            "longest_single_session": 10786
         },
         "1431661781402521700": {
-            "exp": 1285,
+            "exp": 2655,
             "weekly_exp": 10,
             "level": 0,
             "badges": [],
             "last_active": "2026-03-23T16:03:30.735577",
             "booster": {},
-            "voice_time": 15350,
-            "weekly_voice_time": 15350,
+            "voice_time": 31903,
+            "weekly_voice_time": 31903,
             "longest_single_session": 14232
         },
         "1265624974308151390": {
-            "exp": 83998,
+            "exp": 91338,
             "weekly_exp": 550,
-            "level": 23,
+            "level": 26,
             "badges": [],
-            "voice_time": 1057921,
-            "weekly_voice_time": 1057921,
+            "voice_time": 1144019,
+            "weekly_voice_time": 1144019,
             "longest_single_session": 151343
         },
         "1232252671138857001": {
-            "exp": 15104,
+            "exp": 17564,
             "weekly_exp": 560,
-            "level": 4,
+            "level": 5,
             "badges": [],
-            "voice_time": 178048,
-            "weekly_voice_time": 178048,
+            "voice_time": 207625,
+            "weekly_voice_time": 207625,
             "longest_single_session": 22839
         },
         "803884338768379906": {
@@ -816,36 +819,39 @@
             "last_daily": "2026-10-05T14:07:54.442186"
         },
         "1556666879110549676": {
-            "exp": 185,
+            "exp": 4125,
             "weekly_exp": 185,
-            "level": 0,
+            "level": 1,
             "badges": [],
-            "voice_time": 1383,
-            "weekly_voice_time": 1383,
+            "voice_time": 48731,
+            "weekly_voice_time": 48731,
             "msg_count": 7,
             "last_msg_time": "2026-10-05T16:58:49.953330",
             "last_daily": "2026-10-05T16:36:33.690900",
-            "last_active": "2026-10-05T16:58:53.625953"
+            "last_active": "2026-10-05T16:58:53.625953",
+            "longest_single_session": 47390
         },
         "1536901505297154068": {
-            "exp": 195,
+            "exp": 215,
             "weekly_exp": 195,
             "level": 0,
             "badges": [],
-            "voice_time": 1868,
-            "weekly_voice_time": 1868,
+            "voice_time": 2162,
+            "weekly_voice_time": 2162,
             "msg_count": 4,
             "last_msg_time": "2026-10-05T17:22:38.198920",
             "last_daily": "2026-10-05T16:37:37.135158",
-            "last_active": "2026-10-05T17:22:38.198920"
+            "last_active": "2026-10-05T17:22:38.198920",
+            "longest_single_session": 203
         },
         "1549861869161021550": {
-            "exp": 85,
+            "exp": 390,
             "weekly_exp": 85,
             "level": 0,
             "badges": [],
-            "voice_time": 1190,
-            "weekly_voice_time": 1190
+            "voice_time": 5025,
+            "weekly_voice_time": 5025,
+            "longest_single_session": 2152
         },
         "1171074777809686538": {
             "exp": 20,
@@ -902,14 +908,14 @@
             "last_single_session": 49
         },
         "1344724730157989949": {
-            "exp": 170,
+            "exp": 185,
             "weekly_exp": 0,
             "level": 0,
             "badges": [],
             "last_single_session": 3,
             "longest_single_session": 1803,
-            "voice_time": 2120,
-            "weekly_voice_time": 2120
+            "voice_time": 2301,
+            "weekly_voice_time": 2301
         },
         "584375250142232605": {
             "exp": 120,
@@ -932,13 +938,13 @@
             "last_single_session": 20
         },
         "759964298465247254": {
-            "exp": 2180,
+            "exp": 2590,
             "weekly_exp": 2180,
             "level": 0,
             "badges": [],
             "longest_single_session": 13384,
-            "voice_time": 26154,
-            "weekly_voice_time": 26154,
+            "voice_time": 32078,
+            "weekly_voice_time": 32078,
             "last_single_session": 3117,
             "msg_count": 1,
             "last_msg_time": "2026-10-20T19:15:34.834196",
@@ -1017,13 +1023,13 @@
             "last_single_session": 111
         },
         "1301812058370740264": {
-            "exp": 140,
+            "exp": 160,
             "weekly_exp": 140,
             "level": 0,
             "badges": [],
             "longest_single_session": 1700,
-            "voice_time": 1700,
-            "weekly_voice_time": 1700,
+            "voice_time": 1958,
+            "weekly_voice_time": 1958,
             "last_single_session": 1700
         },
         "1094189324297318430": {
@@ -1067,20 +1073,31 @@
             "msg_count": 1,
             "last_msg_time": "2026-10-23T10:41:54.581215",
             "last_daily": "2026-10-23T10:41:54.581215"
+        },
+        "784646206252122122": {
+            "exp": 60,
+            "weekly_exp": 60,
+            "level": 0,
+            "badges": [],
+            "last_active": "2026-10-23T16:12:20.167309",
+            "booster": {},
+            "msg_count": 2,
+            "last_msg_time": "2026-10-23T16:12:16.465693",
+            "last_daily": "2026-10-23T16:12:11.008218"
         }
     },
     "788337048997199882": {
         "453215843258597389": {
-            "exp": 26990,
+            "exp": 28440,
             "weekly_exp": 23960,
-            "level": 7,
+            "level": 8,
             "badges": [
                 "\ud83e\udd49"
             ],
             "last_active": "2026-03-23T13:18:19.269460",
             "booster": {},
-            "voice_time": 35255,
-            "weekly_voice_time": 35255,
+            "voice_time": 49253,
+            "weekly_voice_time": 49253,
             "longest_single_session": 20080
         },
         "1426589718442676224": {
@@ -1092,7 +1109,7 @@
             "booster": {}
         },
         "1232252671138857001": {
-            "exp": 25460,
+            "exp": 26815,
             "weekly_exp": 22370,
             "level": 7,
             "badges": [
@@ -1100,8 +1117,8 @@
             ],
             "last_active": "2026-03-23T14:07:16.032841",
             "booster": {},
-            "voice_time": 36078,
-            "weekly_voice_time": 36078,
+            "voice_time": 51269,
+            "weekly_voice_time": 51269,
             "longest_single_session": 20951
         },
         "1244261449329807478": {
@@ -1113,14 +1130,14 @@
             "booster": {}
         },
         "1000737066822410311": {
-            "exp": 14577,
+            "exp": 15967,
             "weekly_exp": 12445,
             "level": 4,
             "badges": [],
             "last_active": "2026-03-23T14:48:26.568341",
             "booster": {},
-            "voice_time": 20210,
-            "weekly_voice_time": 20210,
+            "voice_time": 35231,
+            "weekly_voice_time": 35231,
             "longest_single_session": 20005
         },
         "1353347923886215168": {
@@ -1147,15 +1164,15 @@
             "booster": {}
         },
         "759964298465247254": {
-            "exp": 1430,
+            "exp": 2815,
             "weekly_exp": 915,
             "level": 0,
             "badges": [],
             "last_active": "2026-03-21T05:54:52.013137",
             "booster": {},
-            "voice_time": 5145,
-            "weekly_voice_time": 5145,
-            "longest_single_session": 5085
+            "voice_time": 20260,
+            "weekly_voice_time": 20260,
+            "longest_single_session": 15115
         },
         "1439757620201128040": {
             "exp": 320,
@@ -1174,11 +1191,14 @@
             "booster": {}
         },
         "1431661781402521700": {
-            "exp": 3020,
+            "exp": 3175,
             "weekly_exp": 3020,
             "level": 0,
             "badges": [],
-            "last_active": "2026-03-23T14:51:14.126214"
+            "last_active": "2026-03-23T14:51:14.126214",
+            "voice_time": 1947,
+            "weekly_voice_time": 1947,
+            "longest_single_session": 1134
         },
         "1179842512324661269": {
             "exp": 420,
@@ -1197,13 +1217,13 @@
             "booster": {}
         },
         "1223367573324697613": {
-            "exp": 2085,
+            "exp": 2210,
             "weekly_exp": 1800,
             "level": 0,
             "badges": [],
             "last_active": "2026-03-20T15:00:37.565572",
-            "voice_time": 2700,
-            "weekly_voice_time": 2700,
+            "voice_time": 3480,
+            "weekly_voice_time": 3480,
             "longest_single_session": 2640
         },
         "351626107323416587": {
@@ -1227,18 +1247,51 @@
             "voice_time": 2013,
             "weekly_voice_time": 2013,
             "last_single_session": 1920
+        },
+        "1265624974308151390": {
+            "exp": 20,
+            "weekly_exp": 20,
+            "level": 0,
+            "badges": [],
+            "last_active": "2026-10-24T06:22:17.773105",
+            "booster": {},
+            "msg_count": 2,
+            "last_msg_time": "2026-10-24T06:22:17.773105",
+            "last_daily": "2026-10-23T18:02:42.933933"
+        },
+        "572414795018666005": {
+            "exp": 20,
+            "weekly_exp": 20,
+            "level": 0,
+            "badges": [],
+            "last_active": "2026-10-24T08:47:58.887954",
+            "booster": {},
+            "msg_count": 2,
+            "last_msg_time": "2026-10-24T08:47:58.887954",
+            "last_daily": "2026-10-24T06:34:57.897141"
+        },
+        "1263185923366060144": {
+            "exp": 180,
+            "weekly_exp": 180,
+            "level": 0,
+            "badges": [],
+            "last_active": "2026-10-24T12:36:55.901660",
+            "booster": {},
+            "msg_count": 18,
+            "last_msg_time": "2026-10-24T12:36:55.901660",
+            "last_daily": "2026-10-24T12:25:35.955550"
         }
     },
     "1039509114008649778": {
         "1000737066822410311": {
-            "exp": 800,
+            "exp": 835,
             "weekly_exp": 670,
             "level": 0,
             "badges": [],
             "last_active": "2026-10-23T16:52:51.241769",
             "booster": {},
-            "voice_time": 36,
-            "weekly_voice_time": 36,
+            "voice_time": 108,
+            "weekly_voice_time": 108,
             "longest_single_session": 36,
             "msg_count": 1,
             "last_msg_time": "2026-10-23T16:52:51.241769",
@@ -1255,17 +1308,17 @@
     },
     "1417636227179483221": {
         "1000737066822410311": {
-            "exp": 703,
-            "weekly_exp": 150,
+            "exp": 1079,
+            "weekly_exp": 280,
             "level": 0,
             "badges": [],
-            "last_active": "2026-10-23T15:10:13.632085",
+            "last_active": "2026-10-24T18:13:45.870761",
             "booster": {},
             "voice_time": 81,
             "weekly_voice_time": 81,
-            "msg_count": 14,
-            "last_msg_time": "2026-10-23T15:10:13.632085",
-            "last_daily": "2026-10-23T14:21:20.617081"
+            "msg_count": 26,
+            "last_msg_time": "2026-10-24T18:13:45.870761",
+            "last_daily": "2026-10-24T17:07:27.867004"
         }
     },
     "1446026825708081246": {},

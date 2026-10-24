@@ -8,6 +8,14 @@ import aiohttp
 from io import BytesIO
 from datetime import datetime, time, timedelta
 import pytz
+from cogs.v2_layout import (
+    build_v2_card,
+    send_v2_message,
+    edit_v2_message,
+    send_v2_interaction,
+    update_v2_interaction,
+    register_view
+)
 
 def load_json_from_root(file_path):
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -62,26 +70,27 @@ class DonationView(discord.ui.View):
 
 class GameCatalogView(discord.ui.View):
     def __init__(self, cog, ctx):
-        super().__init__(timeout=90)
+        super().__init__(timeout=120)
         self.cog = cog
         self.ctx = ctx
+        self.selected_game = None
 
         options = [
+            discord.SelectOption(label="Tebak Emoji", value="tebakemoji", description="Tebak kata/frasa berdasarkan deretan emoji", emoji="🧩"),
+            discord.SelectOption(label="Kuis IPA & Sains", value="kuisipa", description="Kuis tebak istilah biologi, kimia, dan fisika", emoji="🔬"),
+            discord.SelectOption(label="Siapa Aku?", value="siapaaku", description="Kuis detektif tebak tokoh atau benda dari petunjuk bertahap", emoji="🕵️"),
+            discord.SelectOption(label="Susun Kata", value="susunkata", description="Susun kembali kata acak (Anagram) secepatnya", emoji="🔤"),
             discord.SelectOption(label="Sambung Kata", value="sambung", description="Menyambung 2 suku kata berantai dengan multiplier combo", emoji="🔗"),
             discord.SelectOption(label="Si Paling...", value="siapapaling", description="Party game voting opini 'Si Paling' terheboh di server", emoji="🗳️"),
-            discord.SelectOption(label="Tebak Emoji", value="tebakemoji", description="Tebak kata/frasa berdasarkan deretan emoji", emoji="🧩"),
-            discord.SelectOption(label="Susun Kata", value="susunkata", description="Susun kembali kata acak (Anagram) secepatnya", emoji="🔤"),
-            discord.SelectOption(label="Kuis IPA & Sains", value="kuisipa", description="Kuis tebak istilah biologi, kimia, dan fisika", emoji="🔬"),
-            discord.SelectOption(label="Hangman", value="hangman", description="Tebak kata rahasia huruf demi huruf dalam 10 ronde", emoji="🪢"),
-            discord.SelectOption(label="Siapa Aku?", value="siapaaku", description="Kuis detektif tebak tokoh atau benda dari petunjuk bertahap", emoji="🕵️"),
             discord.SelectOption(label="Hitung Cepat", value="hitungcepat", description="Adu cepat dan tepat perhitungan matematika dasar", emoji="⚡"),
             discord.SelectOption(label="Pernah Gak Pernah", value="pernahgak", description="Game kejujuran Never Have I Ever via tombol interaktif", emoji="🤔"),
+            discord.SelectOption(label="Hangman", value="hangman", description="Tebak kata rahasia huruf demi huruf dalam 10 ronde", emoji="🪢"),
             discord.SelectOption(label="Mata-Mata (Spyfall)", value="matamata", description="Game peran rahasia mengungkap mata-mata di antara pemain", emoji="🎭"),
             discord.SelectOption(label="Kuis Musik", value="kuismusik", description="Kuis tebak trivia lagu & musik di Voice Channel", emoji="🎤"),
         ]
 
         select = discord.ui.Select(
-            placeholder="Pilih game untuk melihat panduan & command...",
+            placeholder="Pilih game yang ingin kamu mainkan...",
             min_values=1,
             max_values=1,
             options=options,
@@ -90,12 +99,18 @@ class GameCatalogView(discord.ui.View):
         select.callback = self.select_callback
         self.add_item(select)
 
+        self.start_btn = discord.ui.Button(label="Mulai Game Ini", style=discord.ButtonStyle.success, emoji="▶️", custom_id="game_catalog_start", disabled=True)
+        self.start_btn.callback = self.start_callback
+        self.add_item(self.start_btn)
+
         reset_btn = discord.ui.Button(label="Reset Channel Game", style=discord.ButtonStyle.secondary, emoji="🧹", custom_id="game_catalog_reset")
         reset_btn.callback = self.reset_callback
         self.add_item(reset_btn)
 
     async def select_callback(self, interaction: discord.Interaction):
         val = interaction.data['values'][0]
+        self.selected_game = val
+        self.start_btn.disabled = False
         catalog_info = {
             "sambung": {
                 "title": "🔗 Sambung Kata (Multiplayer)",
@@ -180,21 +195,62 @@ class GameCatalogView(discord.ui.View):
         if not info:
             return await interaction.response.send_message("Informasi game tidak ditemukan.", ephemeral=True)
 
-        embed = discord.Embed(title=info["title"], color=info["color"])
-        embed.add_field(name="⌨️ Perintah", value=info["cmd"], inline=False)
-        embed.add_field(name="📜 Aturan Main", value=info["rules"], inline=False)
-        embed.add_field(name="💰 Hadiah", value=info["reward"], inline=False)
-        embed.set_footer(text="Gunakan !stopgame jika ada game yang macet di channel ini.")
-        await interaction.response.edit_message(embed=embed, view=self)
+        fields = [
+            {"name": "⌨️ Perintah", "value": info["cmd"]},
+            {"name": "📜 Aturan Main", "value": info["rules"]},
+            {"name": "💰 Hadiah", "value": info["reward"]}
+        ]
+        card = build_v2_card(
+            title=info["title"],
+            fields=fields,
+            color=info["color"],
+            footer="Klik tombol 'Mulai Game Ini' di bawah atau ketik perintahnya langsung."
+        )
+        await update_v2_interaction(self.cog.bot, interaction, card, view=self)
+
+    async def start_callback(self, interaction: discord.Interaction):
+        if not self.selected_game:
+            return await interaction.response.send_message("Pilih salah satu game terlebih dahulu di dropdown menu.", ephemeral=True)
+        if interaction.user.id != self.ctx.author.id:
+            return await interaction.response.send_message("Hanya pemanggil menu minigames yang dapat memulai permainan.", ephemeral=True)
+
+        for child in self.children:
+            child.disabled = True
+        card = build_v2_card(
+            title="🎮 Game Sedang Dimulai",
+            description=f"Memulai permainan **{self.selected_game}**... Bersiaplah!",
+            color=0x2ecc71
+        )
+        try:
+            await update_v2_interaction(self.cog.bot, interaction, card, view=self)
+        except Exception:
+            pass
+
+        game_map = {
+            "tebakemoji": self.cog.tebak_emoji_cmd,
+            "kuisipa": self.cog.kuisipa_cmd,
+            "siapaaku": self.cog.siapa_aku_cmd,
+            "susunkata": self.cog.susunkata_cmd,
+            "sambung": self.cog.sambung_kata_cmd,
+            "siapapaling": self.cog.siapa_paling_cmd,
+            "hangman": self.cog.hangman_cmd,
+            "hitungcepat": self.cog.hitung_cepat_cmd,
+            "pernahgak": self.cog.pernah_gak_cmd,
+            "matamata": self.cog.matamata_cmd,
+            "kuismusik": self.cog.kuis_musik_cmd,
+        }
+        handler = game_map.get(self.selected_game)
+        if handler:
+            asyncio.create_task(handler(self.ctx))
 
     async def reset_callback(self, interaction: discord.Interaction):
         await self.cog.end_game_cleanup(interaction.channel_id, interaction.channel)
-        embed = discord.Embed(
+        card = build_v2_card(
             title="🧹 Status Game Direset",
             description=f"Status permainan di channel {interaction.channel.mention} telah berhasil dibersihkan!\nSekarang kamu bisa memulai permainan baru.",
             color=0x2ecc71
         )
-        await interaction.response.send_message(embed=embed, ephemeral=False)
+        await send_v2_interaction(self.cog.bot, interaction, card, ephemeral=False)
 
     async def on_timeout(self):
         for child in self.children:
@@ -248,9 +304,23 @@ class SambungKataLobbyView(discord.ui.View):
             return await interaction.response.send_message("Kamu sudah bergabung di dalam lobby!", ephemeral=True)
         self.players[interaction.user.id] = interaction.user
         player_list = ", ".join([p.mention for p in self.players.values()])
-        embed = interaction.message.embeds[0]
-        embed.set_field_at(0, name=f"👥 Pemain Bergabung ({len(self.players)})", value=player_list, inline=False)
-        await interaction.response.edit_message(embed=embed, view=self)
+        fields = [
+            {"name": f"👥 Pemain Bergabung ({len(self.players)})", "value": player_list}
+        ]
+        card = build_v2_card(
+            title="🔗 ARENA SAMBUNG KATA BERANTAI",
+            description="Tantang kecepatan berpikir dan kosakatamu bersama teman-teman!\n\n"
+                        "**Aturan Permainan:**\n"
+                        "1. Pemain bergantian menyambung kata berdasarkan **2 huruf terakhir**.\n"
+                        "2. Batas waktu menjawab **20 detik** per giliran.\n"
+                        "3. **🔥 Combo Multiplier:** Semakin panjang rantai kata tanpa salah, hadiah koin RSWN & EXP semakin berlipat ganda!\n"
+                        "4. Pemain yang gagal menjawab atau mengulang kata akan tereliminasi.\n\n"
+                        "Klik tombol **⚔️ Ikut Bermain** untuk bergabung (minimal 2 pemain)!",
+            fields=fields,
+            color=0xe91e63,
+            footer="Host atau Moderator bisa klik Mulai Game jika semua pemain siap."
+        )
+        await update_v2_interaction(self.cog.bot, interaction, card, view=self)
 
     @discord.ui.button(label="Mulai Game", style=discord.ButtonStyle.primary, emoji="▶️")
     async def start_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -294,9 +364,23 @@ class SiPalingLobbyView(discord.ui.View):
             return await interaction.response.send_message("Lobby sudah penuh (maksimal 25 pemain).", ephemeral=True)
         self.players[interaction.user.id] = interaction.user
         player_list = ", ".join([p.mention for p in self.players.values()])
-        embed = interaction.message.embeds[0]
-        embed.set_field_at(0, name=f"👥 Pemain Terdaftar ({len(self.players)})", value=player_list, inline=False)
-        await interaction.response.edit_message(embed=embed, view=self)
+        fields = [
+            {"name": f"👥 Pemain Terdaftar ({len(self.players)})", "value": player_list}
+        ]
+        card = build_v2_card(
+            title="👑 ARENA SI PALING... (VOTING PARTY)",
+            description="Siapa yang paling cocok dengan gelar unik malam ini?\n\n"
+                        "**Aturan Permainan:**\n"
+                        "1. Semua pemain yang bergabung akan menjadi kandidat sekaligus pemilih.\n"
+                        "2. Terdapat 3 ronde pertanyaan 'Si Paling'.\n"
+                        "3. Pilih kandidat terbaik via tombol voting (waktu 25 detik per ronde).\n"
+                        "4. Pemain yang mendapat suara terbanyak di tiap ronde mendapatkan koin RSWN dan EXP!\n\n"
+                        "Klik tombol **🙋 Ikut Main** untuk bergabung (minimal 2 pemain)!",
+            fields=fields,
+            color=0x9b59b6,
+            footer="Host atau Moderator bisa klik Mulai Voting jika sudah siap."
+        )
+        await update_v2_interaction(self.cog.bot, interaction, card, view=self)
 
     @discord.ui.button(label="Mulai Voting", style=discord.ButtonStyle.primary, emoji="▶️")
     async def start_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -547,13 +631,13 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
 
     async def start_game_check(self, ctx):
         if ctx.channel.id in self.active_games:
-            embed = discord.Embed(
+            card = build_v2_card(
                 title="⚠️ Ada Game Aktif",
                 description="Masih ada permainan yang sedang berlangsung di channel ini.\n"
                             "Tunggu hingga selesai, atau ketik **`!stopgame`** untuk mereset status channel jika game macet.",
                 color=0xe67e22
             )
-            await ctx.send(embed=embed, delete_after=12)
+            await send_v2_message(self.bot, ctx.channel.id, [card])
             return False
         self.active_games.add(ctx.channel.id)
         return True
@@ -565,34 +649,41 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         return True
 
 
-    @commands.command(name="games", aliases=['minigames', 'daftargame', 'listgame'])
+    @commands.hybrid_command(name="minigames", aliases=['games', 'daftargame', 'listgame'], description="Pusat Arcade & Minigames interaktif server")
     async def games_catalog_cmd(self, ctx):
-        """Membuka menu katalog minigames interaktif."""
-        embed = discord.Embed(
-            title="🎮 RTM-Bot • PUSAT ARCADE & MINIGAMES",
-            description="Selamat datang di arena bermain **RTM-Bot**! Kami menyediakan berbagai game interaktif "
-                        "multipemain, party voting, kuis kata, hingga asah otak dengan hadiah koin RSWN & EXP.\n\n"
-                        "👉 **Pilih game pada menu dropdown di bawah** untuk membaca panduan cara bermain, hadiah, dan perintahnya!",
-            color=0xf1c40f
+        title = "🎮 RTM-Bot • PUSAT ARCADE & MINIGAMES"
+        description = (
+            "Selamat datang di arena bermain **RTM-Bot**! Kami menyediakan berbagai game interaktif "
+            "multipemain, party voting, kuis kata, hingga asah otak dengan hadiah koin RSWN & EXP.\n\n"
+            "👉 **Pilih game pada menu dropdown di bawah lalu klik 'Mulai Game Ini'** untuk bermain langsung di channel ini!"
         )
-        embed.add_field(name="🔗 Multiplayer & Party", value="`!sambung`, `!siapapaling`, `!matamata`, `!pernahgak`, `!kuismusik`", inline=False)
-        embed.add_field(name="🧠 Kuis & Asah Otak", value="`!tebakemoji`, `!susunkata`, `!kuisipa`, `!hangman`, `!siapaaku`, `!hitungcepat`", inline=False)
-        embed.add_field(name="🧹 Emergency Reset", value="Ketik `!stopgame` jika ada game yang macet di channel ini.", inline=False)
+        fields = [
+            {"name": "🔗 Multiplayer & Party", "value": "`!sambung`, `!siapapaling`, `!matamata`, `!pernahgak`, `!kuismusik`", "inline": False},
+            {"name": "🧠 Kuis & Asah Otak", "value": "`!tebakemoji`, `!susunkata`, `!kuisipa`, `!hangman`, `!siapaaku`, `!hitungcepat`", "inline": False},
+            {"name": "🧹 Emergency Reset", "value": "Ketik `!stopgame` jika ada game yang macet di channel ini.", "inline": False}
+        ]
+        footer = "Pilih game pada menu dropdown di bawah lalu klik Mulai Game Ini"
         view = GameCatalogView(self, ctx)
-        await ctx.send(embed=embed, view=view)
+        card = build_v2_card(
+            title=title,
+            description=description,
+            fields=fields,
+            color=0xf1c40f,
+            footer=footer
+        )
+        await send_v2_message(self.bot, ctx.channel.id, [card], view=view)
 
     @commands.command(name="stopgame", aliases=['resetgame', 'batalgame', 'cancelgame', 'endgame'])
     async def stop_game_cmd(self, ctx):
-        """Memaksa reset status game di channel jika macet."""
         channel_id = ctx.channel.id
         await self.end_game_cleanup(channel_id, ctx.channel)
-        embed = discord.Embed(
+        card = build_v2_card(
             title="🧹 Status Permainan Direset",
             description=f"Antrean dan status permainan di channel {ctx.channel.mention} telah berhasil dibersihkan.\n"
                         f"Sekarang kamu bebas memulai minigame baru tanpa kendala!",
             color=0x2ecc71
         )
-        await ctx.send(embed=embed)
+        await send_v2_message(self.bot, ctx.channel.id, [card])
 
     @commands.command(name="setgamechannel")
     @commands.has_permissions(administrator=True)
@@ -650,7 +741,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         if not await self.start_game_check(ctx):
             return
 
-        embed = discord.Embed(
+        card = build_v2_card(
             title="🔗 ARENA SAMBUNG KATA BERANTAI",
             description="Tantang kecepatan berpikir dan kosakatamu bersama teman-teman!\n\n"
                         "**Aturan Permainan:**\n"
@@ -659,10 +750,10 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                         "3. **🔥 Combo Multiplier:** Semakin panjang rantai kata tanpa salah, hadiah koin RSWN & EXP semakin berlipat ganda!\n"
                         "4. Pemain yang gagal menjawab atau mengulang kata akan tereliminasi.\n\n"
                         "Klik tombol **⚔️ Ikut Bermain** untuk bergabung (minimal 2 pemain)!",
-            color=0xe91e63
+            fields=[{"name": "👥 Pemain Bergabung (1)", "value": ctx.author.mention}],
+            color=0xe91e63,
+            footer="Host atau Moderator bisa klik Mulai Game jika semua pemain siap."
         )
-        embed.add_field(name="👥 Pemain Bergabung (1)", value=ctx.author.mention, inline=False)
-        embed.set_footer(text="Host atau Moderator bisa klik Mulai Game jika semua pemain siap.")
 
         async def start_game_callback(players):
             try:
@@ -671,7 +762,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 await self.end_game_cleanup(ctx.channel.id, ctx.channel, 'sambung_kata')
 
         view = SambungKataLobbyView(self, ctx.channel.id, ctx.author, start_game_callback, timeout=45)
-        await ctx.send(embed=embed, view=view)
+        await send_v2_message(self.bot, ctx.channel.id, [card], view=view)
 
     async def play_sambung_kata(self, ctx, players):
         if not self.sambung_kata_words:
@@ -686,13 +777,13 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         turn_index = 0
         combo = 0
 
-        embed_start = discord.Embed(
+        card_start = build_v2_card(
             title="🚀 PERMAINAN SAMBUNG KATA DIMULAI!",
             description=f"Kata pembuka dari bot:\n\n# 🔤 `{current_word.upper()}`\n\n"
                         f"Urutan bermain: {' ➔ '.join([p.display_name for p in active_players])}",
             color=0x2ecc71
         )
-        await ctx.send(embed=embed_start)
+        await send_v2_message(self.bot, ctx.channel.id, [card_start])
         await asyncio.sleep(3)
 
         while len(active_players) > 1:
@@ -700,16 +791,18 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             prefix = current_word[-2:].lower()
 
             combo_text = f"🔥 Combo x{combo} (+{combo * 15}%)" if combo > 1 else "Normal"
-            turn_embed = discord.Embed(
+            card_turn = build_v2_card(
                 title=f"⏳ Giliran: {current_player.display_name}!",
                 description=f"Kata sebelumnya: **`{current_word.upper()}`**\n\n"
                             f"Ketik kata yang diawali dengan:\n# 🔤 「 `{prefix.upper()}`... 」",
-                color=current_player.color if current_player.color != discord.Color.default() else 0xe91e63
+                fields=[
+                    {"name": "👥 Pemain Bertahan", "value": f"{len(active_players)} orang"},
+                    {"name": "🔥 Combo Multiplier", "value": combo_text}
+                ],
+                color=current_player.color.value if current_player.color != discord.Color.default() else 0xe91e63,
+                footer=f"Waktu berpikir: {self.sambung_kata_time_limit} detik"
             )
-            turn_embed.add_field(name="👥 Pemain Bertahan", value=f"{len(active_players)} orang", inline=True)
-            turn_embed.add_field(name="🔥 Combo Multiplier", value=combo_text, inline=True)
-            turn_embed.set_footer(text=f"Waktu berpikir: {self.sambung_kata_time_limit} detik")
-            await ctx.send(embed=turn_embed)
+            await send_v2_message(self.bot, ctx.channel.id, [card_turn])
 
             def check(m):
                 return m.channel == ctx.channel and m.author.id == current_player.id and not m.author.bot
@@ -762,26 +855,25 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 "exp": int(self.sambung_kata_winner_reward["exp"] * bonus_mult)
             }
             await self.give_rewards_with_bonus_check(winner, ctx.channel, final_reward)
-            win_embed = discord.Embed(
+            win_card = build_v2_card(
                 title="🏆 JUARA SAMBUNG KATA!",
                 description=f"Selamat kepada {winner.mention} yang berhasil bertahan hingga akhir!\n\n"
                             f"🎁 **Hadiah Juara:** +{final_reward['rsw']} RSWN & +{final_reward['exp']} EXP\n"
                             f"🔥 **Puncak Combo:** x{combo}",
-                color=discord.Color.gold()
+                color=discord.Color.gold().value
             )
-            await ctx.send(embed=win_embed)
+            await send_v2_message(self.bot, ctx.channel.id, [win_card])
 
 
     @commands.command(name="siapapaling", aliases=['paling', 'wholikely', 'mostlikely', 'votepertanyaan', 'sipaling'])
     async def siapa_paling_cmd(self, ctx):
-        """Memulai party game voting rahasia 'Si Paling...'."""
         if not self.is_channel_allowed('siapapaling', ctx.channel.id):
             return await ctx.send("Game Si Paling tidak diizinkan di channel ini.", delete_after=10)
 
         if not await self.start_game_check(ctx):
             return
 
-        embed = discord.Embed(
+        card = build_v2_card(
             title="🗳️ PARTY GAME: SI PALING...",
             description="Siapakah di antara teman tongkronganmu yang kelakuannya paling cocok dengan situasi kocak?\n\n"
                         "**Cara Bermain:**\n"
@@ -790,10 +882,10 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                         "3. Semua pemain memberikan suara rahasia via menu dropdown.\n"
                         "4. Hasil voting akan diumumkan dengan grafik bar suara!\n\n"
                         "Pemenang voting dan seluruh partisipan berhak mendapatkan koin RSWN & EXP!",
-            color=0x9b59b6
+            fields=[{"name": "👥 Pemain Terdaftar (1)", "value": ctx.author.mention}],
+            color=0x9b59b6,
+            footer="Host atau Moderator bisa klik Mulai Voting jika sudah siap."
         )
-        embed.add_field(name="👥 Pemain Terdaftar (1)", value=ctx.author.mention, inline=False)
-        embed.set_footer(text="Host atau Moderator bisa klik Mulai Voting jika sudah siap.")
 
         async def start_voting_callback(players):
             try:
@@ -802,7 +894,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 await self.end_game_cleanup(ctx.channel.id, ctx.channel, 'voting')
 
         view = SiPalingLobbyView(self, ctx.channel.id, ctx.author, start_voting_callback, timeout=45)
-        await ctx.send(embed=embed, view=view)
+        await send_v2_message(self.bot, ctx.channel.id, [card], view=view)
 
     async def play_siapa_paling(self, ctx, players):
         if not self.siapa_paling_questions:
@@ -823,7 +915,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         round_winners = {}
 
         for round_num, question in enumerate(chosen_questions, 1):
-            embed = discord.Embed(
+            vote_card = build_v2_card(
                 title=f"🗳️ SI PALING... • RONDE {round_num}/{total_rounds}",
                 description=f"# 💭 _{question}_\n\n"
                             f"Pilih salah satu pemain dari menu dropdown di bawah! Pilihanmu bersifat **rahasia**.\n"
@@ -831,15 +923,16 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 color=0x9b59b6
             )
             vote_view = SiPalingVoteView(players, timeout=20)
-            msg = await ctx.send(embed=embed, view=vote_view)
+            msg = await send_v2_message(self.bot, ctx.channel.id, [vote_card], view=vote_view)
             await asyncio.sleep(20)
 
             for child in vote_view.children:
                 child.disabled = True
-            try:
-                await msg.edit(view=vote_view)
-            except Exception:
-                pass
+            if msg and isinstance(msg, dict) and "id" in msg:
+                try:
+                    await edit_v2_message(self.bot, ctx.channel.id, int(msg["id"]), [vote_card], view=vote_view)
+                except Exception:
+                    pass
 
             vote_counts = {p.id: 0 for p in players}
             for voter_id, target_id in vote_view.votes.items():
@@ -869,12 +962,12 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                     bar = "█" * bar_len + "░" * (10 - bar_len)
                     result_desc += f"`{bar}` **{count}** suara ({percent}%) — **{name}**\n"
 
-            result_embed = discord.Embed(
+            result_card = build_v2_card(
                 title=f"📊 HASIL VOTING RONDE {round_num}",
                 description=result_desc,
                 color=0xf1c40f
             )
-            await ctx.send(embed=result_embed)
+            await send_v2_message(self.bot, ctx.channel.id, [result_card])
 
             for voter_id in vote_view.votes.keys():
                 voter_mem = next((p for p in players if p.id == voter_id), None)
@@ -884,32 +977,32 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             if round_num < total_rounds:
                 await asyncio.sleep(4)
 
-        final_embed = discord.Embed(
+        final_card = build_v2_card(
             title="🎉 SESI 'SI PALING...' SELESAI!",
             description="Terima kasih telah berpartisipasi dan meramaikan keseruan server!\n"
                         "Seluruh reward koin RSWN & EXP telah dikirimkan ke saldo akun masing-masing.",
             color=0x2ecc71
         )
-        await ctx.send(embed=final_embed)
+        await send_v2_message(self.bot, ctx.channel.id, [final_card])
 
 
     @commands.command(name="tebakemoji", aliases=['emoji', 'resmoji', 'tebakgambar'])
     async def tebak_emoji_cmd(self, ctx):
-        """Memulai permainan Kuis Tebak Emoji."""
         if not self.is_channel_allowed('resmoji', ctx.channel.id):
             return await ctx.send("Kuis Emoji tidak diizinkan di channel ini.")
         if not await self.start_game_check(ctx):
             return
 
         self.session_scores = {}
-        embed = discord.Embed(
+        card = build_v2_card(
             title="🧩 KUIS TEBAK EMOJI",
             description="Uji imajinasi dan ketelitianmu!\n\n"
                         "📌 Bot akan memberikan petunjuk deretan emoji.\n"
                         "🫵 Tebak kata atau frasa yang sesuai dalam waktu 60 detik.\n"
                         f"🎁 Jawaban benar mendapatkan **+{self.reward_per_correct_emoji} RSWN**.\n\n"
                         f"💡 Butuh petunjuk? Gunakan `!hintemoji` (Biaya: {self.bantuan_price_emoji} RSWN via DM).",
-            color=0x8e44ad
+            color=0x8e44ad,
+            footer="Klik Mulai Sekarang untuk memulai!"
         )
         async def on_start():
             try:
@@ -922,7 +1015,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 await self.end_game_cleanup(ctx.channel.id, ctx.channel, 'emoji')
 
         view = StartGameView(self, ctx.channel.id, ctx.author.id, on_start, timeout=60)
-        await ctx.send(embed=embed, view=view)
+        await send_v2_message(self.bot, ctx.channel.id, [card], view=view)
 
     async def play_emoji_game(self, ctx):
         game_data = self.active_emoji_games.get(ctx.channel.id)
@@ -947,13 +1040,23 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         if not game_data: return
 
         expected_answer = question['answer'].strip().lower()
-        embed = discord.Embed(
-            title=f"❓ SOAL EMOJI #{q_num}/{total_q}",
-            description=f"# {question['emoji']}\n\nSebutkan frasa/kata yang dimaksud!",
-            color=0x2ecc71
+        title = f"❓ SOAL EMOJI #{q_num}/{total_q}"
+        description = f"# {question['emoji']}\n\nSebutkan frasa atau kata yang dimaksud berdasarkan deretan emoji di atas!"
+        fields = [
+            {"name": "🎯 Kategori", "value": f"`{question.get('category', 'Tebak Kata')}`", "inline": True},
+            {"name": "⏱️ Batas Waktu", "value": f"`{self.time_limit_emoji} Detik`", "inline": True},
+            {"name": "💰 Hadiah", "value": f"`+{self.reward_per_correct_emoji} RSWN`", "inline": True}
+        ]
+        footer = f"Ketik jawaban langsung di chat • Butuh petunjuk? Gunakan !hintemoji ({self.bantuan_price_emoji} RSWN)"
+
+        card = build_v2_card(
+            title=title,
+            description=description,
+            fields=fields,
+            color=0x8e44ad,
+            footer=footer
         )
-        embed.set_footer(text=f"Waktu menjawab: {self.time_limit_emoji} detik")
-        await ctx.send(embed=embed)
+        await send_v2_message(self.bot, ctx.channel.id, [card])
 
         def check(m):
             return m.channel == ctx.channel and not m.author.bot
@@ -1030,13 +1133,14 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         if not await self.start_game_check(ctx):
             return
 
-        embed = discord.Embed(
+        card = build_v2_card(
             title="🔤 ARENA SUSUN KATA (ANAGRAM)",
             description="Asah kecepatan berpikir dan ketelitian menyusun huruf!\n\n"
                         "1. Bot mengacak huruf-huruf dari suatu kata.\n"
                         "2. Pemain pertama yang menjawab dengan benar mendapat **50 RSWN** & **100 EXP**.\n"
                         "3. Permainan terdiri dari 10 ronde seru.",
-            color=0x2ecc71
+            color=0x2ecc71,
+            footer="Klik Mulai Sekarang untuk memulai!"
         )
         async def on_start():
             try:
@@ -1045,7 +1149,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 await self.end_game_cleanup(ctx.channel.id, ctx.channel, 'resacak')
 
         view = StartGameView(self, ctx.channel.id, ctx.author.id, on_start, timeout=60)
-        await ctx.send(embed=embed, view=view)
+        await send_v2_message(self.bot, ctx.channel.id, [card], view=view)
 
     async def play_susunkata(self, ctx):
         if not self.resacak_questions:
@@ -1063,15 +1167,23 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 random.shuffle(scrambled)
                 if "".join(scrambled) != original.upper(): break
 
-            embed = discord.Embed(
-                title=f"📝 SOAL #{i}/{sample_size} — SUSUN KATA",
-                color=0x2ecc71
+            title = f"📝 SOAL #{i}/{sample_size} — SUSUN KATA"
+            description = f"# 🔤 `{ ' '.join(scrambled) }`\n\nSusun huruf-huruf acak di atas menjadi sebuah kata yang utuh!"
+            fields = [
+                {"name": "🏷️ Kategori", "value": f"`{q.get('category', 'Umum')}`", "inline": True},
+                {"name": "⏱️ Batas Waktu", "value": f"`{self.resacak_time_limit} Detik`", "inline": True},
+                {"name": "💡 Kisi-kisi", "value": f"_{q.get('clue', 'Pikirkan baik-baik!')}_", "inline": False}
+            ]
+            footer = f"Pemain pertama yang menjawab benar mendapat +{self.resacak_reward['rsw']} RSWN & +{self.resacak_reward['exp']} EXP"
+
+            card = build_v2_card(
+                title=title,
+                description=description,
+                fields=fields,
+                color=0x2ecc71,
+                footer=footer
             )
-            embed.add_field(name="Kategori", value=q.get('category', 'Umum'), inline=True)
-            embed.add_field(name="Huruf Teracak", value=f"# `{ ' '.join(scrambled) }`", inline=False)
-            embed.add_field(name="Kisi-kisi", value=q.get('clue', 'Pikirkan baik-baik!'), inline=False)
-            embed.set_footer(text=f"Batas waktu: {self.resacak_time_limit} detik")
-            await ctx.send(embed=embed)
+            await send_v2_message(self.bot, ctx.channel.id, [card])
 
             def check(m):
                 return m.channel == ctx.channel and not m.author.bot
@@ -1106,25 +1218,49 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
 
         if leaderboard:
             sorted_lb = sorted(leaderboard.items(), key=lambda x: x[1], reverse=True)
+            top_users_data = []
+            for n, (u_name, s) in enumerate(sorted_lb[:3], 1):
+                top_users_data.append({
+                    "name": u_name,
+                    "rank": n,
+                    "score_str": f"{s} Poin",
+                    "sub_str": "Susun Kata"
+                })
+            try:
+                from cogs.card_generator import generate_top3_podium_card, clean_display_text
+                card_buf = await generate_top3_podium_card(
+                    guild=ctx.guild,
+                    top_users_data=top_users_data,
+                    title_tag="SUSUN KATA TOP 3",
+                    subtitle_text=f"Papan Skor Susun Kata • {clean_display_text(ctx.guild.name, fallback='Server')}",
+                    bot_name=(self.bot.user.display_name if self.bot.user else "ハキムラーマン"),
+                    footer_system="Mini Games • Susun Kata"
+                )
+                if card_buf:
+                    file = discord.File(fp=card_buf, filename="susunkata_top3.png")
+                    await ctx.send(file=file)
+            except Exception:
+                pass
             desc = "\n".join([f"**#{n}.** {u}: {s} poin" for n, (u, s) in enumerate(sorted_lb, 1)])
-            await ctx.send(embed=discord.Embed(title="🏆 Papan Skor Susun Kata", description=desc, color=discord.Color.gold()))
+            lb_card = build_v2_card(title="🏆 Papan Skor Susun Kata", description=desc, color=discord.Color.gold().value)
+            await send_v2_message(self.bot, ctx.channel.id, [lb_card])
 
 
     @commands.command(name="kuisipa", aliases=['ipa', 'resipa', 'sains'])
     async def kuisipa_cmd(self, ctx):
-        """Memulai Kuis IPA dan Pengetahuan Sains."""
         if not self.is_channel_allowed('resipa', ctx.channel.id):
             return await ctx.send("Kuis IPA tidak diizinkan di channel ini.", delete_after=10)
         if not await self.start_game_check(ctx):
             return
 
-        embed = discord.Embed(
+        card = build_v2_card(
             title="🔬 KUIS IPA & PENGETAHUAN SAINS",
             description="Tebak istilah biologi, fisika, dan kimia!\n\n"
                         "1. Bot menyajikan 10 soal sains acak.\n"
                         "2. Jawab dengan benar dalam batas waktu 30 detik.\n"
                         "3. Pemenang mendapat **50 RSWN** & **100 EXP** per soal.",
-            color=0x1abc9c
+            color=0x1abc9c,
+            footer="Klik Mulai Sekarang untuk memulai!"
         )
         async def on_start():
             try:
@@ -1133,7 +1269,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 await self.end_game_cleanup(ctx.channel.id, ctx.channel, 'resipa')
 
         view = StartGameView(self, ctx.channel.id, ctx.author.id, on_start, timeout=60)
-        await ctx.send(embed=embed, view=view)
+        await send_v2_message(self.bot, ctx.channel.id, [card], view=view)
 
     async def play_kuisipa(self, ctx):
         if not self.resipa_questions:
@@ -1151,15 +1287,23 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 random.shuffle(scrambled)
                 if "".join(scrambled) != original.upper(): break
 
-            embed = discord.Embed(
-                title=f"🔬 SOAL SAINS #{i}/{sample_size}",
-                color=0x1abc9c
+            title = f"🔬 SOAL SAINS #{i}/{sample_size}"
+            description = f"# 🧪 `{ ' '.join(scrambled) }`\n\nSusun kembali huruf acak di atas menjadi istilah sains yang tepat!"
+            fields = [
+                {"name": "📚 Kategori", "value": f"`{q.get('category', 'Sains')}`", "inline": True},
+                {"name": "⏱️ Batas Waktu", "value": f"`{self.resipa_time_limit} Detik`", "inline": True},
+                {"name": "💡 Petunjuk Sains", "value": f"_{q.get('clue', 'Definisi konsep ilmiah')}_", "inline": False}
+            ]
+            footer = f"Pemain pertama yang menjawab benar mendapat +{self.resipa_reward['rsw']} RSWN & +{self.resipa_reward['exp']} EXP"
+
+            card = build_v2_card(
+                title=title,
+                description=description,
+                fields=fields,
+                color=0x1abc9c,
+                footer=footer
             )
-            embed.add_field(name="Kategori", value=q.get('category', 'Sains'), inline=True)
-            embed.add_field(name="Huruf Teracak", value=f"# `{ ' '.join(scrambled) }`", inline=False)
-            embed.add_field(name="Petunjuk Sains", value=q.get('clue', 'Definisi konsep sains'), inline=False)
-            embed.set_footer(text=f"Batas waktu: {self.resipa_time_limit} detik")
-            await ctx.send(embed=embed)
+            await send_v2_message(self.bot, ctx.channel.id, [card])
 
             def check(m):
                 return m.channel == ctx.channel and not m.author.bot
@@ -1194,26 +1338,50 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
 
         if leaderboard:
             sorted_lb = sorted(leaderboard.items(), key=lambda x: x[1], reverse=True)
+            top_users_data = []
+            for n, (u_name, s) in enumerate(sorted_lb[:3], 1):
+                top_users_data.append({
+                    "name": u_name,
+                    "rank": n,
+                    "score_str": f"{s} Poin",
+                    "sub_str": "Kuis IPA"
+                })
+            try:
+                from cogs.card_generator import generate_top3_podium_card, clean_display_text
+                card_buf = await generate_top3_podium_card(
+                    guild=ctx.guild,
+                    top_users_data=top_users_data,
+                    title_tag="KUIS IPA TOP 3",
+                    subtitle_text=f"Papan Skor Kuis IPA • {clean_display_text(ctx.guild.name, fallback='Server')}",
+                    bot_name=(self.bot.user.display_name if self.bot.user else "ハキムラーマン"),
+                    footer_system="Mini Games • Kuis IPA"
+                )
+                if card_buf:
+                    file = discord.File(fp=card_buf, filename="kuisipa_top3.png")
+                    await ctx.send(file=file)
+            except Exception:
+                pass
             desc = "\n".join([f"**#{n}.** {u}: {s} poin" for n, (u, s) in enumerate(sorted_lb, 1)])
-            await ctx.send(embed=discord.Embed(title="🏆 Papan Skor Kuis IPA", description=desc, color=discord.Color.teal()))
+            lb_card = build_v2_card(title="🏆 Papan Skor Kuis IPA", description=desc, color=discord.Color.teal().value)
+            await send_v2_message(self.bot, ctx.channel.id, [lb_card])
 
 
     @commands.command(name="hangman", aliases=['tebakkata', 'resman'])
     async def hangman_cmd(self, ctx):
-        """Memulai permainan Hangman klasik."""
         if not self.is_channel_allowed('resman', ctx.channel.id):
             return await ctx.send("Permainan Hangman tidak diizinkan di channel ini.")
         if not await self.start_game_check(ctx):
             return
 
         self.session_scores = {}
-        embed = discord.Embed(
+        card = build_v2_card(
             title="🪢 DUNIA HANGMAN (TEBAK KATA)",
             description="Tebak kata rahasia huruf demi huruf!\n\n"
                         "1. Bot menyajikan 10 soal dengan kisi-kisi dan jumlah huruf.\n"
                         "2. Jawab kata lengkapnya sebelum batas waktu 120 detik habis.\n"
                         f"3. Butuh bantuan? Beli via `!bantuanhangman` (Harga: {self.bantuan_price_hangman} RSWN via DM).",
-            color=0x34495e
+            color=0x34495e,
+            footer="Klik Mulai Sekarang untuk memulai!"
         )
         async def on_start():
             try:
@@ -1226,7 +1394,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 await self.end_game_cleanup(ctx.channel.id, ctx.channel, 'hangman')
 
         view = StartGameView(self, ctx.channel.id, ctx.author.id, on_start, timeout=60)
-        await ctx.send(embed=embed, view=view)
+        await send_v2_message(self.bot, ctx.channel.id, [card], view=view)
 
     async def play_hangman(self, ctx):
         game_data = self.active_hangman_games.get(ctx.channel.id)
@@ -1250,15 +1418,18 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
 
         target_word = question['word'].strip()
         hidden = " ".join(["_" for _ in target_word])
-        embed = discord.Embed(
+        fields = [
+            {"name": "🏷️ Kategori", "value": f"`{question.get('category', 'Umum')}`", "inline": True},
+            {"name": "💡 Kisi-kisi", "value": f"_{question.get('clue', 'Tebak kata ini')}_", "inline": True}
+        ]
+        card = build_v2_card(
             title=f"❓ SOAL HANGMAN #{q_num}/{total_q}",
-            description=f"Kategori: **{question.get('category', 'Umum')}**\n"
-                        f"Kisi-kisi: *{question.get('clue', 'Tebak kata ini')}*\n\n"
-                        f"# `{hidden}` ({len(target_word)} Huruf)",
-            color=0x00ff00
+            description=f"# `{hidden}` ({len(target_word)} Huruf)\n\nTebak kata lengkapnya langsung di chat!",
+            fields=fields,
+            color=0x2ecc71,
+            footer="Waktu berpikir: 120 detik"
         )
-        embed.set_footer(text="Waktu berpikir: 120 detik")
-        await ctx.send(embed=embed)
+        await send_v2_message(self.bot, ctx.channel.id, [card])
 
         def check(m):
             return m.channel == ctx.channel and not m.author.bot
@@ -1349,31 +1520,52 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         questions = random.sample(self.siapakah_aku_data, sample_size)
         leaderboard = {}
 
-        await ctx.send(embed=discord.Embed(
+        card = build_v2_card(
             title="🕵️ SESI KUIS 'SIAPA AKU?' DIMULAI!",
             description=f"Akan ada **{sample_size} soal** berturut-turut.\nPetunjuk akan dibuka setiap **10 detik**!",
             color=0x1abc9c
-        ))
+        )
+        await send_v2_message(self.bot, ctx.channel.id, [card])
         await asyncio.sleep(3)
 
         for i, item in enumerate(questions, 1):
             target = item['name'].strip()
             clues = item['clues']
-            embed = discord.Embed(title=f"🕵️ SOAL #{i}/{sample_size}", description=f"Kategori: **{item.get('category', 'Umum')}**", color=0x1abc9c)
-            embed.set_footer(text="Maksimal 2 kali tebakan salah per orang pada setiap soal!")
-            msg = await ctx.send(embed=embed)
+            category = item.get('category', 'Umum')
 
             round_solved = False
             winner = None
             attempts = {}
+            current_message_id = None
 
             for c_idx, clue in enumerate(clues):
                 if round_solved: break
-                embed.add_field(name=f"Petunjuk #{c_idx + 1}", value=f"_{clue}_", inline=False)
-                try:
-                    await msg.edit(embed=embed)
-                except Exception:
-                    pass
+
+                clue_fields = []
+                for prev_i in range(c_idx + 1):
+                    clue_fields.append({
+                        "name": f"🔍 Petunjuk #{prev_i + 1}",
+                        "value": f"_{clues[prev_i]}_",
+                        "inline": False
+                    })
+
+                title = f"🕵️ SIAPA AKU? • SOAL #{i}/{sample_size}"
+                description = f"Kategori: **{category}**\n\nPetunjuk ke-**{c_idx + 1}** dari **{len(clues)}** telah terbuka!"
+                footer = "Maksimal 2 tebakan per orang • Petunjuk berikutnya terbuka setiap 10 detik"
+
+                card = build_v2_card(
+                    title=title,
+                    description=description,
+                    fields=clue_fields,
+                    color=0x3498db,
+                    footer=footer
+                )
+                if current_message_id:
+                    await edit_v2_message(self.bot, ctx.channel.id, current_message_id, [card])
+                else:
+                    resp = await send_v2_message(self.bot, ctx.channel.id, [card])
+                    if resp and isinstance(resp, dict) and "id" in resp:
+                        current_message_id = int(resp["id"])
 
                 def check(m):
                     return m.channel == ctx.channel and not m.author.bot
@@ -1421,13 +1613,36 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
 
         if leaderboard:
             sorted_lb = sorted(leaderboard.items(), key=lambda x: x[1], reverse=True)
+            top_users_data = []
+            for n, (u_name, s) in enumerate(sorted_lb[:3], 1):
+                top_users_data.append({
+                    "name": u_name,
+                    "rank": n,
+                    "score_str": f"{s} Poin",
+                    "sub_str": "Siapa Aku?"
+                })
+            try:
+                from cogs.card_generator import generate_top3_podium_card, clean_display_text
+                card_buf = await generate_top3_podium_card(
+                    guild=ctx.guild,
+                    top_users_data=top_users_data,
+                    title_tag="SIAPA AKU TOP 3",
+                    subtitle_text=f"Papan Skor Siapa Aku • {clean_display_text(ctx.guild.name, fallback='Server')}",
+                    bot_name=(self.bot.user.display_name if self.bot.user else "ハキムラーマン"),
+                    footer_system="Mini Games • Siapa Aku"
+                )
+                if card_buf:
+                    file = discord.File(fp=card_buf, filename="siapa_aku_top3.png")
+                    await ctx.send(file=file)
+            except Exception:
+                pass
             desc = "\n".join([f"**#{n}.** {u}: **{s}** poin" for n, (u, s) in enumerate(sorted_lb, 1)])
-            await ctx.send(embed=discord.Embed(title="🏆 Papan Skor Akhir 'Siapa Aku?'", description=desc, color=0xffd700))
+            lb_card = build_v2_card(title="🏆 Papan Skor Akhir 'Siapa Aku?'", description=desc, color=0xffd700)
+            await send_v2_message(self.bot, ctx.channel.id, [lb_card])
 
 
     @commands.command(name="hitungcepat", aliases=['math', 'hitung', 'matematika'])
     async def hitung_cepat_cmd(self, ctx):
-        """Adu kecepatan perhitungan matematika dasar."""
         if not await self.start_game_check(ctx):
             return
         try:
@@ -1443,24 +1658,25 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         problems = random.sample(self.hitung_cepat_data, sample_size)
         leaderboard = {}
 
-        await ctx.send(embed=discord.Embed(
+        card_start = build_v2_card(
             title="⚡ SESI HITUNG CEPAT DIMULAI!",
             description=f"Akan ada **{sample_size} soal** aritmatika! Siapa paling cepat dan tepat menjawab dialah juaranya!",
             color=0xe74c3c
-        ))
+        )
+        await send_v2_message(self.bot, ctx.channel.id, [card_start])
         await asyncio.sleep(3)
 
         for i, item in enumerate(problems, 1):
             problem = item['problem']
             answer_str = str(item['answer']).strip()
 
-            embed = discord.Embed(
+            card_problem = build_v2_card(
                 title=f"🧮 SOAL MATEMATIKA #{i}/{sample_size}",
                 description=f"# `{problem} = ?`",
-                color=0xe74c3c
+                color=0xe74c3c,
+                footer="Batas waktu: 15 detik"
             )
-            embed.set_footer(text="Batas waktu: 15 detik")
-            await ctx.send(embed=embed)
+            await send_v2_message(self.bot, ctx.channel.id, [card_problem])
 
             def check(m):
                 return m.channel == ctx.channel and not m.author.bot
@@ -1495,13 +1711,36 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
 
         if leaderboard:
             sorted_lb = sorted(leaderboard.items(), key=lambda x: x[1], reverse=True)
+            top_users_data = []
+            for n, (u_name, s) in enumerate(sorted_lb[:3], 1):
+                top_users_data.append({
+                    "name": u_name,
+                    "rank": n,
+                    "score_str": f"{s} Benar",
+                    "sub_str": "Hitung Cepat"
+                })
+            try:
+                from cogs.card_generator import generate_top3_podium_card, clean_display_text
+                card_buf = await generate_top3_podium_card(
+                    guild=ctx.guild,
+                    top_users_data=top_users_data,
+                    title_tag="HITUNG CEPAT TOP 3",
+                    subtitle_text=f"Papan Skor Hitung Cepat • {clean_display_text(ctx.guild.name, fallback='Server')}",
+                    bot_name=(self.bot.user.display_name if self.bot.user else "ハキムラーマン"),
+                    footer_system="Mini Games • Hitung Cepat"
+                )
+                if card_buf:
+                    file = discord.File(fp=card_buf, filename="hitung_cepat_top3.png")
+                    await ctx.send(file=file)
+            except Exception:
+                pass
             desc = "\n".join([f"**#{n}.** {u}: **{s}** soal benar" for n, (u, s) in enumerate(sorted_lb, 1)])
-            await ctx.send(embed=discord.Embed(title="🏆 Papan Skor Hitung Cepat", description=desc, color=0x2ecc71))
+            lb_card = build_v2_card(title="🏆 Papan Skor Hitung Cepat", description=desc, color=0x2ecc71)
+            await send_v2_message(self.bot, ctx.channel.id, [lb_card])
 
 
     @commands.command(name="pernahgak", aliases=['nhie', 'pernah'])
     async def pernah_gak_cmd(self, ctx):
-        """Permainan kejujuran Never Have I Ever via tombol interaktif."""
         if not await self.start_game_check(ctx):
             return
         try:
@@ -1517,29 +1756,31 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         questions = random.sample(self.pernah_gak_pernah_data, sample_size)
         session_results = []
 
-        await ctx.send(embed=discord.Embed(
+        card_start = build_v2_card(
             title="🤔 PERMAINAN 'PERNAH GAK PERNAH' DIMULAI!",
             description="Akan ada 10 pernyataan! Jawab sejujur-jujurnya menggunakan tombol interaktif!",
             color=0xf1c40f
-        ))
+        )
+        await send_v2_message(self.bot, ctx.channel.id, [card_start])
         await asyncio.sleep(3)
 
         for i, statement in enumerate(questions, 1):
-            embed = discord.Embed(
+            card_stmt = build_v2_card(
                 title=f"❓ PERNYATAAN #{i}/{sample_size}",
                 description=f"# 💬 _{statement}_\n\nKlik tombol di bawah untuk menjawab!",
-                color=0xf1c40f
+                color=0xf1c40f,
+                footer="Waktu menjawab: 15 detik"
             )
-            embed.set_footer(text="Waktu menjawab: 15 detik")
             view = PernahGakView(ctx.guild.members, timeout=15)
-            msg = await ctx.send(embed=embed, view=view)
+            msg = await send_v2_message(self.bot, ctx.channel.id, [card_stmt], view=view)
             await asyncio.sleep(15)
 
             for child in view.children: child.disabled = True
-            try:
-                await msg.edit(view=view)
-            except Exception:
-                pass
+            if msg and isinstance(msg, dict) and "id" in msg:
+                try:
+                    await edit_v2_message(self.bot, ctx.channel.id, int(msg["id"]), [card_stmt], view=view)
+                except Exception:
+                    pass
 
             pernah_names = []
             gak_pernah_names = []
@@ -1563,12 +1804,12 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             summary_desc += f"  ✅ Pernah ({len(res['pernah'])}): {', '.join(res['pernah']) if res['pernah'] else '-'}\n"
             summary_desc += f"  ❌ Gak Pernah ({len(res['gak_pernah'])}): {', '.join(res['gak_pernah']) if res['gak_pernah'] else '-'}\n\n"
 
-        summary_embed = discord.Embed(
+        summary_card = build_v2_card(
             title="📊 RINGKASAN KEJUJURAN 'PERNAH GAK PERNAH'",
             description=summary_desc[:4000],
             color=0x3498db
         )
-        await ctx.send(embed=summary_embed)
+        await send_v2_message(self.bot, ctx.channel.id, [summary_card])
 
 
     @commands.command(name="matamata", aliases=['spyfall', 'spy'])
@@ -1614,7 +1855,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             await ctx.send(f"⚠️ Gagal mengirimkan DM ke: {', '.join(failed_dms)}. Pastikan DM terbuka!")
             return
 
-        embed = discord.Embed(
+        card = build_v2_card(
             title="🎭 GAME MATA-MATA DIMULAI!",
             description="Peran dan lokasi telah dikirimkan via DM.\n\n"
                         "• **Warga:** Cari siapa yang berpura-pura tahu lokasi.\n"
@@ -1622,7 +1863,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                         "Kalian punya **5 menit** untuk berdiskusi. Gunakan `!tuduh @user` jika mencurigai seseorang!",
             color=0x7289da
         )
-        await ctx.send(embed=embed)
+        await send_v2_message(self.bot, ctx.channel.id, [card])
         await asyncio.sleep(300)
 
         if ctx.channel.id in self.spyfall_game_states and not self.spyfall_game_states[ctx.channel.id]['game_ended']:
@@ -1637,7 +1878,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
 
     @commands.command(name="tuduh")
     async def tuduh_cmd(self, ctx, member: discord.Member):
-        """Menuduh seorang pemain sebagai mata-mata dalam sesi game Mata-Mata."""
         if ctx.channel.id not in self.spyfall_game_states:
             return await ctx.send("Game Mata-Mata belum dimulai di channel ini.", ephemeral=True)
         game = self.spyfall_game_states[ctx.channel.id]
@@ -1650,22 +1890,25 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             return await ctx.send("Sedang ada voting berlangsung. Tunggu sebentar.", ephemeral=True)
 
         game['vote_in_progress'] = True
-        vote_embed = discord.Embed(
+        vote_card = build_v2_card(
             title="🗳️ VOTING PENUDUHAN MATA-MATA",
             description=f"{ctx.author.mention} menuduh {member.mention} sebagai mata-mata!\n\n"
                         f"Setuju (✅) atau Tolak (❌)? Voting berakhir dalam 30 detik.",
-            color=discord.Color.red()
+            color=discord.Color.red().value
         )
-        msg = await ctx.send(embed=vote_embed)
-        try:
-            await msg.add_reaction("✅")
-            await msg.add_reaction("❌")
-        except Exception:
-            pass
+        msg = await send_v2_message(self.bot, ctx.channel.id, [vote_card])
+        msg_id = int(msg["id"]) if msg and isinstance(msg, dict) and "id" in msg else getattr(msg, "id", None)
+        if msg_id:
+            try:
+                fetched_msg = await ctx.channel.fetch_message(msg_id)
+                await fetched_msg.add_reaction("✅")
+                await fetched_msg.add_reaction("❌")
+            except Exception:
+                pass
 
         await asyncio.sleep(30)
         try:
-            cached = await ctx.channel.fetch_message(msg.id)
+            cached = await ctx.channel.fetch_message(msg_id)
             yes_count, no_count = 0, 0
             for r in cached.reactions:
                 if str(r.emoji) == "✅": yes_count = r.count - 1
@@ -1689,7 +1932,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
 
     @commands.command(name="ungkap_lokasi", aliases=['ulokasi'])
     async def ungkap_lokasi_cmd(self, ctx, *, guessed_location: str):
-        """Mata-mata mencoba menebak lokasi rahasia."""
         if ctx.channel.id not in self.spyfall_game_states:
             return await ctx.send("Game Mata-Mata belum dimulai.", ephemeral=True)
         game = self.spyfall_game_states[ctx.channel.id]
@@ -1713,7 +1955,6 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
 
     @commands.command(name="kuismusik", aliases=['startquiz', 'musicquiz'])
     async def kuis_musik_cmd(self, ctx):
-        """Memulai Kuis Trivia Musik di Voice Channel."""
         if not self.is_channel_allowed('startquiz', ctx.channel.id):
             return await ctx.send("Kuis Musik tidak diizinkan di channel ini.")
         if not await self.start_game_check(ctx):
@@ -1757,12 +1998,12 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 is_bonus = num >= 12
                 correct_this_round = []
                 view = QuizView(q["options"], q["answer"], participants, make_callback(q, is_bonus, correct_this_round))
-                embed = discord.Embed(
+                card_q = build_v2_card(
                     title=f"🎤 SOAL MUSIK #{num}/{sample_size}{' (BONUS)' if is_bonus else ''}",
                     description=f"# {q['question']}",
-                    color=discord.Color.gold() if is_bonus else discord.Color.blurple()
+                    color=discord.Color.gold().value if is_bonus else 0x5865f2
                 )
-                await ctx.send(embed=embed, view=view)
+                await send_v2_message(self.bot, ctx.channel.id, [card_q], view=view)
                 await view.wait()
                 if is_bonus: bonus_winners.extend(correct_this_round)
                 await asyncio.sleep(4)
@@ -1771,20 +2012,46 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             self.bank_data = load_json_from_root('data/bank_data.json')
             self.level_data = load_json_from_root('data/level_data.json')
             g_id = str(ctx.guild.id)
-            lb_embed = discord.Embed(title="🏆 LEADERBOARD KUIS MUSIK", color=0x1db954)
+            lb_fields = []
 
             rewards = [(50, 150), (30, 100), (20, 50)]
+            top_users_data = []
             for rank, (u_id, sc) in enumerate(sorted_scores[:3]):
                 u_obj = self.bot.get_user(int(u_id))
                 name = u_obj.display_name if u_obj else f"User ({u_id})"
                 exp_r, rsw_r = rewards[rank] if rank < len(rewards) else (10, 20)
                 self.bank_data.setdefault(u_id, {"balance": 0, "debt": 0})['balance'] += rsw_r
                 self.level_data.setdefault(g_id, {}).setdefault(u_id, {"exp": 0, "level": 1})['exp'] += exp_r
-                lb_embed.add_field(name=f"#{rank + 1}. {name}", value=f"Skor: **{sc}** (+{rsw_r} RSWN & +{exp_r} EXP)", inline=False)
+                lb_fields.append({"name": f"#{rank + 1}. {name}", "value": f"Skor: **{sc}** (+{rsw_r} RSWN & +{exp_r} EXP)"})
+                top_users_data.append({
+                    "member": u_obj,
+                    "name": name,
+                    "rank": rank + 1,
+                    "score_str": f"{sc} Poin",
+                    "sub_str": f"+{rsw_r} RSWN"
+                })
+
+            if top_users_data:
+                try:
+                    from cogs.card_generator import generate_top3_podium_card, clean_display_text
+                    card_buf = await generate_top3_podium_card(
+                        guild=ctx.guild,
+                        top_users_data=top_users_data,
+                        title_tag="KUIS MUSIK TOP 3",
+                        subtitle_text=f"Leaderboard Kuis Musik • {clean_display_text(ctx.guild.name, fallback='Server')}",
+                        bot_name=(self.bot.user.display_name if self.bot.user else "ハキムラーマン"),
+                        footer_system="Mini Games • Kuis Musik"
+                    )
+                    if card_buf:
+                        file = discord.File(fp=card_buf, filename="kuis_musik_top3.png")
+                        await ctx.send(file=file)
+                except Exception:
+                    pass
 
             save_json_to_root(self.bank_data, 'data/bank_data.json')
             save_json_to_root(self.level_data, 'data/level_data.json')
-            await ctx.send(embed=lb_embed)
+            lb_card = build_v2_card(title="🏆 LEADERBOARD KUIS MUSIK", fields=lb_fields, color=0x1db954)
+            await send_v2_message(self.bot, ctx.channel.id, [lb_card])
 
         finally:
             await self.end_game_cleanup(ctx.channel.id, ctx.channel, 'music')
@@ -1793,21 +2060,76 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
     async def display_leaderboard(self, ctx, game_title):
         if not self.session_scores: return
         sorted_scores = sorted(self.session_scores.values(), key=lambda x: x.get("score", x.get("correct", 0)), reverse=True)
-        embed = discord.Embed(title=f"🏆 Papan Peringkat Sesi {game_title}", color=discord.Color.gold())
+        top_users_data = []
+        for i, data in enumerate(sorted_scores[:3]):
+            user = data['user']
+            score = data.get('score', data.get('total_rsw', 0))
+            correct = data.get('correct', 0)
+            top_users_data.append({
+                "member": user,
+                "name": user.display_name,
+                "rank": i + 1,
+                "score_str": f"+{score:,} RSWN",
+                "sub_str": f"Benar: {correct} Soal"
+            })
+        if top_users_data:
+            try:
+                from cogs.card_generator import generate_top3_podium_card, clean_display_text
+                card_buf = await generate_top3_podium_card(
+                    guild=ctx.guild,
+                    top_users_data=top_users_data,
+                    title_tag=f"{clean_display_text(game_title, fallback='GAME').upper()} TOP 3",
+                    subtitle_text=f"Papan Skor Sesi Permainan {clean_display_text(game_title, fallback='Game')} • {clean_display_text(ctx.guild.name, fallback='Server')}",
+                    bot_name=(self.bot.user.display_name if self.bot.user else "ハキムラーマン"),
+                    footer_system=f"Mini Games • Sesi {clean_display_text(game_title, fallback='Game')}"
+                )
+                if card_buf:
+                    file = discord.File(fp=card_buf, filename="minigames_top3.png")
+                    await ctx.send(file=file)
+            except Exception:
+                pass
+        lb_fields = []
         for i, data in enumerate(sorted_scores[:5]):
             user = data['user']
             score = data.get('score', data.get('total_rsw', 0))
-            embed.add_field(
-                name=f"#{i + 1}. {user.display_name}",
-                value=f"💰 **Hadiah RSWN:** +{score}\n✅ **Benar:** {data.get('correct', 0)}\n❌ **Salah:** {data.get('wrong', 0)}",
-                inline=False
-            )
-        await ctx.send(embed=embed)
+            lb_fields.append({
+                "name": f"#{i + 1}. {user.display_name}",
+                "value": f"💰 **Hadiah RSWN:** +{score}\n✅ **Benar:** {data.get('correct', 0)}\n❌ **Salah:** {data.get('wrong', 0)}"
+            })
+        card = build_v2_card(title=f"🏆 Papan Peringkat Sesi {game_title}", fields=lb_fields, color=discord.Color.gold().value)
+        await send_v2_message(self.bot, ctx.channel.id, [card])
 
+
+    @commands.command(name="tekateki", aliases=['riddle', 'teka-teki', 'tekatekiharian'])
+    async def tekateki_cmd(self, ctx):
+        if not self.tekateki_harian_data:
+            return await ctx.send("Database teka-teki harian belum tersedia.")
+        if not self.daily_puzzle:
+            self.daily_puzzle = random.choice(self.tekateki_harian_data)
+            self.daily_puzzle_solvers.clear()
+
+        q = self.daily_puzzle
+        q_text = q.get('question') or q.get('riddle', 'Teka-teki misterius')
+        title = "🧩 TEKA-TEKI HARIAN SERVER"
+        description = f"# 💭 _{q_text}_\n\nKetik **`!jawab <tebakan>`** untuk memecahkan teka-teki ini!"
+        fields = [
+            {"name": "🏷️ Kategori", "value": f"`{q.get('category', 'Logika & Riddle')}`", "inline": True},
+            {"name": "💡 Kisi-kisi", "value": f"_{q.get('clue', 'Pikirkan baik-baik!')}_", "inline": True},
+            {"name": "🏆 Pemenang Hari Ini", "value": f"{len(self.daily_puzzle_solvers)} Member Berhasil", "inline": True}
+        ]
+        footer = "Teka-teki harian • Reward: +50 RSWN & +100 EXP bagi yang berhasil memecahkan"
+
+        card = build_v2_card(
+            title=title,
+            description=description,
+            fields=fields,
+            color=0xf1c40f,
+            footer=footer
+        )
+        await send_v2_message(self.bot, ctx.channel.id, [card])
 
     @commands.command(name="jawab")
     async def jawab_teka_teki_cmd(self, ctx, *, user_answer: str):
-        """Menjawab Teka-Teki Harian bot."""
         if not self.daily_puzzle:
             return await ctx.send("Belum ada Teka-Teki Harian yang aktif untuk hari ini.")
         if ctx.author.id in self.daily_puzzle_solvers:
@@ -1848,10 +2170,9 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         data = load_json_from_root(self.DONATION_BUTTONS_FILE)
         if not data:
             return await ctx.send("Tidak ada tombol donasi yang terdaftar.")
-        embed = discord.Embed(title="💸 Daftar Tombol Donasi", color=discord.Color.blue())
-        for i, btn in enumerate(data):
-            embed.add_field(name=f"Tombol #{i+1}", value=f"Label: `{btn['label']}`\nURL: <{btn['url']}>", inline=False)
-        await ctx.send(embed=embed)
+        fields = [{"name": f"Tombol #{i+1}", "value": f"Label: `{btn['label']}`\nURL: <{btn['url']}>"} for i, btn in enumerate(data)]
+        card = build_v2_card(title="💸 Daftar Tombol Donasi", fields=fields, color=discord.Color.blue().value)
+        await send_v2_message(self.bot, ctx.channel.id, [card])
 
     @commands.command(name="removedonasibtn")
     @commands.has_permissions(administrator=True)

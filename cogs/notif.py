@@ -73,7 +73,6 @@ def _extract_youtube_info(url, cookiefile_path=None):
     import json
     import re
 
-    # 1. Direct HTML scrape via ytInitialPlayerResponse (fast, no heavy dependencies, reliable for video/premiere/live)
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
         r_html = requests.get(clean_url, headers=headers, timeout=6)
@@ -102,7 +101,6 @@ def _extract_youtube_info(url, cookiefile_path=None):
     except Exception:
         pass
 
-    # 2. oEmbed check
     if not title or not channel_name:
         try:
             r = requests.get(f"https://www.youtube.com/oembed?url={clean_url}&format=json", timeout=5)
@@ -122,7 +120,6 @@ def _extract_youtube_info(url, cookiefile_path=None):
         except Exception:
             pass
 
-    # 3. pytubefix fallback
     if not title:
         try:
             yt = pytubefix.YouTube(clean_url, client='WEB')
@@ -138,7 +135,6 @@ def _extract_youtube_info(url, cookiefile_path=None):
         except Exception:
             pass
 
-    # 4. yt-dlp fallback (flat extraction, without oauth2 username)
     if not title:
         try:
             ydl_opts = {
