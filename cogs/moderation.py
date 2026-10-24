@@ -690,12 +690,19 @@ class DynamicRoleSelect(discord.ui.Select):
 
         try:
             if chosen_role in member.roles:
-                await member.remove_roles(chosen_role, reason="Role Panel Copot Role")
-                embed = discord.Embed(
-                    title="➖ Role Dilepas",
-                    description=f"Role **{chosen_role.name}** berhasil dilepas dari akunmu.",
-                    color=0xFEE75C
-                )
+                if is_exclusive:
+                    embed = discord.Embed(
+                        title="ℹ️ Role Sudah Terpasang",
+                        description=f"Kamu sudah memiliki role **{chosen_role.name}**!\n\n*(Role kategori ini wajib dipilih salah satu. Jika ingin berganti, silakan pilih role opsi lain)*",
+                        color=0x5865F2
+                    )
+                else:
+                    await member.remove_roles(chosen_role, reason="Role Panel Copot Role")
+                    embed = discord.Embed(
+                        title="➖ Role Dilepas",
+                        description=f"Role **{chosen_role.name}** berhasil dilepas dari akunmu.",
+                        color=0xFEE75C
+                    )
             else:
                 if is_exclusive:
                     other_roles = []
@@ -816,12 +823,19 @@ class DynamicRoleButton(discord.ui.Button):
 
         try:
             if role in member.roles:
-                await member.remove_roles(role, reason="Role Panel Copot Role")
-                embed = discord.Embed(
-                    title="➖ Role Dilepas",
-                    description=f"Role **{role.name}** berhasil dilepas dari akunmu.",
-                    color=0xFEE75C
-                )
+                if is_exclusive:
+                    embed = discord.Embed(
+                        title="ℹ️ Role Sudah Terpasang",
+                        description=f"Kamu sudah memiliki role **{role.name}**!\n\n*(Role kategori ini wajib dipilih salah satu. Jika ingin berganti, silakan klik role opsi lain)*",
+                        color=0x5865F2
+                    )
+                else:
+                    await member.remove_roles(role, reason="Role Panel Copot Role")
+                    embed = discord.Embed(
+                        title="➖ Role Dilepas",
+                        description=f"Role **{role.name}** berhasil dilepas dari akunmu.",
+                        color=0xFEE75C
+                    )
             else:
                 if is_exclusive:
                     panel_roles = getattr(self.view, "roles_data", {})
@@ -2367,6 +2381,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         self.spam_history = {}
         self.cross_channel_spam_history = {}
         self._recent_boosters = {}
+        self.active_mass_role_tasks = {}
         
         self.reminder_channel_id = int(os.getenv("REMINDER_CHANNEL_ID", 1379762287149187162)) if os.getenv("REMINDER_CHANNEL_ID") else 1379762287149187162
         self.male_role_id = int(os.getenv("MALE_ROLE_ID", 1385246612288311326)) if os.getenv("MALE_ROLE_ID") else 1385246612288311326
@@ -2452,6 +2467,9 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
     def cog_unload(self):
         self.update_panel_task.cancel()
         self.cleanup_spam_history.cancel()
+        for task in list(self.active_mass_role_tasks.values()):
+            if not task.done():
+                task.cancel()
 
     async def _create_welcome_card(self, member: discord.Member, title: str) -> io.BytesIO:
         if generate_official_member_card:
@@ -5116,6 +5134,221 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
             color=self.color_success
         )
         await ctx.send(embed=embed, ephemeral=True)
+
+    def _make_mass_role_progress_bar(self, current: int, total: int, length: int = 16) -> str:
+        if total <= 0:
+            return f"`[{'█' * length}]` 100.0%"
+        pct = min(1.0, max(0.0, current / total))
+        filled = int(round(length * pct))
+        bar = '█' * filled + '░' * (length - filled)
+        return f"`[{bar}]` {pct * 100:.1f}%"
+
+    async def _run_mass_give_role(self, ctx: commands.Context, role: discord.Role, targets: list[discord.Member], status_msg: discord.Message):
+        guild_id = ctx.guild.id
+        total = len(targets)
+        processed = 0
+        success = 0
+        failed = 0
+        skipped = 0
+        start_time = time.time()
+        last_update_time = time.time()
+
+        try:
+            for member in targets:
+                if role in member.roles:
+                    skipped += 1
+                    processed += 1
+                    continue
+
+                try:
+                    await member.add_roles(role, reason=f"Mass Give Role by Bot Owner ({ctx.author})")
+                    success += 1
+                except discord.HTTPException as e:
+                    if e.status == 429:
+                        retry_after = getattr(e, "retry_after", 5.0) or 5.0
+                        await asyncio.sleep(retry_after + 1.0)
+                        try:
+                            await member.add_roles(role, reason=f"Mass Give Role by Bot Owner ({ctx.author})")
+                            success += 1
+                        except Exception:
+                            failed += 1
+                    else:
+                        failed += 1
+                except Exception:
+                    failed += 1
+
+                processed += 1
+
+                now = time.time()
+                if now - last_update_time >= 12.0:
+                    last_update_time = now
+                    elapsed = now - start_time
+                    rate = processed / elapsed if elapsed > 0 else 1
+                    remaining = total - processed
+                    eta_sec = int(remaining / rate) if rate > 0 else 0
+                    eta_str = str(timedelta(seconds=eta_sec))
+
+                    embed = discord.Embed(
+                        title="👑 Mass Give Role — Sedang Berjalan...",
+                        color=0x5865F2,
+                        timestamp=discord.utils.utcnow()
+                    )
+                    embed.description = (
+                        f"**Role:** {role.mention} (`{role.name}`)\n"
+                        f"**Target Member Manusia:** `{total}` member\n\n"
+                        f"{self._make_mass_role_progress_bar(processed, total)}\n\n"
+                        f"⏳ **Diproses:** `{processed}/{total}`\n"
+                        f"✅ **Berhasil:** `{success}`\n"
+                        f"⏭️ **Dilewati (Sudah Punya):** `{skipped}`\n"
+                        f"❌ **Gagal:** `{failed}`\n"
+                        f"⏱️ **Estimasi Selesai (ETA):** `{eta_str}`"
+                    )
+                    embed.set_footer(text="Gunakan /cancelmassrole untuk membatalkan proses kapan saja.")
+                    try:
+                        await status_msg.edit(embed=embed)
+                    except Exception:
+                        pass
+
+                await asyncio.sleep(0.35)
+
+            elapsed_total = int(time.time() - start_time)
+            dur_str = str(timedelta(seconds=elapsed_total))
+            embed = discord.Embed(
+                title="🎉 Mass Give Role — Selesai!",
+                color=0x57F287,
+                timestamp=discord.utils.utcnow()
+            )
+            embed.description = (
+                f"**Role:** {role.mention} (`{role.name}`)\n"
+                f"**Target Member Manusia:** `{total}` member\n\n"
+                f"{self._make_mass_role_progress_bar(total, total)}\n\n"
+                f"✅ **Berhasil Diberikan:** `{success}` member\n"
+                f"⏭️ **Dilewati:** `{skipped}` member\n"
+                f"❌ **Gagal:** `{failed}` member\n"
+                f"⏱️ **Total Waktu Pengerjaan:** `{dur_str}`"
+            )
+            embed.set_footer(text="Proses pembagian role massal selesai sepenuhnya.")
+            try:
+                await status_msg.edit(embed=embed)
+            except Exception:
+                pass
+        except asyncio.CancelledError:
+            embed = discord.Embed(
+                title="🛑 Mass Give Role — Dibatalkan!",
+                color=0xED4245,
+                timestamp=discord.utils.utcnow()
+            )
+            embed.description = (
+                f"**Role:** {role.mention} (`{role.name}`)\n"
+                f"Proses pembagian role massal telah dibatalkan oleh Owner.\n\n"
+                f"⏳ **Terakhir Diproses:** `{processed}/{total}`\n"
+                f"✅ **Berhasil Diberikan:** `{success}`\n"
+                f"❌ **Gagal/Dilewati:** `{failed + skipped}`\n"
+                f"⏸️ **Sisa Dibatalkan:** `{total - processed}`"
+            )
+            embed.set_footer(text="Operasi mass role dihentikan.")
+            try:
+                await status_msg.edit(embed=embed)
+            except Exception:
+                pass
+            raise
+        finally:
+            self.active_mass_role_tasks.pop(guild_id, None)
+
+    @commands.hybrid_command(
+        name="massgiverole",
+        aliases=["massrole", "giveroleall"],
+        description="Bagikan role ke seluruh anggota manusia di server secara aman tanpa lag (Khusus Bot Owner)"
+    )
+    @app_commands.describe(role="Role yang ingin dibagikan ke seluruh member manusia")
+    async def massgiverole(self, ctx: commands.Context, role: discord.Role):
+        if not ctx.guild:
+            return await ctx.send("❌ Perintah ini hanya dapat dijalankan di dalam server.", ephemeral=True)
+
+        if not await self.bot.is_owner(ctx.author):
+            return await ctx.send("❌ Perintah ini khusus untuk **Bot Owner** demi keamanan server.", ephemeral=True)
+
+        bot_member = ctx.guild.me or ctx.guild.get_member(self.bot.user.id)
+        if not bot_member or not bot_member.guild_permissions.manage_roles:
+            return await ctx.send("❌ Bot tidak memiliki izin **Manage Roles** di server ini.", ephemeral=True)
+
+        if role >= bot_member.top_role:
+            return await ctx.send(f"❌ Posisi role {role.mention} berada di atas atau setara dengan role tertinggi bot. Naikkan role bot terlebih dahulu.", ephemeral=True)
+
+        if role.managed:
+            return await ctx.send(f"❌ Role {role.mention} adalah role terkelola (integrasi/bot/booster) dan tidak dapat diberikan secara manual.", ephemeral=True)
+
+        guild_id = ctx.guild.id
+        if guild_id in self.active_mass_role_tasks and not self.active_mass_role_tasks[guild_id].done():
+            return await ctx.send("⚠️ Masih ada proses mass role yang sedang berjalan di server ini. Gunakan `/cancelmassrole` jika ingin membatalkannya.", ephemeral=True)
+
+        await ctx.defer(ephemeral=False)
+
+        init_embed = discord.Embed(
+            title="🔍 Menyiapkan Mass Give Role...",
+            description="Sedang memindai dan menyinkronkan daftar anggota server...",
+            color=0x5865F2
+        )
+        status_msg = await ctx.send(embed=init_embed)
+
+        try:
+            if not ctx.guild.chunked:
+                await ctx.guild.chunk()
+        except Exception:
+            pass
+
+        target_members = [m for m in ctx.guild.members if not m.bot and role not in m.roles]
+        total_targets = len(target_members)
+
+        if total_targets == 0:
+            done_embed = discord.Embed(
+                title="ℹ️ Tidak Ada Target Member",
+                description=f"Semua anggota manusia di server sudah memiliki role {role.mention} atau tidak ditemukan member manusia yang belum punya role tersebut.",
+                color=0xFEE75C
+            )
+            return await status_msg.edit(embed=done_embed)
+
+        est_time_sec = int(total_targets * 0.4)
+        est_str = str(timedelta(seconds=est_time_sec))
+
+        start_embed = discord.Embed(
+            title="👑 Mass Give Role — Memulai Proses",
+            color=0x5865F2,
+            timestamp=discord.utils.utcnow()
+        )
+        start_embed.description = (
+            f"**Role:** {role.mention} (`{role.name}`)\n"
+            f"**Target Member Manusia:** `{total_targets}` member\n"
+            f"*(Bot dan member yang sudah memiliki role otomatis dilewati)*\n\n"
+            f"{self._make_mass_role_progress_bar(0, total_targets)}\n\n"
+            f"⏳ **Status:** Memulai pembagian role secara bertahap...\n"
+            f"⏱️ **Estimasi Durasi:** ± `{est_str}`"
+        )
+        start_embed.set_footer(text="Gunakan /cancelmassrole untuk membatalkan proses kapan saja.")
+        await status_msg.edit(embed=start_embed)
+
+        task = asyncio.create_task(self._run_mass_give_role(ctx, role, target_members, status_msg))
+        self.active_mass_role_tasks[guild_id] = task
+
+    @commands.hybrid_command(
+        name="cancelmassrole",
+        aliases=["stopmassrole"],
+        description="Batalkan proses pembagian role massal yang sedang berjalan (Khusus Bot Owner)"
+    )
+    async def cancelmassrole(self, ctx: commands.Context):
+        if not ctx.guild:
+            return await ctx.send("❌ Perintah ini hanya dapat dijalankan di dalam server.", ephemeral=True)
+
+        if not await self.bot.is_owner(ctx.author):
+            return await ctx.send("❌ Perintah ini khusus untuk **Bot Owner**.", ephemeral=True)
+
+        guild_id = ctx.guild.id
+        task = self.active_mass_role_tasks.get(guild_id)
+        if not task or task.done():
+            return await ctx.send("ℹ️ Tidak ada proses mass role yang sedang berjalan di server ini.", ephemeral=True)
+
+        task.cancel()
+        return await ctx.send("🛑 Permintaan pembatalan proses mass role berhasil dikirim.", ephemeral=True)
 
 
     @commands.hybrid_command(name="ticket", aliases=["tiket", "setupticket"], description="Buka panel konfigurasi atau pasang panel tiket bantuan")
