@@ -334,6 +334,9 @@ async def on_message(message):
         lower = message.content.strip().lower()
         if lower.startswith(("!clear", "!cleardm", "!purge", "!reset", "!hapus", "clear", "cleardm")):
             return
+    gemini_cog = bot.get_cog("Cyber Defense & AI Raka")
+    if gemini_cog and hasattr(gemini_cog, "is_ai_trigger") and gemini_cog.is_ai_trigger(message):
+        return
     await bot.process_commands(message)
 
 @bot.event
@@ -705,16 +708,26 @@ async def on_command_error(ctx, error):
         if not invoked:
             return
         gemini_cog = ctx.bot.get_cog("Cyber Defense & AI Raka")
-        if gemini_cog:
-            if invoked in ["ai", "tanya", "gemini", "chat", "ask"] or (ctx.channel and ctx.channel.id in getattr(gemini_cog, "active_sessions", {})):
-                return
+        if gemini_cog and hasattr(gemini_cog, "is_ai_trigger") and gemini_cog.is_ai_trigger(ctx.message):
+            return
+        conversational_starters = {
+            "ini", "itu", "apa", "apakah", "siapa", "siapakah", "kenapa", "mengapa",
+            "bagaimana", "gimana", "kapan", "dimana", "kemana", "dari", "bisa", "tolong",
+            "coba", "halo", "hai", "woi", "bro", "bang", "min", "kak", "kamu", "lu", "lo",
+            "gue", "gw", "saya", "aku", "ada", "mau", "lagi", "udah", "sudah", "belum",
+            "jangan", "kok", "masa", "bener", "tau", "tahu", "cerita", "jelaskan", "buatkan",
+            "tuliskan", "how", "what", "why", "when", "who", "where", "can", "could", "is",
+            "are", "tell", "explain", "ai", "tanya", "gemini", "chat", "ask"
+        }
+        if invoked in conversational_starters or len(invoked) <= 2:
+            return
         all_cmds = set()
         for cmd in ctx.bot.commands:
             if not cmd.hidden:
                 all_cmds.add(cmd.name.lower())
                 for alias in cmd.aliases:
                     all_cmds.add(alias.lower())
-        matches = difflib.get_close_matches(invoked, list(all_cmds), n=3, cutoff=0.55)
+        matches = difflib.get_close_matches(invoked, list(all_cmds), n=3, cutoff=0.70)
         embed = discord.Embed(
             title="🔍 Perintah Tidak Ditemukan",
             color=discord.Color.orange()

@@ -519,58 +519,38 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
         self.cleanup_task.cancel()
 
     async def deep_clean_ghost_channels(self):
-        for guild_id_str, config in list(self.guild_config.items()):
-            if not isinstance(config, dict):
-                continue
-            target_cat_id = config.get('target_category_id')
-            trigger_vc_id = config.get('trigger_vc_id')
-            if not target_cat_id:
-                continue
-
-            try:
-                guild = self.bot.get_guild(int(guild_id_str))
-                if not guild:
-                    continue
-                category = guild.get_channel(int(target_cat_id))
-                if not category or not isinstance(category, discord.CategoryChannel):
-                    continue
-
-                for vc in list(category.voice_channels):
-                    if trigger_vc_id and vc.id == int(trigger_vc_id):
-                        continue
-                    humans = [m for m in vc.members if not m.bot]
-                    vc_id_str = str(vc.id)
-                    if len(humans) == 0:
-                        try:
-                            await vc.delete(reason="Pembersihan otomatis: channel suara sementara kosong.")
-                        except (discord.NotFound, discord.Forbidden):
-                            pass
-                        except Exception:
-                            pass
-                        self.active_temp_channels.pop(vc_id_str, None)
-                    else:
-                        if vc_id_str not in self.active_temp_channels:
-                            first_human = humans[0]
-                            self.active_temp_channels[vc_id_str] = {
-                                "owner_id": str(first_human.id),
-                                "guild_id": guild_id_str
-                            }
-                        else:
-                            current_owner_id = self.active_temp_channels[vc_id_str].get("owner_id")
-                            if not any(str(m.id) == current_owner_id for m in humans):
-                                new_owner = humans[0]
-                                self.active_temp_channels[vc_id_str]["owner_id"] = str(new_owner.id)
-            except Exception:
-                pass
-
         orphans = []
         for ch_id_str, ch_info in list(self.active_temp_channels.items()):
             try:
                 ch_id = int(ch_id_str)
                 g_id = int(ch_info.get("guild_id", 0))
-                guild = self.bot.get_guild(g_id)
-                if not guild or not guild.get_channel(ch_id):
+                cfg = self.guild_config.get(str(g_id), {})
+                trigger_vc_id = cfg.get("trigger_vc_id")
+                if trigger_vc_id and ch_id == int(trigger_vc_id):
                     orphans.append(ch_id_str)
+                    continue
+                guild = self.bot.get_guild(g_id)
+                if not guild:
+                    continue
+                channel = guild.get_channel(ch_id)
+                if not channel or not isinstance(channel, discord.VoiceChannel):
+                    orphans.append(ch_id_str)
+                    continue
+
+                humans = [m for m in channel.members if not m.bot]
+                if len(humans) == 0:
+                    try:
+                        await channel.delete(reason="Pembersihan otomatis: channel suara sementara kosong.")
+                    except (discord.NotFound, discord.Forbidden):
+                        pass
+                    except Exception:
+                        pass
+                    orphans.append(ch_id_str)
+                else:
+                    current_owner_id = ch_info.get("owner_id")
+                    if not any(str(m.id) == current_owner_id for m in humans):
+                        new_owner = humans[0]
+                        self.active_temp_channels[ch_id_str]["owner_id"] = str(new_owner.id)
             except Exception:
                 orphans.append(ch_id_str)
 
@@ -579,6 +559,7 @@ class DynamicVoice(commands.Cog, name="Dynamic Voice Hub"):
 
         if orphans:
             save_temp_channels(self.active_temp_channels)
+
 
     @tasks.loop(seconds=30)
     async def cleanup_task(self):

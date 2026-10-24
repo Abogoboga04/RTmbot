@@ -21,6 +21,7 @@ from PIL import Image
 import imagehash
 from collections import deque
 from pymongo import MongoClient
+import difflib
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(name)s: %(message)s')
 log = logging.getLogger('UnifiedAI')
@@ -1381,6 +1382,90 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                     except: pass
             except Exception: pass
 
+    def is_ai_trigger(self, message: discord.Message) -> bool:
+        if not message or not getattr(message, 'content', None) or message.author.bot:
+            return False
+
+        if (self.bot.user in message.mentions) or (f"<@{self.bot.user.id}>" in message.content) or (f"<@!{self.bot.user.id}>" in message.content):
+            return True
+
+        if message.reference and isinstance(message.reference.resolved, discord.Message):
+            if message.reference.resolved.author.id == self.bot.user.id:
+                return True
+
+        content = message.content.strip()
+        if not content:
+            return False
+
+        now_time = time.time()
+        has_active_session = False
+        if message.channel and message.channel.id in self.active_sessions:
+            if now_time - self.active_sessions[message.channel.id] < 180:
+                has_active_session = True
+            else:
+                self.active_sessions.pop(message.channel.id, None)
+
+        if has_active_session and not content.startswith(("!", "?")):
+            return True
+
+        if not content.startswith("!"):
+            return False
+
+        if content.startswith("! "):
+            return True
+
+        raw_body = content[1:].strip()
+        words = raw_body.split()
+        if not words:
+            return False
+
+        first_word = words[0].lower()
+        ai_explicit = {"ai", "tanya", "gemini", "chat", "ask"}
+        ai_subcommands = {"rangkum", "summary", "tldr", "auto_tag_toggle", "ngobrol", "selesai", "reset", "atur", "hapus_semua_jadwal", "hj", "reset_jadwal"}
+
+        if first_word in ai_explicit:
+            if len(words) > 1 and words[1].lower() in ai_subcommands:
+                return False
+            if first_word == "ai" and len(words) == 1:
+                return False
+            return True
+
+        if first_word in {"selesai", "stop"}:
+            if has_active_session or (message.channel and message.channel.id in self.active_chats):
+                return True
+            return False
+
+        valid_cmds = set()
+        for cmd in self.bot.commands:
+            valid_cmds.add(cmd.name.lower())
+            for alias in cmd.aliases:
+                valid_cmds.add(alias.lower())
+
+        if first_word in valid_cmds:
+            return False
+
+        conversational_starters = {
+            "ini", "itu", "apa", "apakah", "siapa", "siapakah", "kenapa", "mengapa",
+            "bagaimana", "gimana", "kapan", "dimana", "kemana", "dari", "bisa", "tolong",
+            "coba", "halo", "hai", "woi", "bro", "bang", "min", "kak", "kamu", "lu", "lo",
+            "gue", "gw", "saya", "aku", "ada", "mau", "lagi", "udah", "sudah", "belum",
+            "jangan", "kok", "masa", "bener", "tau", "tahu", "cerita", "jelaskan", "buatkan",
+            "tuliskan", "how", "what", "why", "when", "who", "where", "can", "could", "is",
+            "are", "tell", "explain"
+        }
+
+        if first_word in conversational_starters:
+            return True
+
+        if len(words) == 1:
+            return False
+
+        matches = difflib.get_close_matches(first_word, list(valid_cmds), n=1, cutoff=0.75)
+        if matches:
+            return False
+
+        return True
+
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author.id == self.bot.user.id:
@@ -1668,16 +1753,23 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
         prefix_prompt = ""
         if message.content.startswith(prefix):
             content_body = message.content[len(prefix):].strip()
-            if content_body:
-                first_word = content_body.split()[0].lower()
-                valid_cmds = set([cmd.name.lower() for cmd in self.bot.commands] + [alias.lower() for cmd in self.bot.commands for alias in cmd.aliases])
-                
-                if first_word in ["ai", "tanya", "gemini", "chat"]:
-                    sub_words = content_body.split()[1:]
-                    ai_subcommands = ["rangkum", "summary", "tldr", "auto_tag_toggle", "ngobrol", "selesai", "reset", "atur", "hapus_semua_jadwal", "hj", "reset_jadwal"]
+            if message.content.startswith("! "):
+                is_ai_prefix_trigger = True
+                prefix_prompt = content_body
+            elif content_body:
+                words = content_body.split()
+                first_word = words[0].lower()
+                ai_explicit = {"ai", "tanya", "gemini", "chat", "ask"}
+                ai_subcommands = {"rangkum", "summary", "tldr", "auto_tag_toggle", "ngobrol", "selesai", "reset", "atur", "hapus_semua_jadwal", "hj", "reset_jadwal"}
+
+                if first_word in ai_explicit:
+                    sub_words = words[1:]
                     if not sub_words or sub_words[0].lower() not in ai_subcommands:
-                        is_ai_prefix_trigger = True
-                        prefix_prompt = " ".join(sub_words) if sub_words else ""
+                        if first_word == "ai" and not sub_words:
+                            pass
+                        else:
+                            is_ai_prefix_trigger = True
+                            prefix_prompt = " ".join(sub_words) if sub_words else "(User memanggil AI)"
                 elif first_word in ["selesai", "stop"]:
                     if message.channel.id in self.active_sessions or message.channel.id in self.active_chats:
                         self.active_sessions.pop(message.channel.id, None)
@@ -1687,9 +1779,31 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                         except Exception:
                             pass
                         return
-                elif first_word not in valid_cmds:
-                    is_ai_prefix_trigger = True
-                    prefix_prompt = content_body
+                else:
+                    valid_cmds = set()
+                    for cmd in self.bot.commands:
+                        valid_cmds.add(cmd.name.lower())
+                        for alias in cmd.aliases:
+                            valid_cmds.add(alias.lower())
+
+                    if first_word not in valid_cmds:
+                        conversational_starters = {
+                            "ini", "itu", "apa", "apakah", "siapa", "siapakah", "kenapa", "mengapa",
+                            "bagaimana", "gimana", "kapan", "dimana", "kemana", "dari", "bisa", "tolong",
+                            "coba", "halo", "hai", "woi", "bro", "bang", "min", "kak", "kamu", "lu", "lo",
+                            "gue", "gw", "saya", "aku", "ada", "mau", "lagi", "udah", "sudah", "belum",
+                            "jangan", "kok", "masa", "bener", "tau", "tahu", "cerita", "jelaskan", "buatkan",
+                            "tuliskan", "how", "what", "why", "when", "who", "where", "can", "could", "is",
+                            "are", "tell", "explain"
+                        }
+                        if first_word in conversational_starters:
+                            is_ai_prefix_trigger = True
+                            prefix_prompt = content_body
+                        elif len(words) >= 2:
+                            matches = difflib.get_close_matches(first_word, list(valid_cmds), n=1, cutoff=0.75)
+                            if not matches:
+                                is_ai_prefix_trigger = True
+                                prefix_prompt = content_body
 
         if not message.guild:
             raw_text = message.content.strip()
