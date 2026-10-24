@@ -27,9 +27,11 @@ log = logging.getLogger('UnifiedAI')
 
 GEMINI_MODELS = [
     'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-2.5-flash-lite',
     'gemini-3-flash-preview',
-    'gemini-3.1-flash-lite-preview',
-    'gemini-2.5-flash-lite'
+    'gemini-3.1-flash-lite-preview'
 ]
 
 DISCORD_MSG_LIMIT = 2000
@@ -62,7 +64,11 @@ default_key = os.getenv("GOOGLE_API_KEY")
 if default_key:
     API_KEYS.append(default_key)
 
-for i in range(1, 10):
+gemini_env_key = os.getenv("GEMINI_API_KEY")
+if gemini_env_key and gemini_env_key not in API_KEYS:
+    API_KEYS.append(gemini_env_key)
+
+for i in range(1, 25):
     extra_key = os.getenv(f"GOOGLE_API_KEY_{i}")
     if extra_key and extra_key not in API_KEYS:
         API_KEYS.append(extra_key)
@@ -271,10 +277,7 @@ async def generate_smart_response(content_payload):
         attempts_per_model = max(1, len(API_KEYS))
         for _ in range(attempts_per_model):
             try:
-                try:
-                    model = genai.GenerativeModel(model_name, tools='google_search')
-                except Exception:
-                    model = genai.GenerativeModel(model_name)
+                model = genai.GenerativeModel(model_name)
                 response = await model.generate_content_async(content_payload, safety_settings=safety_settings)
                 try:
                     if not response.candidates:
@@ -397,6 +400,9 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
         self.chat_history = {}
         self.dm_history = {}
         self.active_chats = {}
+        self.active_sessions = {}
+        self.channel_summaries = {}
+        self.chat_overflow = {}
         self.system_instructions = {}
         self.last_nimbrung_time = {}
         self.message_counters = {}
@@ -474,7 +480,8 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
         5. DILARANG: Jangan pernah pura-pura jadi AI lain, jangan tulis [GOOGLE_SEARCH] secara literal di chat.
         6. PANJANG JAWABAN: Default pendek (1-4 kalimat). Panjangkan HANYA jika user minta detail atau topik teknis kompleks.
         7. Gunakan tata, gaya, style bahasa, ketikan santai jangan kaku/baku buat seperti ketikan manusia bukan Bot/Robot/AI
-        8. Jika ditanya jenis kelamin kamu jawab pria 
+        8. Jika ditanya jenis kelamin kamu jawab pria
+        9. KESELARASAN OBROLAN & ANTI-HALU: BACA DAN SAMBUNGKAN DENGAN [RIWAYAT 25 CHAT TERAKHIR] & [RINGKASAN TOPIK OBROLAN SEBELUMNYA]. Wajib nyambung dengan topik pembicaraan saat ini dan tanggapi secara koheren, dilarang halu atau keluar dari alur percakapan.
         
 
         KEMAMPUAN KHUSUS MELALUI CHAT (EKSEKUSI TANPA COMMAND):
@@ -559,6 +566,62 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
         else: waktu = "Malam"
         return f"WIB: {wib_time.strftime('%A, %d %B %Y %H:%M:%S')} ({waktu}) | Waktu Pusat UTC: {utc_now.strftime('%d %B %Y %H:%M:%S')}"
 
+    def add_to_chat_history(self, channel_id, formatted_text):
+        if not channel_id or not formatted_text:
+            return
+        if channel_id not in self.chat_history:
+            self.chat_history[channel_id] = deque(maxlen=25)
+        if len(self.chat_history[channel_id]) >= 25:
+            oldest = self.chat_history[channel_id][0]
+            if channel_id not in self.chat_overflow:
+                self.chat_overflow[channel_id] = []
+            self.chat_overflow[channel_id].append(oldest)
+            if len(self.chat_overflow[channel_id]) >= 10:
+                overflow_batch = list(self.chat_overflow[channel_id])
+                self.chat_overflow[channel_id].clear()
+                asyncio.create_task(self.update_channel_summary(channel_id, overflow_batch))
+        self.chat_history[channel_id].append(formatted_text)
+
+    async def update_channel_summary(self, channel_id, overflow_messages):
+        if not overflow_messages:
+            return
+        old_summary = self.channel_summaries.get(channel_id, "")
+        block_text = "\n".join(overflow_messages)
+        prompt = (
+            "Ringkas konteks dan topik obrolan sebelumnya berikut secara padat dan jelas (maksimal 3-4 kalimat). "
+            "Fokus pada topik yang sedang dibahas dan poin-poin penting:\n\n"
+            f"{block_text}\n\n"
+            f"Ringkasan sebelumnya:\n{old_summary}\n\n"
+            "Tulis langsung ringkasannya saja tanpa basa-basi."
+        )
+        try:
+            res = await generate_smart_response([prompt])
+            if res and res.text:
+                self.channel_summaries[channel_id] = res.text.strip()
+        except Exception as e:
+            log.error(f"[SUMMARY_UPDATE_ERR] {e}")
+
+    async def ensure_channel_history(self, channel):
+        if not channel or not hasattr(channel, "history"):
+            return
+        cid = channel.id
+        if len(self.chat_history.get(cid, [])) < 3:
+            try:
+                fetched = []
+                async for m in channel.history(limit=10):
+                    if m.content and not m.content.startswith(('!', '/', '.')):
+                        sender = "Raka" if m.author.id == self.bot.user.id else m.author.display_name
+                        fetched.append(f"{sender}: {m.content}")
+                if fetched:
+                    fetched.reverse()
+                    if cid not in self.chat_history:
+                        self.chat_history[cid] = deque(maxlen=25)
+                    for item in fetched:
+                        if item not in self.chat_history[cid]:
+                            self.chat_history[cid].append(item)
+            except Exception:
+                pass
+
     def get_brain_context(self, message_content, guild=None, channel_id=None):
         context = []
         msg_lower = message_content.lower()
@@ -595,10 +658,14 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
             if text_and_voice_channels:
                 final_context_str += "\n[DAFTAR CHANNEL TEKS & VOICE SERVER INI]:\n" + ", ".join(text_and_voice_channels[:40]) + "\n"
 
-        if channel_id and channel_id in self.chat_history:
-            history_list = list(self.chat_history[channel_id])
-            if history_list:
-                final_context_str += "\n[SHORT-TERM MEMORY (15 Chat Terakhir dari Berbagai User di Sini)]:\n" + "\n".join(history_list) + "\n"
+        if channel_id:
+            summary_text = self.channel_summaries.get(channel_id, "")
+            if summary_text:
+                final_context_str += f"\n[RINGKASAN TOPIK OBROLAN SEBELUMNYA]:\n{summary_text}\n"
+            if channel_id in self.chat_history:
+                history_list = list(self.chat_history[channel_id])
+                if history_list:
+                    final_context_str += "\n[RIWAYAT 25 CHAT TERAKHIR DI CHANNEL INI (Urut Waktu)]:\n" + "\n".join(history_list) + "\n"
 
         try:
             from cogs.bot_knowledge_engine import find_relevant_knowledge
@@ -1086,17 +1153,24 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
             text = re.sub(r'\$\$ACTION_EXECUTE_COMMAND:\s*.*?\$\$', '', text, flags=re.IGNORECASE | re.DOTALL).strip()
                 
             sent_msg = None
+            target_cid = send_target.channel.id if isinstance(send_target, discord.Message) else getattr(send_target, 'id', None)
+            if target_cid:
+                self.active_sessions[target_cid] = time.time()
             if isinstance(send_target, discord.Message):
                 chunks = [text[i:i+DISCORD_MSG_LIMIT] for i in range(0, len(text), DISCORD_MSG_LIMIT)]
                 for i, chunk in enumerate(chunks):
                     if i == 0: sent_msg = await send_target.reply(chunk)
                     else: await send_target.channel.send(chunk)
+                    if target_cid:
+                        self.add_to_chat_history(target_cid, f"Raka: {chunk}")
                 if emoji_to_react and sent_msg:
                     try: await sent_msg.add_reaction(emoji_to_react)
                     except Exception: pass
             else:
                 for chunk in [text[i:i+DISCORD_MSG_LIMIT] for i in range(0, len(text), DISCORD_MSG_LIMIT)]:
                     await send_target.send(chunk)
+                    if target_cid:
+                        self.add_to_chat_history(target_cid, f"Raka: {chunk}")
                     
         except Exception as e:
             err_str = str(e).lower()
@@ -1368,8 +1442,8 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
             if message.author.id not in self.dm_history: self.dm_history[message.author.id] = deque(maxlen=50)
             self.dm_history[message.author.id].append(f"{message.author.display_name}: {message.content}")
         else:
-            if message.channel.id not in self.chat_history: self.chat_history[message.channel.id] = deque(maxlen=15)
-            if message.content: self.chat_history[message.channel.id].append(f"{message.author.display_name}: {message.content}")
+            if message.content:
+                self.add_to_chat_history(message.channel.id, f"{message.author.display_name}: {message.content}")
 
         is_ai_whitelisted_msg = any(w.lower() in message.content.lower() for w in self.cyber_config.get("ai_whitelist_words", []))
         
@@ -1569,29 +1643,53 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
 
         prefix = "!"
 
+        replied_context_str = ""
+        is_reply_to_bot = False
+        is_reply_to_other = False
+        if message.reference and isinstance(message.reference.resolved, discord.Message):
+            ref_msg = message.reference.resolved
+            if ref_msg.author.id == self.bot.user.id:
+                is_reply_to_bot = True
+                ref_author = "Raka (Bot)"
+            else:
+                is_reply_to_other = True
+                ref_author = ref_msg.author.display_name
+            ref_text = (ref_msg.content or "").strip()
+            if ref_text:
+                replied_context_str = f"[MEMBALAS PESAN DARI {ref_author}]: \"{ref_text[:400]}\"\n"
+
+        is_bot_mentioned = (
+            (self.bot.user in message.mentions) or
+            (f"<@{self.bot.user.id}>" in message.content) or
+            (f"<@!{self.bot.user.id}>" in message.content)
+        )
+
+        is_ai_prefix_trigger = False
+        prefix_prompt = ""
         if message.content.startswith(prefix):
             content_body = message.content[len(prefix):].strip()
             if content_body:
                 first_word = content_body.split()[0].lower()
-                valid_cmds = [cmd.name for cmd in self.bot.commands] + [alias for cmd in self.bot.commands for alias in cmd.aliases]
+                valid_cmds = set([cmd.name.lower() for cmd in self.bot.commands] + [alias.lower() for cmd in self.bot.commands for alias in cmd.aliases])
                 
-                is_ai_cmd_without_subcommand = False
-                if first_word == "ai":
+                if first_word in ["ai", "tanya", "gemini", "chat"]:
                     sub_words = content_body.split()[1:]
-                    ai_subcommands = ["rangkum", "summary", "tldr", "auto_tag_toggle", "ngobrol", "selesai", "reset", "atur", "hapus_semua_jadwal", "hj", "reset_jadwal", "tanya"]
+                    ai_subcommands = ["rangkum", "summary", "tldr", "auto_tag_toggle", "ngobrol", "selesai", "reset", "atur", "hapus_semua_jadwal", "hj", "reset_jadwal"]
                     if not sub_words or sub_words[0].lower() not in ai_subcommands:
-                        is_ai_cmd_without_subcommand = True
-                        content_body = " ".join(sub_words) if sub_words else ""
-                
-                if is_ai_cmd_without_subcommand and content_body:
-                    try:
-                        async with message.channel.typing():
-                            images = await self.get_images_from_message(message)
-                            ctx_data = self.get_brain_context(content_body, getattr(message, 'guild', None), message.channel.id)
-                            await self.process_and_send_response(message, message.author, ctx_data, content_body, images, guild_id=guild_id)
-                    except Exception as e:
-                        log.error(f"[PREFIX_CHAT_ERROR] {e}")
-                    return
+                        is_ai_prefix_trigger = True
+                        prefix_prompt = " ".join(sub_words) if sub_words else ""
+                elif first_word in ["selesai", "stop"]:
+                    if message.channel.id in self.active_sessions or message.channel.id in self.active_chats:
+                        self.active_sessions.pop(message.channel.id, None)
+                        self.active_chats.pop(message.channel.id, None)
+                        try:
+                            await message.reply("Sip, sesi obrolan aktif di channel ini udah gue tutup. Kalau butuh gue lagi, tinggal tag atau trigger pakai ! ya.")
+                        except Exception:
+                            pass
+                        return
+                elif first_word not in valid_cmds:
+                    is_ai_prefix_trigger = True
+                    prefix_prompt = content_body
 
         if not message.guild:
             raw_text = message.content.strip()
@@ -1636,59 +1734,65 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                     log.error(f"[DM_CLEAR_ERROR] {e}")
                 return
 
-            if not message.content.startswith(prefix):
+            if not message.content.startswith(prefix) or is_ai_prefix_trigger:
+                dm_prompt = prefix_prompt if is_ai_prefix_trigger else message.content
                 try:
                     async with message.channel.typing():
                         images = await self.get_images_from_message(message)
-                        ctx_data = self.get_brain_context(message.content, None, message.channel.id)
-                        await self.process_and_send_response(message, message.author, ctx_data, message.content, images, guild_id=guild_id)
+                        full_dm_prompt = f"{replied_context_str}{dm_prompt}"
+                        ctx_data = self.get_brain_context(full_dm_prompt, None, message.channel.id)
+                        await self.process_and_send_response(message, message.author, ctx_data, full_dm_prompt, images, guild_id=guild_id)
                 except Exception as e:
                     log.error(f"[DM_CHAT_ERROR] {e}")
                 return
 
-        if message.guild and (self.bot.user in message.mentions or is_reply_to_bot):
-            try:
-                async with message.channel.typing():
-                    bot_id = self.bot.user.id
-                    clean_content = message.content.replace(f"<@{bot_id}>", "").replace(f"<@!{bot_id}>", "").strip()
-                    images = await self.get_images_from_message(message)
-                    ctx_data = self.get_brain_context(clean_content, getattr(message, 'guild', None), message.channel.id)
-                    
-                    if is_reply_to_bot and self.bot.user not in message.mentions:
-                        prompt = f"User mereply pesan lu: {clean_content}"
-                    else:
-                        prompt = f"Nge-tag lu dan bilang: {clean_content}"
-                        
-                    await self.process_and_send_response(message, message.author, ctx_data, prompt, images, guild_id=guild_id)
-            except Exception as e:
-                log.error(f"[MENTION_CHAT_ERROR] {e}")
-            return
+        if message.guild:
+            should_respond = False
+            final_prompt = ""
+            
+            now_time = time.time()
+            session_timeout = 180
+            has_active_session = False
+            if message.channel.id in self.active_sessions:
+                if now_time - self.active_sessions[message.channel.id] < session_timeout:
+                    has_active_session = True
+                else:
+                    self.active_sessions.pop(message.channel.id, None)
+            
+            chat_session = self.active_chats.get(message.channel.id)
+            expert_active = False
+            custom_data = self.auto_config.get("custom_personas", {}).get(uid_str)
+            if custom_data and time.time() < custom_data.get("expiry", 0):
+                expert_active = True
 
-        expert_active = False
-        custom_data = self.auto_config.get("custom_personas", {}).get(uid_str)
-        if custom_data and time.time() < custom_data.get("expiry", 0):
-            expert_active = True
+            if is_bot_mentioned or is_reply_to_bot:
+                should_respond = True
+                bot_id = self.bot.user.id
+                clean_content = message.content.replace(f"<@{bot_id}>", "").replace(f"<@!{bot_id}>", "").strip()
+                if clean_content:
+                    final_prompt = f"{replied_context_str}{clean_content}"
+                else:
+                    final_prompt = f"{replied_context_str}(User memanggil/me-mention kamu)"
+            elif is_ai_prefix_trigger:
+                should_respond = True
+                final_prompt = f"{replied_context_str}{prefix_prompt}"
+            elif (has_active_session or chat_session or expert_active) and not message.content.startswith(prefix):
+                if is_reply_to_other and not is_bot_mentioned:
+                    return
+                should_respond = True
+                final_prompt = f"{replied_context_str}{message.content.strip()}"
 
-        chat_session = self.active_chats.get(message.channel.id)
-        
-        is_reply_to_other = message.reference and isinstance(message.reference.resolved, discord.Message) and message.reference.resolved.author.id != self.bot.user.id
-        
-        if (chat_session or expert_active) and not message.content.startswith(prefix):
-            if is_reply_to_other and self.bot.user not in message.mentions:
+            if should_respond and final_prompt:
+                try:
+                    async with message.channel.typing():
+                        self.active_sessions[message.channel.id] = time.time()
+                        await self.ensure_channel_history(message.channel)
+                        images = await self.get_images_from_message(message)
+                        ctx_data = self.get_brain_context(final_prompt, message.guild, message.channel.id)
+                        await self.process_and_send_response(message, message.author, ctx_data, final_prompt, images, guild_id=guild_id)
+                except Exception as e:
+                    log.error(f"[AI_CHAT_ERROR] {e}")
                 return
-                
-            is_owner = (await self.bot.is_owner(message.author)) or self.is_creator(message.author.id) or (message.guild and message.author.id == message.guild.owner_id)
-            is_replying_to_bot = message.reference and isinstance(message.reference.resolved, discord.Message) and message.reference.resolved.author.id == self.bot.user.id
-            if is_owner and not (self.bot.user in message.mentions or is_replying_to_bot):
-                return
-                
-            try:
-                async with message.channel.typing():
-                    images = await self.get_images_from_message(message)
-                    ctx_data = self.get_brain_context(message.content, getattr(message, 'guild', None), message.channel.id)
-                    await self.process_and_send_response(message, message.author, ctx_data, message.content, images, guild_id=guild_id)
-            except: pass
-            return
 
 
     @commands.hybrid_command(name="cyber_toggle", aliases=["cybertoggle", "onoffcyber"], description="Nyalakan atau matikan sistem pertahanan AI RTM")
@@ -1816,7 +1920,14 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
             await ctx.send(f"Gagal balas pesan: {e}", ephemeral=True)
 
     @commands.hybrid_group(name="ai", invoke_without_command=True, description="Panel Kontrol Induk AI Raka")
-    async def ai(self, ctx: commands.Context):
+    async def ai(self, ctx: commands.Context, *, prompt: str = ""):
+        if prompt:
+            async with ctx.typing():
+                self.active_sessions[ctx.channel.id] = time.time()
+                await self.ensure_channel_history(ctx.channel)
+                images = await self.get_images_from_message(ctx.message)
+                ctx_data = self.get_brain_context(prompt, ctx.guild, ctx.channel.id)
+                return await self.process_and_send_response(ctx.message, ctx.author, ctx_data, prompt, images, guild_id=getattr(ctx.guild, 'id', None))
         prefix = "/"
         embed = discord.Embed(title="Raka Control Panel", description=f"Halo, {ctx.author.mention}. Ini panel kontrol Raka berbasis Slash Commands. Karena banyaknya fitur, command telah dibagi menjadi 4 kategori:", color=0xFF0000)
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
@@ -1870,24 +1981,22 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
 
     @ai.command(name="ngobrol", description="Aktifkan mode obrolan AI non-stop di channel ini")
     async def ngobrol_start(self, ctx: commands.Context):
-        if ctx.channel.id in self.active_chats: return await ctx.send("Udah aktif.")
-        try:
-            self.active_chats[ctx.channel.id] = True
-            await ctx.send("Raka hadir di channel ini.")
-        except Exception as e: await ctx.send(f"Gagal: {e}")
+        self.active_chats[ctx.channel.id] = True
+        self.active_sessions[ctx.channel.id] = time.time()
+        await ctx.send("Raka hadir di channel ini. Mode obrolan aktif tanpa perlu mention/prefix.")
 
     @ai.command(name="selesai", description="Matikan mode obrolan AI di channel ini")
     async def ngobrol_stop(self, ctx: commands.Context):
-        if ctx.channel.id in self.active_chats:
-            del self.active_chats[ctx.channel.id]
-            await ctx.send("Bye.")
-        else: await ctx.send("Ga ada sesi di sini.")
+        self.active_chats.pop(ctx.channel.id, None)
+        self.active_sessions.pop(ctx.channel.id, None)
+        await ctx.send("Sip, sesi ngobrol di channel ini udah gue tutup. Bye.")
 
     @ai.command(name="reset", description="Reset ingatan jangka pendek sesi obrolan di channel ini")
     async def reset_chat(self, ctx: commands.Context):
-        if ctx.channel.id in self.active_chats: del self.active_chats[ctx.channel.id]
-        self.active_chats[ctx.channel.id] = True
-        await ctx.send("Sesi obrolan direset.")
+        self.chat_history.pop(ctx.channel.id, None)
+        self.channel_summaries.pop(ctx.channel.id, None)
+        self.chat_overflow.pop(ctx.channel.id, None)
+        await ctx.send("Riwayat dan ringkasan obrolan di channel ini berhasil direset.")
 
     @ai.command(name="atur", description="Set instruksi spesifik sementara (Khusus Owner)")
     @app_commands.describe(i="Sifat spesifik")
@@ -1905,12 +2014,14 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
 
     @ai.command(name="tanya", description="Bicara atau tanyakan sesuatu langsung pada AI tanpa me-mention")
     @app_commands.describe(prompt="Topik yang ingin dibicarakan")
-    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.cooldown(1, 3, commands.BucketType.user)
     async def tanya(self, ctx: commands.Context, *, prompt: str):
         async with ctx.typing():
+            self.active_sessions[ctx.channel.id] = time.time()
+            await self.ensure_channel_history(ctx.channel)
             images = await self.get_images_from_message(ctx.message)
-            ctx_data = self.get_brain_context(prompt, getattr(ctx, 'guild', None), ctx.channel.id)
-            await self.process_and_send_response(ctx, ctx.author, ctx_data, prompt, images)
+            ctx_data = self.get_brain_context(prompt, ctx.guild, ctx.channel.id)
+            await self.process_and_send_response(ctx.message, ctx.author, ctx_data, prompt, images, guild_id=getattr(ctx.guild, 'id', None))
 
     @aisifat.command(name="ngambek", description="Buat AI ngambek ke user tertentu (Khusus Owner)")
     @app_commands.describe(id_user="ID User yang dituju", menit="Durasi ngambek dalam menit")

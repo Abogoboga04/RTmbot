@@ -704,6 +704,10 @@ async def on_command_error(ctx, error):
         invoked = (ctx.invoked_with or "").lower()
         if not invoked:
             return
+        gemini_cog = ctx.bot.get_cog("Cyber Defense & AI Raka")
+        if gemini_cog:
+            if invoked in ["ai", "tanya", "gemini", "chat", "ask"] or (ctx.channel and ctx.channel.id in getattr(gemini_cog, "active_sessions", {})):
+                return
         all_cmds = set()
         for cmd in ctx.bot.commands:
             if not cmd.hidden:
@@ -777,7 +781,6 @@ async def on_command_error(ctx, error):
         try: await ctx.send(embed=embed, delete_after=10)
         except: pass
 
-    # Laporkan error perintah ke Global Webhook Monitor
     guild_name = ctx.guild.name if ctx.guild else "Direct Message"
     fields = [
         {"name": "🌐 Server", "value": f"**{guild_name}** (`{getattr(ctx.guild, 'id', 'DM')}`)", "inline": True},
