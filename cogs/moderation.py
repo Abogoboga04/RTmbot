@@ -16,10 +16,11 @@ import io
 import unicodedata
 
 try:
-    from cogs.card_generator import generate_official_member_card, get_or_create_member_serial_id
+    from cogs.card_generator import generate_official_member_card, get_or_create_member_serial_id, clean_display_text
 except ImportError:
     generate_official_member_card = None
     get_or_create_member_serial_id = None
+    clean_display_text = lambda x: x
 
 from cogs.v2_layout import build_v2_card, send_v2_message, send_v2_interaction, register_view, edit_v2_message
 
@@ -2502,7 +2503,7 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
                     level=level,
                     balance=balance,
                     rank_pos=serial_id,
-                    custom_title=f"KARTU RESMI ANGGOTA • {member.guild.name.upper()}"
+                    custom_title=clean_display_text(f"KARTU RESMI ANGGOTA • {member.guild.name.upper()}")
                 )
                 return card_buffer
             except Exception:

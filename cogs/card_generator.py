@@ -3,6 +3,7 @@ import io
 import json
 import math
 import re
+import struct
 import unicodedata
 import asyncio
 from datetime import datetime
@@ -61,6 +62,21 @@ def get_or_create_member_serial_id(guild: discord.Guild, member: discord.Member)
         
     return new_serial
 
+FANCY_MAP = {
+    'ᴀ':'A','ʙ':'B','ᴄ':'C','ᴅ':'D','ᴇ':'E','ғ':'F','ɢ':'G','ʜ':'H','ɪ':'I','ᴊ':'J','ᴋ':'K','ʟ':'L','ᴍ':'M',
+    'ɴ':'N','ᴏ':'O','ᴘ':'P','ǫ':'Q','ʀ':'R','ꜱ':'S','s':'S','ᴛ':'T','ᴜ':'U','ᴠ':'V','ᴡ':'W','x':'X','ʏ':'Y','ᴢ':'Z',
+    '⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9',
+    '₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9',
+    'ᵃ':'a','ᵇ':'b','ᶜ':'c','ᵈ':'d','ᵉ':'e','ᶠ':'f','ᵍ':'g','ʰ':'h','ⁱ':'i','ʲ':'j','ᵏ':'k','ˡ':'l','ᵐ':'m',
+    'ⁿ':'n','ᵒ':'o','ᵖ':'p','ʳ':'r','ˢ':'s','ᵗ':'t','ᵘ':'u','ᵛ':'v','ʷ':'w','ˣ':'x','ʸ':'y','ᶻ':'z'
+}
+
+def normalize_fancy_text(text: str) -> str:
+    if not text:
+        return ""
+    mapped = "".join(FANCY_MAP.get(ch, ch) for ch in str(text))
+    return unicodedata.normalize("NFKC", mapped)
+
 def is_safe_printable_char(ch: str) -> bool:
     """Filter karakter untuk mencegah box kosong (□) sembari mendukung huruf internasional."""
     code = ord(ch)
@@ -74,6 +90,14 @@ def is_safe_printable_char(ch: str) -> bool:
         return True
     if 0x0600 <= code <= 0x06FF:
         return True
+    if 0x2000 <= code <= 0x206F:
+        return True
+    if 0x2600 <= code <= 0x27BF:
+        return True
+    if 0x2B00 <= code <= 0x2BFF:
+        return True
+    if 0x3000 <= code <= 0x303F:
+        return True
     if 0x3040 <= code <= 0x30FF:
         return True
     if 0x4E00 <= code <= 0x9FFF:
@@ -82,18 +106,95 @@ def is_safe_printable_char(ch: str) -> bool:
         return True
     if 0xFF01 <= code <= 0xFFEE:
         return True
-    if code in (0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014, 0x2026, 0x2500, 0x2502, 0x2605, 0x2606):
-        return True
     return False
 
 def clean_display_text(text: str, fallback: str = "MEMBER") -> str:
     """Bersihkan teks dari unicode tak kasat mata, plane 14 selectors, dan kontrol."""
     if not text:
         return fallback
-    text = unicodedata.normalize('NFKC', str(text))
-    cleaned = ''.join(ch for ch in text if is_safe_printable_char(ch)).strip()
-    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    normalized = normalize_fancy_text(text)
+    cleaned = "".join(ch for ch in normalized if is_safe_printable_char(ch)).strip()
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
     return cleaned if cleaned else fallback
+
+_CMAP_CACHE = {}
+
+def get_font_cmap(font_path: str) -> set:
+    if not font_path or not os.path.isfile(font_path):
+        return set()
+    if font_path in _CMAP_CACHE:
+        return _CMAP_CACHE[font_path]
+    try:
+        with open(font_path, "rb") as f:
+            data = f.read()
+        offset = struct.unpack(">I", data[12:16])[0] if data[:4] == b"ttcf" else 0
+        num_tables = struct.unpack(">H", data[offset+4:offset+6])[0]
+        cmap_offset = None
+        for i in range(num_tables):
+            entry = offset + 12 + i * 16
+            if data[entry:entry+4] == b"cmap":
+                cmap_offset = struct.unpack(">I", data[entry+8:entry+12])[0]
+                break
+        if not cmap_offset:
+            _CMAP_CACHE[font_path] = set()
+            return set()
+        num_subtables = struct.unpack(">H", data[cmap_offset+2:cmap_offset+4])[0]
+        chars = set()
+        for i in range(num_subtables):
+            sub_off = cmap_offset + struct.unpack(">I", data[cmap_offset+8+i*8:cmap_offset+12+i*8])[0]
+            fmt = struct.unpack(">H", data[sub_off:sub_off+2])[0]
+            if fmt == 4:
+                seg_count = struct.unpack(">H", data[sub_off+6:sub_off+8])[0] // 2
+                end_codes = struct.unpack(f">{seg_count}H", data[sub_off+14:sub_off+14+seg_count*2])
+                start_codes = struct.unpack(f">{seg_count}H", data[sub_off+16+seg_count*2:sub_off+16+seg_count*4])
+                for start, end in zip(start_codes, end_codes):
+                    if start == 0xFFFF:
+                        break
+                    chars.update(range(start, end + 1))
+            elif fmt == 12:
+                n_groups = struct.unpack(">I", data[sub_off+12:sub_off+16])[0]
+                for g in range(n_groups):
+                    start_c, end_c, _ = struct.unpack(">III", data[sub_off+16+g*12:sub_off+28+g*12])
+                    chars.update(range(start_c, end_c + 1))
+        _CMAP_CACHE[font_path] = chars
+        return chars
+    except Exception:
+        _CMAP_CACHE[font_path] = set()
+        return set()
+
+def draw_text_with_fallback(draw, xy, text, primary_font, fallback_font, primary_cmap, fallback_cmap, fill, align="left"):
+    if not text:
+        return 0.0
+    valid_chars = []
+    total_w = 0.0
+    for ch in str(text):
+        c = ord(ch)
+        if c in primary_cmap:
+            f = primary_font
+        elif c in fallback_cmap:
+            f = fallback_font
+        elif ch in (" ", "\t"):
+            f = primary_font
+        else:
+            continue
+        ch_w = f.getlength(ch)
+        valid_chars.append((ch, f, ch_w))
+        total_w += ch_w
+
+    x, y = xy
+    if align == "center":
+        cur_x = float(x) - total_w / 2.0
+    elif align == "right":
+        cur_x = float(x) - total_w
+    else:
+        cur_x = float(x)
+
+    cur_y = float(y)
+    for ch, f, ch_w in valid_chars:
+        draw.text((cur_x, cur_y), ch, font=f, fill=fill)
+        cur_x += ch_w
+
+    return total_w
 
 def get_card_fonts():
     """Load font tipografi elegan lintas platform (Windows & Linux Railway)."""
@@ -106,6 +207,8 @@ def get_card_fonts():
         r"C:\Windows\Fonts",
         "/usr/share/fonts/truetype/dejavu",
         "/usr/share/fonts/truetype/liberation",
+        "/usr/share/fonts/opentype/noto",
+        "/usr/share/fonts/truetype/noto",
         "/usr/share/fonts",
         "/usr/local/share/fonts"
     ]
@@ -124,6 +227,15 @@ def get_card_fonts():
     f_serif_reg = find_font(["georgia.ttf", "times.ttf", "DejaVuSerif.ttf", "LiberationSerif-Regular.ttf"])
     f_sans_bold = find_font(["arialbd.ttf", "DejaVuSans-Bold.ttf", "LiberationSans-Bold.ttf"])
     f_sans_reg = find_font(["arial.ttf", "DejaVuSans.ttf", "LiberationSans-Regular.ttf"])
+    f_cjk_bold = find_font(["msyhbd.ttc", "NotoSansCJK-Bold.ttc", "NotoSansCJKsc-Bold.otf", "segoeuib.ttf", "malgunbd.ttf", "DejaVuSans-Bold.ttf"])
+    f_cjk_reg = find_font(["msyh.ttc", "NotoSansCJK-Regular.ttc", "NotoSansCJKsc-Regular.otf", "segoeui.ttf", "malgun.ttf", "DejaVuSans.ttf"])
+
+    cmap_serif_bold = get_font_cmap(f_serif_bold)
+    cmap_serif_reg = get_font_cmap(f_serif_reg)
+    cmap_sans_bold = get_font_cmap(f_sans_bold)
+    cmap_sans_reg = get_font_cmap(f_sans_reg)
+    cmap_cjk_bold = get_font_cmap(f_cjk_bold)
+    cmap_cjk_reg = get_font_cmap(f_cjk_reg)
 
     def load_font(path, size):
         try:
@@ -135,19 +247,31 @@ def get_card_fonts():
 
     return {
         "title": load_font(f_serif_bold, 28),
+        "title_cjk": load_font(f_cjk_bold, 28),
         "subtitle": load_font(f_serif_bold, 15),
         "name_header": load_font(f_serif_bold, 28),
+        "name_header_cjk": load_font(f_cjk_bold, 28),
         "badge": load_font(f_sans_bold, 17),
         "label": load_font(f_serif_bold, 16),
         "value": load_font(f_serif_bold, 17),
         "photo_label": load_font(f_sans_bold, 14),
+        "photo_label_cjk": load_font(f_cjk_bold, 14),
         "quote": load_font(f_serif_reg, 16),
+        "quote_cjk": load_font(f_cjk_reg, 16),
         "sign_name": load_font(f_serif_bold, 24),
+        "sign_name_cjk": load_font(f_cjk_bold, 24),
         "sign_role": load_font(f_serif_reg, 15),
+        "sign_role_cjk": load_font(f_cjk_reg, 15),
         "stamp_title": load_font(f_sans_bold, 13),
         "stamp_date": load_font(f_sans_bold, 16),
         "stamp_sub": load_font(f_sans_bold, 12),
         "auth_id": load_font(f_sans_reg, 12),
+        "cmap_serif_bold": cmap_serif_bold,
+        "cmap_serif_reg": cmap_serif_reg,
+        "cmap_sans_bold": cmap_sans_bold,
+        "cmap_sans_reg": cmap_sans_reg,
+        "cmap_cjk_bold": cmap_cjk_bold,
+        "cmap_cjk_reg": cmap_cjk_reg,
     }
 
 def draw_star(draw, cx, cy, r_outer=15, r_inner=7, fill=(245, 195, 60, 255), outline=(180, 135, 30, 255)):
@@ -311,8 +435,8 @@ async def generate_official_member_card(
         draw.line([(W - 42, H - 43), (W - 42, H - 43 - bracket_len)], fill=gold_dark, width=2)
         draw.ellipse([(W - 42 - dot_dist - 2, H - 43 - dot_dist - 2), (W - 42 - dot_dist + 2, H - 43 - dot_dist + 2)], fill=gold_dark)
 
-        title_text = custom_title or f"KARTU RESMI ANGGOTA • {safe_guild_name.upper()}"
-        draw.text((58, 48), title_text, font=fonts["title"], fill=text_dark)
+        title_text = clean_display_text(custom_title) if custom_title else f"KARTU RESMI ANGGOTA • {safe_guild_name.upper()}"
+        draw_text_with_fallback(draw, (58, 48), title_text, fonts["title"], fonts["title_cjk"], fonts["cmap_serif_bold"], fonts["cmap_cjk_bold"], fill=text_dark, align="left")
         draw.text((58, 86), sub_header_str, font=fonts["subtitle"], fill=text_gold)
 
         if rank_pos is not None:
@@ -350,14 +474,12 @@ async def generate_official_member_card(
         tag_box = [(75, 302), (195, 332)]
         draw.rounded_rectangle(tag_box, radius=6, fill=(248, 237, 218, 255), outline=gold_light, width=1)
         short_u = safe_user_name[:12]
-        tb = fonts["photo_label"].getbbox(short_u)
-        tb_w = tb[2] - tb[0]
-        draw.text((75 + (120 - tb_w) // 2, 310), short_u, font=fonts["photo_label"], fill=text_dark)
+        draw_text_with_fallback(draw, (135, 310), short_u, fonts["photo_label"], fonts["photo_label_cjk"], fonts["cmap_sans_bold"], fonts["cmap_cjk_bold"], fill=text_dark, align="center")
 
         user_header_text = f"{safe_user_name} • {highest_role_name}"
         if len(user_header_text) > 36:
             user_header_text = user_header_text[:33] + "..."
-        draw.text((246, 154), user_header_text, font=fonts["name_header"], fill=text_dark)
+        draw_text_with_fallback(draw, (246, 154), user_header_text, fonts["name_header"], fonts["name_header_cjk"], fonts["cmap_serif_bold"], fonts["cmap_cjk_bold"], fill=text_dark, align="left")
 
         user_suffix = str(target.id)[-5:]
         guild_suffix = str(guild.id)[-4:] if guild else "0000"
@@ -390,25 +512,19 @@ async def generate_official_member_card(
         draw.line([(58, 415), (W - 58, 415)], fill=gold_light, width=1)
 
         quote_text = f"Lisensi resmi ini diterbitkan secara sah atas keaktifan dan keanggotaan terverifikasi di server {safe_guild_name}."
-        q_bbox = fonts["quote"].getbbox(quote_text)
-        qw = q_bbox[2] - q_bbox[0]
-        draw.text(((W - qw) // 2, 445), quote_text, font=fonts["quote"], fill=(122, 103, 80, 255))
+        draw_text_with_fallback(draw, (W // 2, 445), quote_text, fonts["quote"], fonts["quote_cjk"], fonts["cmap_serif_reg"], fonts["cmap_cjk_reg"], fill=(122, 103, 80, 255), align="center")
 
         cx_left = 185
-        sw = fonts["sign_name"].getbbox(server_owner_name)[2] - fonts["sign_name"].getbbox(server_owner_name)[0]
-        draw.text((cx_left - sw // 2, 482), server_owner_name, font=fonts["sign_name"], fill=text_dark)
-        srw = fonts["sign_role"].getbbox(server_owner_role)[2] - fonts["sign_role"].getbbox(server_owner_role)[0]
-        draw.text((cx_left - srw // 2, 510), server_owner_role, font=fonts["sign_role"], fill=text_gold)
+        draw_text_with_fallback(draw, (cx_left, 482), server_owner_name, fonts["sign_name"], fonts["sign_name_cjk"], fonts["cmap_serif_bold"], fonts["cmap_cjk_bold"], fill=text_dark, align="center")
+        draw_text_with_fallback(draw, (cx_left, 510), server_owner_role, fonts["sign_role"], fonts["sign_role_cjk"], fonts["cmap_serif_reg"], fonts["cmap_cjk_reg"], fill=text_gold, align="center")
 
         draw_star(draw, W // 2 - 36, 498, r_outer=13, r_inner=6)
         draw_sakura(draw, W // 2, 498, r_petal=7)
         draw_star(draw, W // 2 + 36, 498, r_outer=13, r_inner=6)
 
         cx_right = 835
-        bw = fonts["sign_name"].getbbox(bot_owner_name)[2] - fonts["sign_name"].getbbox(bot_owner_name)[0]
-        draw.text((cx_right - bw // 2, 482), bot_owner_name, font=fonts["sign_name"], fill=text_dark)
-        brw = fonts["sign_role"].getbbox(bot_owner_role)[2] - fonts["sign_role"].getbbox(bot_owner_role)[0]
-        draw.text((cx_right - brw // 2, 510), bot_owner_role, font=fonts["sign_role"], fill=text_gold)
+        draw_text_with_fallback(draw, (cx_right, 482), bot_owner_name, fonts["sign_name"], fonts["sign_name_cjk"], fonts["cmap_serif_bold"], fonts["cmap_cjk_bold"], fill=text_dark, align="center")
+        draw_text_with_fallback(draw, (cx_right, 510), bot_owner_role, fonts["sign_role"], fonts["sign_role_cjk"], fonts["cmap_serif_reg"], fonts["cmap_cjk_reg"], fill=text_gold, align="center")
 
         auth_str = f"ID OTENTIKASI RESMI: RTM-{target.id}-VERIFIED"
         a_bbox = fonts["auth_id"].getbbox(auth_str)
