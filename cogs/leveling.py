@@ -43,12 +43,29 @@ EXP_PRICE_PER_UNIT = 10
 DAILY_EXP_LIMIT = 1500
 
 _memory_cache = {}
+_cache_mtimes = {}
 _font_bold_bytes = None
 _font_reg_bytes = None
 
+def invalidate_cache(path=None):
+    if path:
+        _memory_cache.pop(path, None)
+        _cache_mtimes.pop(path, None)
+    else:
+        _memory_cache.clear()
+        _cache_mtimes.clear()
+
 def load_json(path):
-    if path in _memory_cache:
+    if os.path.exists(path):
+        try:
+            mtime = os.path.getmtime(path)
+            if path in _memory_cache and _cache_mtimes.get(path) == mtime:
+                return _memory_cache[path]
+        except Exception:
+            pass
+    elif path in _memory_cache:
         return _memory_cache[path]
+
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if not os.path.exists(path):
         default_data = {}
@@ -68,12 +85,20 @@ def load_json(path):
             json.dump(default_data, f, indent=4)
         os.replace(temp_path, path)
         _memory_cache[path] = default_data
+        try:
+            _cache_mtimes[path] = os.path.getmtime(path)
+        except Exception:
+            pass
         return default_data
 
     try:
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
             _memory_cache[path] = data
+            try:
+                _cache_mtimes[path] = os.path.getmtime(path)
+            except Exception:
+                pass
             return data
     except (json.JSONDecodeError, FileNotFoundError):
         _memory_cache[path] = {}
@@ -86,6 +111,10 @@ def save_json(path, data):
     with open(temp_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4)
     os.replace(temp_path, path)
+    try:
+        _cache_mtimes[path] = os.path.getmtime(path)
+    except Exception:
+        pass
 
 def calculate_new_level(exp, exp_per_level, max_level):
     lvl = exp // exp_per_level
@@ -994,6 +1023,24 @@ class ProgressionSystem(commands.Cog, name="Progression & Economy"):
                     except Exception:
                         pass
             self._dirty_config = False
+
+    def add_user_rewards(self, guild_id: int, user_id: int, exp_amount: int = 0, rswn_amount: int = 0):
+        guild_id_str = str(guild_id)
+        user_id_str = str(user_id)
+        
+        all_level_data = load_json(LEVEL_FILE)
+        data = all_level_data.setdefault(guild_id_str, {})
+        user_data = data.setdefault(user_id_str, {"exp": 0, "weekly_exp": 0, "level": 0, "badges": [], "last_active": None, "booster": {}, "msg_count": 0, "last_msg_time": None, "last_daily": None})
+        if exp_amount > 0:
+            user_data["exp"] = user_data.get("exp", 0) + exp_amount
+            user_data["weekly_exp"] = user_data.get("weekly_exp", 0) + exp_amount
+        save_json(LEVEL_FILE, all_level_data)
+        
+        if rswn_amount > 0:
+            bank_data = load_json(BANK_FILE)
+            user_bank = bank_data.setdefault(user_id_str, {"balance": 0, "debt": 0})
+            user_bank["balance"] = user_bank.get("balance", 0) + rswn_amount
+            save_json(BANK_FILE, bank_data)
 
     def get_anomaly_multiplier(self):
         try:

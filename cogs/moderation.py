@@ -3404,6 +3404,8 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
     
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
+        if ctx.cog != self:
+            return
         if isinstance(error, commands.MissingPermissions):
             embed = self._create_embed(description=f"❌ Anda tidak memiliki izin `{', '.join(error.missing_permissions)}` untuk menjalankan perintah ini.", color=self.color_error)
             await ctx.send(embed=embed, delete_after=15)

@@ -616,15 +616,17 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         final_exp = int(reward_base.get('exp', 0) * anomaly_multiplier)
 
         user_id_str, guild_id_str = str(user.id), str(user.guild.id)
-        self.bank_data = load_json_from_root('data/bank_data.json')
-        self.level_data = load_json_from_root('data/level_data.json')
-
-        self.bank_data.setdefault(user_id_str, {'balance': 0, 'debt': 0})['balance'] += final_rsw
-        user_level_data = self.level_data.setdefault(guild_id_str, {}).setdefault(user_id_str, {'exp': 0, 'level': 1})
-        user_level_data['exp'] += final_exp
-
-        save_json_to_root(self.bank_data, 'data/bank_data.json')
-        save_json_to_root(self.level_data, 'data/level_data.json')
+        leveling_cog = self.bot.get_cog("ProgressionSystem")
+        if leveling_cog and hasattr(leveling_cog, "add_user_rewards"):
+            leveling_cog.add_user_rewards(user.guild.id, user.id, exp_amount=final_exp, rswn_amount=final_rsw)
+        else:
+            self.bank_data = load_json_from_root('data/bank_data.json')
+            self.level_data = load_json_from_root('data/level_data.json')
+            self.bank_data.setdefault(user_id_str, {'balance': 0, 'debt': 0})['balance'] += final_rsw
+            user_level_data = self.level_data.setdefault(guild_id_str, {}).setdefault(user_id_str, {'exp': 0, 'level': 1})
+            user_level_data['exp'] += final_exp
+            save_json_to_root(self.bank_data, 'data/bank_data.json')
+            save_json_to_root(self.level_data, 'data/level_data.json')
 
         if anomaly_multiplier > 1 and channel:
             await channel.send(f"✨ **BONUS ANOMALI!** {user.mention} mendapatkan hadiah berlipat ganda ({final_rsw} RSWN & {final_exp} EXP)!", delete_after=15)
@@ -2042,13 +2044,17 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             lb_fields = []
 
             rewards = [(50, 150), (30, 100), (20, 50)]
+            leveling_cog = self.bot.get_cog("ProgressionSystem")
             top_users_data = []
             for rank, (u_id, sc) in enumerate(sorted_scores[:3]):
                 u_obj = self.bot.get_user(int(u_id))
                 name = u_obj.display_name if u_obj else f"User ({u_id})"
                 exp_r, rsw_r = rewards[rank] if rank < len(rewards) else (10, 20)
-                self.bank_data.setdefault(u_id, {"balance": 0, "debt": 0})['balance'] += rsw_r
-                self.level_data.setdefault(g_id, {}).setdefault(u_id, {"exp": 0, "level": 1})['exp'] += exp_r
+                if leveling_cog and hasattr(leveling_cog, "add_user_rewards") and ctx.guild:
+                    leveling_cog.add_user_rewards(ctx.guild.id, int(u_id), exp_amount=exp_r, rswn_amount=rsw_r)
+                else:
+                    self.bank_data.setdefault(u_id, {"balance": 0, "debt": 0})['balance'] += rsw_r
+                    self.level_data.setdefault(g_id, {}).setdefault(u_id, {"exp": 0, "level": 1})['exp'] += exp_r
                 lb_fields.append({"name": f"#{rank + 1}. {name}", "value": f"Skor: **{sc}** (+{rsw_r} RSWN & +{exp_r} EXP)"})
                 top_users_data.append({
                     "member": u_obj,
@@ -2075,8 +2081,9 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 except Exception:
                     pass
 
-            save_json_to_root(self.bank_data, 'data/bank_data.json')
-            save_json_to_root(self.level_data, 'data/level_data.json')
+            if not (leveling_cog and hasattr(leveling_cog, "add_user_rewards")):
+                save_json_to_root(self.bank_data, 'data/bank_data.json')
+                save_json_to_root(self.level_data, 'data/level_data.json')
             lb_card = build_v2_card(title="🏆 LEADERBOARD KUIS MUSIK", fields=lb_fields, color=0x1db954)
             await send_v2_message(self.bot, ctx.channel.id, [lb_card])
 

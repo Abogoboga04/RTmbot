@@ -681,14 +681,18 @@ class InsightHub(commands.Cog, name="Community Insights & Utility"):
         
         try:
             prefix = self.bot.command_prefix
-            if isinstance(prefix, str) and message.content.startswith(prefix):
-                 return
-            elif callable(prefix):
-                 prefixes = await prefix(self.bot, message)
-                 if any(message.content.startswith(p) for p in prefixes):
-                      return
+            if callable(prefix):
+                prefixes = await prefix(self.bot, message)
+            elif isinstance(prefix, (list, tuple, set)):
+                prefixes = prefix
+            elif isinstance(prefix, str):
+                prefixes = [prefix]
+            else:
+                prefixes = ["!", "?"]
+            if any(message.content.startswith(p) for p in prefixes):
+                return
         except Exception:
-             pass
+            pass
 
         member = message.author
         if not self.has_gender_role(member, guild_id):
