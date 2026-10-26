@@ -1228,7 +1228,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
 
             if winner:
                 await self.give_rewards_with_bonus_check(winner, ctx.channel, self.resacak_reward)
-                leaderboard[winner.display_name] = leaderboard.get(winner.display_name, 0) + 1
+                leaderboard[winner] = leaderboard.get(winner, 0) + 1
                 await self.send_game_message(ctx, f"✅ **Tepat!** {winner.mention} berhasil menyusun kata: **{original.upper()}**!")
             else:
                 await self.send_game_message(ctx, f"⌛ **Waktu Habis!** Kata yang benar adalah **{original.upper()}**.")
@@ -1238,9 +1238,11 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         if leaderboard:
             sorted_lb = sorted(leaderboard.items(), key=lambda x: x[1], reverse=True)
             top_users_data = []
-            for n, (u_name, s) in enumerate(sorted_lb[:3], 1):
+            for n, (u_obj, s) in enumerate(sorted_lb[:3], 1):
+                u_name = u_obj.display_name if hasattr(u_obj, "display_name") else str(u_obj)
                 top_users_data.append({
                     "name": u_name,
+                    "member": u_obj if hasattr(u_obj, "display_avatar") else None,
                     "rank": n,
                     "score_str": f"{s} Poin",
                     "sub_str": "Susun Kata"
@@ -1260,7 +1262,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                     await self.send_game_message(ctx, file=file)
             except Exception:
                 pass
-            desc = "\n".join([f"**#{n}.** {u}: {s} poin" for n, (u, s) in enumerate(sorted_lb, 1)])
+            desc = "\n".join([f"**#{n}.** {u.display_name if hasattr(u, 'display_name') else str(u)}: {s} poin" for n, (u, s) in enumerate(sorted_lb, 1)])
             lb_card = build_v2_card(title="🏆 Papan Skor Susun Kata", description=desc, color=discord.Color.gold().value)
             await send_v2_message(self.bot, ctx.channel.id, [lb_card])
 
@@ -1348,7 +1350,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
 
             if winner:
                 await self.give_rewards_with_bonus_check(winner, ctx.channel, self.resipa_reward)
-                leaderboard[winner.display_name] = leaderboard.get(winner.display_name, 0) + 1
+                leaderboard[winner] = leaderboard.get(winner, 0) + 1
                 await self.send_game_message(ctx, f"✅ **Benar!** {winner.mention} menjawab istilah: **{original.upper()}**!")
             else:
                 await self.send_game_message(ctx, f"⌛ **Waktu Habis!** Istilah yang benar adalah **{original.upper()}**.")
@@ -1358,9 +1360,11 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         if leaderboard:
             sorted_lb = sorted(leaderboard.items(), key=lambda x: x[1], reverse=True)
             top_users_data = []
-            for n, (u_name, s) in enumerate(sorted_lb[:3], 1):
+            for n, (u_obj, s) in enumerate(sorted_lb[:3], 1):
+                u_name = u_obj.display_name if hasattr(u_obj, "display_name") else str(u_obj)
                 top_users_data.append({
                     "name": u_name,
+                    "member": u_obj if hasattr(u_obj, "display_avatar") else None,
                     "rank": n,
                     "score_str": f"{s} Poin",
                     "sub_str": "Kuis IPA"
@@ -1380,7 +1384,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                     await self.send_game_message(ctx, file=file)
             except Exception:
                 pass
-            desc = "\n".join([f"**#{n}.** {u}: {s} poin" for n, (u, s) in enumerate(sorted_lb, 1)])
+            desc = "\n".join([f"**#{n}.** {u.display_name if hasattr(u, 'display_name') else str(u)}: {s} poin" for n, (u, s) in enumerate(sorted_lb, 1)])
             lb_card = build_v2_card(title="🏆 Papan Skor Kuis IPA", description=desc, color=discord.Color.teal().value)
             await send_v2_message(self.bot, ctx.channel.id, [lb_card])
 
@@ -1623,7 +1627,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
 
             if winner:
                 await self.give_rewards_with_bonus_check(winner, ctx.channel)
-                leaderboard[winner.display_name] = leaderboard.get(winner.display_name, 0) + 1
+                leaderboard[winner] = leaderboard.get(winner, 0) + 1
                 await self.send_game_message(ctx, f"🎉 **Tepat Sekali!** {winner.mention} berhasil menebak: **{target.upper()}**!")
             else:
                 await self.send_game_message(ctx, f"⌛ **Waktu Habis!** Jawaban yang benar adalah: **{target.upper()}**.")
@@ -1633,9 +1637,11 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         if leaderboard:
             sorted_lb = sorted(leaderboard.items(), key=lambda x: x[1], reverse=True)
             top_users_data = []
-            for n, (u_name, s) in enumerate(sorted_lb[:3], 1):
+            for n, (u_obj, s) in enumerate(sorted_lb[:3], 1):
+                u_name = u_obj.display_name if hasattr(u_obj, "display_name") else str(u_obj)
                 top_users_data.append({
                     "name": u_name,
+                    "member": u_obj if hasattr(u_obj, "display_avatar") else None,
                     "rank": n,
                     "score_str": f"{s} Poin",
                     "sub_str": "Siapa Aku?"
@@ -1655,7 +1661,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                     await self.send_game_message(ctx, file=file)
             except Exception:
                 pass
-            desc = "\n".join([f"**#{n}.** {u}: **{s}** poin" for n, (u, s) in enumerate(sorted_lb, 1)])
+            desc = "\n".join([f"**#{n}.** {u.display_name if hasattr(u, 'display_name') else str(u)}: **{s}** poin" for n, (u, s) in enumerate(sorted_lb, 1)])
             lb_card = build_v2_card(title="🏆 Papan Skor Akhir 'Siapa Aku?'", description=desc, color=0xffd700)
             await send_v2_message(self.bot, ctx.channel.id, [lb_card])
 
@@ -1721,7 +1727,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
 
             if winner:
                 await self.give_rewards_with_bonus_check(winner, ctx.channel)
-                leaderboard[winner.display_name] = leaderboard.get(winner.display_name, 0) + 1
+                leaderboard[winner] = leaderboard.get(winner, 0) + 1
                 await self.send_game_message(ctx, f"⚡ **Tepat!** {winner.mention} menjawab **{answer_str}** dengan benar!")
             else:
                 await self.send_game_message(ctx, f"⌛ **Waktu Habis!** Jawaban yang benar adalah **{answer_str}**.")
@@ -1731,9 +1737,11 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         if leaderboard:
             sorted_lb = sorted(leaderboard.items(), key=lambda x: x[1], reverse=True)
             top_users_data = []
-            for n, (u_name, s) in enumerate(sorted_lb[:3], 1):
+            for n, (u_obj, s) in enumerate(sorted_lb[:3], 1):
+                u_name = u_obj.display_name if hasattr(u_obj, "display_name") else str(u_obj)
                 top_users_data.append({
                     "name": u_name,
+                    "member": u_obj if hasattr(u_obj, "display_avatar") else None,
                     "rank": n,
                     "score_str": f"{s} Benar",
                     "sub_str": "Hitung Cepat"
@@ -1753,7 +1761,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                     await self.send_game_message(ctx, file=file)
             except Exception:
                 pass
-            desc = "\n".join([f"**#{n}.** {u}: **{s}** soal benar" for n, (u, s) in enumerate(sorted_lb, 1)])
+            desc = "\n".join([f"**#{n}.** {u.display_name if hasattr(u, 'display_name') else str(u)}: **{s}** soal benar" for n, (u, s) in enumerate(sorted_lb, 1)])
             lb_card = build_v2_card(title="🏆 Papan Skor Hitung Cepat", description=desc, color=0x2ecc71)
             await send_v2_message(self.bot, ctx.channel.id, [lb_card])
 

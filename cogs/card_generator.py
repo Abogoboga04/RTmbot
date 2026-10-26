@@ -642,21 +642,31 @@ async def generate_top3_podium_card(
         if not m or not getattr(m, "display_avatar", None):
             return None
         try:
-            return await asyncio.wait_for(m.display_avatar.replace(size=sz, format="png").read(), timeout=2.5)
+            return await asyncio.wait_for(m.display_avatar.replace(size=sz, format="png").read(), timeout=4.0)
         except Exception:
             return None
 
     avatar_tasks = []
     for idx, item in enumerate(top_users_data[:3]):
-        avatar_tasks.append(_get_avatar(item.get("member"), 128))
+        m_obj = item.get("member") or item.get("user")
+        if not m_obj and guild and item.get("name"):
+            target_name = item.get("name", "").strip().lower()
+            if target_name:
+                for gm in guild.members:
+                    if gm.display_name.lower() == target_name or gm.name.lower() == target_name:
+                        m_obj = gm
+                        break
+        avatar_tasks.append(_get_avatar(m_obj, 128))
 
     avatars = await asyncio.gather(*avatar_tasks, return_exceptions=True)
 
     enriched_users = []
     for idx, item in enumerate(top_users_data[:3]):
         av_bytes = avatars[idx] if idx < len(avatars) and isinstance(avatars[idx], (bytes, bytearray)) else None
+        m_obj = item.get("member") or item.get("user")
+        fallback_name = getattr(m_obj, "display_name", f"Member {idx + 1}")
         enriched_users.append({
-            "name": item.get("name", getattr(item.get("member"), "display_name", f"Member {idx + 1}")),
+            "name": item.get("name", fallback_name),
             "score_str": item.get("score_str", "+0 EXP"),
             "sub_str": item.get("sub_str", "Lvl 0"),
             "rank": item.get("rank", idx + 1),
@@ -816,22 +826,32 @@ async def generate_weekly_leaderboard_card(
         if not m or not getattr(m, "display_avatar", None):
             return None
         try:
-            return await asyncio.wait_for(m.display_avatar.replace(size=sz, format="png").read(), timeout=2.5)
+            return await asyncio.wait_for(m.display_avatar.replace(size=sz, format="png").read(), timeout=4.0)
         except Exception:
             return None
 
     avatar_tasks = []
     for idx, item in enumerate(top_users_data[:10]):
         sz = 128 if idx < 3 else 64
-        avatar_tasks.append(_get_avatar(item.get("member"), sz))
+        m_obj = item.get("member") or item.get("user")
+        if not m_obj and guild and item.get("name"):
+            target_name = item.get("name", "").strip().lower()
+            if target_name:
+                for gm in guild.members:
+                    if gm.display_name.lower() == target_name or gm.name.lower() == target_name:
+                        m_obj = gm
+                        break
+        avatar_tasks.append(_get_avatar(m_obj, sz))
 
     avatars = await asyncio.gather(*avatar_tasks, return_exceptions=True)
 
     enriched_users = []
     for idx, item in enumerate(top_users_data[:10]):
         av_bytes = avatars[idx] if idx < len(avatars) and isinstance(avatars[idx], (bytes, bytearray)) else None
+        m_obj = item.get("member") or item.get("user")
+        fallback_name = getattr(m_obj, "display_name", f"Member {idx + 1}")
         enriched_users.append({
-            "name": item.get("name", getattr(item.get("member"), "display_name", f"Member {idx + 1}")),
+            "name": item.get("name", fallback_name),
             "score_str": item.get("score_str", "+0 EXP"),
             "sub_str": item.get("sub_str", "Voice: 0m"),
             "rank": item.get("rank", idx + 1),
