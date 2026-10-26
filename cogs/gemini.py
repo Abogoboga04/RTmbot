@@ -1382,6 +1382,15 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                     except: pass
             except Exception: pass
 
+    def is_minigame_running(self, channel_id: int) -> bool:
+        if not channel_id:
+            return False
+        for cog_name in ["Arcade Mini-Games", "Tavern & Party Games", "Minigames", "PartyGames"]:
+            cog = self.bot.get_cog(cog_name)
+            if cog and hasattr(cog, "active_games") and channel_id in cog.active_games:
+                return True
+        return False
+
     def is_ai_trigger(self, message: discord.Message) -> bool:
         if not message or not getattr(message, 'content', None) or message.author.bot:
             return False
@@ -1397,6 +1406,9 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
         if not content:
             return False
 
+        if message.channel and self.is_minigame_running(message.channel.id):
+            return False
+
         now_time = time.time()
         has_active_session = False
         if message.channel and message.channel.id in self.active_sessions:
@@ -1404,6 +1416,8 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                 has_active_session = True
             else:
                 self.active_sessions.pop(message.channel.id, None)
+                if hasattr(self, 'active_chats') and message.channel.id in self.active_chats:
+                    self.active_chats.pop(message.channel.id, None)
 
         if has_active_session and not content.startswith(("!", "?")):
             return True
@@ -1864,6 +1878,8 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
             should_respond = False
             final_prompt = ""
             
+            in_minigame = self.is_minigame_running(message.channel.id)
+
             now_time = time.time()
             session_timeout = 180
             has_active_session = False
@@ -1872,12 +1888,8 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                     has_active_session = True
                 else:
                     self.active_sessions.pop(message.channel.id, None)
-            
-            chat_session = self.active_chats.get(message.channel.id)
-            expert_active = False
-            custom_data = self.auto_config.get("custom_personas", {}).get(uid_str)
-            if custom_data and time.time() < custom_data.get("expiry", 0):
-                expert_active = True
+                    if hasattr(self, 'active_chats') and message.channel.id in self.active_chats:
+                        self.active_chats.pop(message.channel.id, None)
 
             if is_bot_mentioned or is_reply_to_bot:
                 should_respond = True
@@ -1887,14 +1899,15 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                     final_prompt = f"{replied_context_str}{clean_content}"
                 else:
                     final_prompt = f"{replied_context_str}(User memanggil/me-mention kamu)"
-            elif is_ai_prefix_trigger:
-                should_respond = True
-                final_prompt = f"{replied_context_str}{prefix_prompt}"
-            elif (has_active_session or chat_session or expert_active) and not message.content.startswith(prefix):
-                if is_reply_to_other and not is_bot_mentioned:
-                    return
-                should_respond = True
-                final_prompt = f"{replied_context_str}{message.content.strip()}"
+            elif not in_minigame:
+                if is_ai_prefix_trigger:
+                    should_respond = True
+                    final_prompt = f"{replied_context_str}{prefix_prompt}"
+                elif has_active_session and not message.content.startswith(prefix):
+                    if is_reply_to_other and not is_bot_mentioned:
+                        return
+                    should_respond = True
+                    final_prompt = f"{replied_context_str}{message.content.strip()}"
 
             if should_respond and final_prompt:
                 try:

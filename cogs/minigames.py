@@ -629,7 +629,21 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
         if anomaly_multiplier > 1 and channel:
             await channel.send(f"✨ **BONUS ANOMALI!** {user.mention} mendapatkan hadiah berlipat ganda ({final_rsw} RSWN & {final_exp} EXP)!", delete_after=15)
 
+    async def send_game_message(self, ctx, *args, **kwargs):
+        try:
+            return await ctx.channel.send(*args, **kwargs)
+        except Exception:
+            try:
+                return await ctx.send(*args, **kwargs)
+            except Exception:
+                return None
+
     async def start_game_check(self, ctx):
+        if hasattr(ctx, 'interaction') and ctx.interaction and not ctx.interaction.response.is_done():
+            try:
+                await ctx.defer()
+            except Exception:
+                pass
         if ctx.channel.id in self.active_games:
             card = build_v2_card(
                 title="⚠️ Ada Game Aktif",
@@ -651,6 +665,11 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
 
     @commands.hybrid_command(name="minigames", aliases=['games', 'daftargame', 'listgame'], description="Pusat Arcade & Minigames interaktif server")
     async def games_catalog_cmd(self, ctx):
+        if hasattr(ctx, 'interaction') and ctx.interaction and not ctx.interaction.response.is_done():
+            try:
+                await ctx.defer()
+            except Exception:
+                pass
         title = "🎮 RTM-Bot • PUSAT ARCADE & MINIGAMES"
         description = (
             "Selamat datang di arena bermain **RTM-Bot**! Kami menyediakan berbagai game interaktif "
@@ -817,13 +836,13 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                     break
 
                 if not content.startswith(prefix):
-                    await ctx.send(f"❌ **Salah!** Kata `{content.upper()}` tidak diawali dengan **`{prefix.upper()}`**. {current_player.mention} tereliminasi!")
+                    await self.send_game_message(ctx, f"❌ **Salah!** Kata `{content.upper()}` tidak diawali dengan **`{prefix.upper()}`**. {current_player.mention} tereliminasi!")
                     eliminated = True
                 elif content in used_words:
-                    await ctx.send(f"❌ **Sudah Dipakai!** Kata `{content.upper()}` sudah pernah disebutkan sebelumnya. {current_player.mention} tereliminasi!")
+                    await self.send_game_message(ctx, f"❌ **Sudah Dipakai!** Kata `{content.upper()}` sudah pernah disebutkan sebelumnya. {current_player.mention} tereliminasi!")
                     eliminated = True
                 elif len(content) < 3:
-                    await ctx.send(f"❌ **Terlalu Pendek!** Kata harus minimal 3 huruf. {current_player.mention} tereliminasi!")
+                    await self.send_game_message(ctx, f"❌ **Terlalu Pendek!** Kata harus minimal 3 huruf. {current_player.mention} tereliminasi!")
                     eliminated = True
                 else:
                     try:
@@ -836,7 +855,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                     turn_index = (turn_index + 1) % len(active_players)
 
             except asyncio.TimeoutError:
-                await ctx.send(f"⌛ **Waktu Habis!** {current_player.mention} tidak menjawab tepat waktu dan tereliminasi!")
+                await self.send_game_message(ctx, f"⌛ **Waktu Habis!** {current_player.mention} tidak menjawab tepat waktu dan tereliminasi!")
                 eliminated = True
 
             if eliminated:
@@ -1082,7 +1101,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                     self.session_scores[author.id]["correct"] += 1
                     game_data["correct"] += 1
 
-                    await ctx.send(f"✅ **Benar!** Jawaban dari {author.mention} tepat: **{question['answer'].upper()}** (+{final_reward} RSWN)!")
+                    await self.send_game_message(ctx, f"✅ **Benar!** Jawaban dari {author.mention} tepat: **{question['answer'].upper()}** (+{final_reward} RSWN)!")
                     try:
                         await user_msg.add_reaction("🎉")
                     except Exception:
@@ -1091,7 +1110,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             except asyncio.TimeoutError:
                 break
 
-        await ctx.send(f"⌛ **Waktu Habis!** Jawaban yang benar adalah: **{question['answer'].upper()}**.")
+        await self.send_game_message(ctx, f"⌛ **Waktu Habis!** Jawaban yang benar adalah: **{question['answer'].upper()}**.")
 
     async def end_emoji_game(self, ctx):
         self.bank_data = load_json_from_root('data/bank_data.json')
@@ -1210,9 +1229,9 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             if winner:
                 await self.give_rewards_with_bonus_check(winner, ctx.channel, self.resacak_reward)
                 leaderboard[winner.display_name] = leaderboard.get(winner.display_name, 0) + 1
-                await ctx.send(f"✅ **Tepat!** {winner.mention} berhasil menyusun kata: **{original.upper()}**!")
+                await self.send_game_message(ctx, f"✅ **Tepat!** {winner.mention} berhasil menyusun kata: **{original.upper()}**!")
             else:
-                await ctx.send(f"⌛ **Waktu Habis!** Kata yang benar adalah **{original.upper()}**.")
+                await self.send_game_message(ctx, f"⌛ **Waktu Habis!** Kata yang benar adalah **{original.upper()}**.")
 
             await asyncio.sleep(2)
 
@@ -1238,7 +1257,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 )
                 if card_buf:
                     file = discord.File(fp=card_buf, filename="susunkata_top3.png")
-                    await ctx.send(file=file)
+                    await self.send_game_message(ctx, file=file)
             except Exception:
                 pass
             desc = "\n".join([f"**#{n}.** {u}: {s} poin" for n, (u, s) in enumerate(sorted_lb, 1)])
@@ -1330,9 +1349,9 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             if winner:
                 await self.give_rewards_with_bonus_check(winner, ctx.channel, self.resipa_reward)
                 leaderboard[winner.display_name] = leaderboard.get(winner.display_name, 0) + 1
-                await ctx.send(f"✅ **Benar!** {winner.mention} menjawab istilah: **{original.upper()}**!")
+                await self.send_game_message(ctx, f"✅ **Benar!** {winner.mention} menjawab istilah: **{original.upper()}**!")
             else:
-                await ctx.send(f"⌛ **Waktu Habis!** Istilah yang benar adalah **{original.upper()}**.")
+                await self.send_game_message(ctx, f"⌛ **Waktu Habis!** Istilah yang benar adalah **{original.upper()}**.")
 
             await asyncio.sleep(2)
 
@@ -1358,7 +1377,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 )
                 if card_buf:
                     file = discord.File(fp=card_buf, filename="kuisipa_top3.png")
-                    await ctx.send(file=file)
+                    await self.send_game_message(ctx, file=file)
             except Exception:
                 pass
             desc = "\n".join([f"**#{n}.** {u}: {s} poin" for n, (u, s) in enumerate(sorted_lb, 1)])
@@ -1453,7 +1472,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                     self.session_scores[author.id]["total_rsw"] += final_r
                     game_data["correct"] += 1
 
-                    await ctx.send(f"✅ **Tepat Sekali!** {author.mention} berhasil menebak: **{target_word.upper()}** (+{final_r} RSWN)!")
+                    await self.send_game_message(ctx, f"✅ **Tepat Sekali!** {author.mention} berhasil menebak: **{target_word.upper()}** (+{final_r} RSWN)!")
                     try:
                         await msg.add_reaction("🎉")
                     except Exception:
@@ -1462,7 +1481,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             except asyncio.TimeoutError:
                 break
 
-        await ctx.send(f"⌛ **Waktu Habis!** Jawaban yang benar adalah: **{target_word.upper()}**.")
+        await self.send_game_message(ctx, f"⌛ **Waktu Habis!** Jawaban yang benar adalah: **{target_word.upper()}**.")
 
     async def end_hangman(self, ctx):
         self.bank_data = load_json_from_root('data/bank_data.json')
@@ -1598,16 +1617,16 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                             except Exception:
                                 pass
                             if attempts[uid] == 2:
-                                await ctx.send(f"⚠️ {user_m.author.mention}, batas tebakanmu untuk soal ini habis!", delete_after=5)
+                                await self.send_game_message(ctx, f"⚠️ {user_m.author.mention}, batas tebakanmu untuk soal ini habis!", delete_after=5)
                     except asyncio.TimeoutError:
                         break
 
             if winner:
                 await self.give_rewards_with_bonus_check(winner, ctx.channel)
                 leaderboard[winner.display_name] = leaderboard.get(winner.display_name, 0) + 1
-                await ctx.send(f"🎉 **Tepat Sekali!** {winner.mention} berhasil menebak: **{target.upper()}**!")
+                await self.send_game_message(ctx, f"🎉 **Tepat Sekali!** {winner.mention} berhasil menebak: **{target.upper()}**!")
             else:
-                await ctx.send(f"⌛ **Waktu Habis!** Jawaban yang benar adalah: **{target.upper()}**.")
+                await self.send_game_message(ctx, f"⌛ **Waktu Habis!** Jawaban yang benar adalah: **{target.upper()}**.")
 
             await asyncio.sleep(3)
 
@@ -1633,7 +1652,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 )
                 if card_buf:
                     file = discord.File(fp=card_buf, filename="siapa_aku_top3.png")
-                    await ctx.send(file=file)
+                    await self.send_game_message(ctx, file=file)
             except Exception:
                 pass
             desc = "\n".join([f"**#{n}.** {u}: **{s}** poin" for n, (u, s) in enumerate(sorted_lb, 1)])
@@ -1703,9 +1722,9 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
             if winner:
                 await self.give_rewards_with_bonus_check(winner, ctx.channel)
                 leaderboard[winner.display_name] = leaderboard.get(winner.display_name, 0) + 1
-                await ctx.send(f"⚡ **Tepat!** {winner.mention} menjawab **{answer_str}** dengan benar!")
+                await self.send_game_message(ctx, f"⚡ **Tepat!** {winner.mention} menjawab **{answer_str}** dengan benar!")
             else:
-                await ctx.send(f"⌛ **Waktu Habis!** Jawaban yang benar adalah **{answer_str}**.")
+                await self.send_game_message(ctx, f"⌛ **Waktu Habis!** Jawaban yang benar adalah **{answer_str}**.")
 
             await asyncio.sleep(2)
 
@@ -1731,7 +1750,7 @@ class ArcadeMinigames(commands.Cog, name="Arcade Mini-Games"):
                 )
                 if card_buf:
                     file = discord.File(fp=card_buf, filename="hitung_cepat_top3.png")
-                    await ctx.send(file=file)
+                    await self.send_game_message(ctx, file=file)
             except Exception:
                 pass
             desc = "\n".join([f"**#{n}.** {u}: **{s}** soal benar" for n, (u, s) in enumerate(sorted_lb, 1)])
