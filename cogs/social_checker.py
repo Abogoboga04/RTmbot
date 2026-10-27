@@ -64,6 +64,31 @@ def rotate_api_key():
 
 configure_genai()
 
+def clean_ai_hype_text(text: str) -> str:
+    if not text:
+        return ""
+    text = text.strip().strip('"\'`')
+    preamble_patterns = [
+        r'^(?:[\*_~`\s]*(?:siap|tentu|oke|baik|halo|berikut(?:\sadalah)?|ini(?:\sdia)?|teks|pengumuman|notifikasi)[^\n:]*:[ \t\r\f\v\*_~`]*\n*)+',
+    ]
+    for pattern in preamble_patterns:
+        text = re.sub(pattern, '', text, flags=re.IGNORECASE).strip()
+    if '\n' in text:
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
+        if len(lines) > 1:
+            first_line_clean = lines[0].strip().strip('*_~`')
+            first_line_lower = first_line_clean.lower()
+            is_filler = (
+                ':' in lines[0] or
+                'teks pengumuman' in first_line_lower or
+                'ini dia' in first_line_lower or
+                first_line_lower in ['siap!', 'tentu!', 'oke!', 'baik!']
+            )
+            if is_filler and any(w in first_line_lower for w in ['siap', 'tentu', 'oke', 'baik', 'berikut', 'ini dia', 'pengumuman', 'notifikasi']):
+                text = '\n\n'.join(lines[1:]).strip()
+    return text.strip('"\'`').strip()
+
+
 def clean_hyperlink_title(raw_title: str) -> str:
     if not raw_title:
         return ""
@@ -586,15 +611,17 @@ Tugas kamu membuat 1 kalimat notifikasi/sapaan santai dan asik buat warga server
 Informasi konten:
 {context_str}
 
-Panduan gaya:
+Panduan gaya & aturan mutlak:
 1. Hubungkan sapaan kamu secara alami dengan judul atau topik kontennya di atas. Jangan buat pujian kosong yang tidak nyambung dengan isi videonya.
 2. Gunakan bahasa obrolan Discord/tongkrongan Indonesia yang asik, santai, dan luwes.
 3. Sesuaikan dengan situasinya:
    - Kalau video santai/keseharian/vlog, sapa warga server dengan santai dan ajak nonton.
    - Kalau live streaming, ajak warga server langsung merapat ke live chat.
 4. Singkat, padat (cukup 1-2 kalimat). Jangan pakai hashtag dan jangan tulis URL link di dalam teks karena link sudah disediakan di tombol.
+5. PENTING: DILARANG KERAS menyertakan kalimat pembuka/basa-basi apapun seperti "Siap!", "Berikut adalah...", "Ini dia pengumumannya:", "Tentu!", atau tanda kutip pembuka/penutup.
+6. LANGSUNG tulis isi kalimat notifikasinya dari kata pertama tanpa kata pengantar atau judul sama sekali.
 
-Berikan teks pengumuman kamu sekarang:"""
+Tulis LANGSUNG teks pengumumannya sekarang:"""
 
         models_to_try = ['gemini-2.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash-lite']
 
@@ -605,7 +632,9 @@ Berikan teks pengumuman kamu sekarang:"""
                     model = genai.GenerativeModel(model_name)
                     response = await asyncio.wait_for(model.generate_content_async(prompt), timeout=30.0)
                     if response and response.text:
-                        return response.text.strip().replace('"', '')
+                        cleaned = clean_ai_hype_text(response.text)
+                        if cleaned:
+                            return cleaned
                 except asyncio.TimeoutError:
                     return self._fallback_hype(creator, platform, is_live)
                 except google_exceptions.ResourceExhausted:
