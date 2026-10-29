@@ -652,6 +652,20 @@ async def sync_commands(ctx: commands.Context, scope: str = "guild"):
         log.error(f"Sync error: {e}")
 
 
+@bot.command(name="reload")
+@commands.is_owner()
+async def reload_cog(ctx: commands.Context, cog_name: str):
+    clean_name = cog_name.strip().lower()
+    full_name = f"cogs.{clean_name}" if not clean_name.startswith("cogs.") else clean_name
+    try:
+        await bot.reload_extension(full_name)
+        await ctx.send(f"✅ Cog `{full_name}` berhasil di-reload.")
+        log.info(f"Cog {full_name} reloaded by {ctx.author}.")
+    except Exception as e:
+        await ctx.send(f"❌ Gagal me-reload cog `{full_name}`: {e}")
+        log.error(f"Failed to reload {full_name}: {e}", exc_info=True)
+
+
 @bot.command(name="cogbackup")
 @commands.is_owner()
 async def cog_backup(ctx):

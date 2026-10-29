@@ -957,10 +957,9 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         clean_user = normalize_tiktok_username(username)
         creator_name = display_name or clean_user
         ydl_opts = {
-            "extract_flat": True,
             "quiet": True,
             "no_warnings": True,
-            "playlist_items": "1:5",
+            "playlist_items": "1:3",
             "socket_timeout": 12,
             "logger": _SilentYDLLogger(),
         }
@@ -981,9 +980,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                     vid = str(entry.get("id") or "")
                     if not vid:
                         continue
-                    url = entry.get("url")
-                    if not url or not url.startswith("http"):
-                        url = f"https://www.tiktok.com/@{clean_user}/video/{vid}"
+                    url = f"https://www.tiktok.com/@{clean_user}/video/{vid}"
                     uploader = entry.get("uploader") or creator_name
                     title_raw = entry.get("title") or f"TikTok Video by @{clean_user}"
                     results.append({
