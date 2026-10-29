@@ -105,18 +105,43 @@ def normalize_tiktok_username(raw: str) -> str:
     if not raw:
         return ""
     text = str(raw).strip()
+    if "?" in text:
+        text = text.split("?")[0]
+    m = re.search(r'@([a-zA-Z0-9_.-]+)', text)
+    if m:
+        return m.group(1).lower().rstrip("/")
     if "tiktok.com" in text:
-        m = re.search(r'@([a-zA-Z0-9_.-]+)', text)
-        if m:
-            return m.group(1).lower()
-        parts = text.rstrip("/").split("/")
+        parts = [p for p in text.rstrip("/").split("/") if p]
         if parts:
-            candidate = parts[-1].split("?")[0].lstrip("@")
-            if candidate:
+            candidate = parts[-1].lstrip("@")
+            if candidate and not candidate.startswith("http") and "tiktok.com" not in candidate:
                 return candidate.lower()
     clean = text.lstrip("@").strip().lower()
-    clean = clean.split("?")[0].split("/")[0]
+    clean = clean.split("/")[0]
     return clean
+
+async def async_resolve_tiktok_username(raw: str) -> str:
+    if not raw:
+        return ""
+    text = str(raw).strip()
+    clean = normalize_tiktok_username(text)
+    if clean and ("tiktok.com" not in clean and not clean.startswith("http")):
+        return clean
+    if "tiktok.com" in text:
+        try:
+            from curl_cffi import requests as cffi_requests
+            def _resolve_url(target_url: str):
+                s = cffi_requests.Session(impersonate="chrome")
+                resp = s.head(target_url, allow_redirects=True, timeout=8)
+                return resp.url
+            final_url = await asyncio.to_thread(_resolve_url, text)
+            resolved_clean = normalize_tiktok_username(final_url)
+            if resolved_clean:
+                return resolved_clean
+        except Exception:
+            pass
+    return clean
+
 
 
 class SocialFormatEditorModal(discord.ui.Modal, title="Format Notifikasi"):
@@ -838,10 +863,10 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
         return meta
 
-    def _sync_tiktok_live(self, username: str):
+    def _sync_tiktok_web_profile(self, username: str):
         clean_user = normalize_tiktok_username(username)
         if not clean_user:
-            return None
+            return None, None, None, None
         url = f"https://www.tiktok.com/@{clean_user}/"
         try:
             from curl_cffi import requests as cffi_requests
@@ -863,12 +888,14 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                         user_detail = scope.get("webapp.user-detail", {})
                         u_info = user_detail.get("userInfo", {})
                         user = u_info.get("user", {})
+                        sec_uid = user.get("secUid")
+                        display_name = user.get("nickname") or clean_user
+                        avatar = user.get("avatarLarger") or user.get("avatarMedium") or user.get("avatarThumb")
                         room_id = str(user.get("roomId") or "").strip()
+                        live_item = None
                         if room_id and room_id != "0":
-                            display_name = user.get("nickname") or clean_user
-                            avatar = user.get("avatarLarger") or user.get("avatarMedium") or user.get("avatarThumb")
                             signature = user.get("signature") or f"Sedang live streaming di TikTok: @{clean_user}"
-                            return {
+                            live_item = {
                                 "video_id": f"live_{clean_user}_{room_id}",
                                 "title": f"Live Streaming TikTok - @{clean_user}",
                                 "creator": display_name,
@@ -876,9 +903,20 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                                 "thumbnail": avatar,
                                 "description": clean_hyperlink_title(signature) or f"Sedang siaran langsung di TikTok: @{clean_user}",
                                 "is_live": True,
+                                "sec_uid": sec_uid,
                             }
+                        return live_item, sec_uid, display_name, avatar
         except Exception:
             pass
+        return None, None, None, None
+
+    def _sync_tiktok_live(self, username: str):
+        clean_user = normalize_tiktok_username(username)
+        if not clean_user:
+            return None
+        live_item, _, _, _ = self._sync_tiktok_web_profile(clean_user)
+        if live_item:
+            return live_item
 
         try:
             live_url = f"https://www.tiktok.com/@{clean_user}/live"
@@ -912,6 +950,55 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         except Exception:
             pass
         return None
+
+    def _sync_tiktok_secuid_videos(self, sec_uid: str, username: str, display_name: Optional[str] = None):
+        if not sec_uid:
+            return []
+        clean_user = normalize_tiktok_username(username)
+        creator_name = display_name or clean_user
+        ydl_opts = {
+            "extract_flat": True,
+            "quiet": True,
+            "no_warnings": True,
+            "playlist_items": "1:5",
+            "socket_timeout": 12,
+            "logger": _SilentYDLLogger(),
+        }
+        try:
+            from yt_dlp.networking.impersonate import ImpersonateTarget
+            ydl_opts["impersonate"] = ImpersonateTarget.from_str("chrome")
+        except Exception:
+            pass
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(f"tiktokuser:{sec_uid}", download=False)
+                if not info or "entries" not in info:
+                    return []
+                results = []
+                for entry in info.get("entries", []):
+                    if not entry:
+                        continue
+                    vid = str(entry.get("id") or "")
+                    if not vid:
+                        continue
+                    url = entry.get("url")
+                    if not url or not url.startswith("http"):
+                        url = f"https://www.tiktok.com/@{clean_user}/video/{vid}"
+                    uploader = entry.get("uploader") or creator_name
+                    title_raw = entry.get("title") or f"TikTok Video by @{clean_user}"
+                    results.append({
+                        "video_id": vid,
+                        "title": clean_hyperlink_title(title_raw) or f"TikTok Video by @{clean_user}",
+                        "creator": uploader,
+                        "url": url,
+                        "thumbnail": entry.get("thumbnail"),
+                        "description": title_raw,
+                        "is_live": False,
+                        "sec_uid": sec_uid,
+                    })
+                return results
+        except Exception:
+            return []
 
     def _sync_tiktok_embed(self, username: str):
         clean_user = normalize_tiktok_username(username)
@@ -987,22 +1074,49 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         except Exception:
             return None
 
-    async def _fetch_tiktok_content(self, username: str):
+    async def _fetch_tiktok_content(self, username: str, sec_uid: Optional[str] = None):
         clean_user = normalize_tiktok_username(username)
         if not clean_user:
             return []
 
         results = []
+        known_sec_uid = sec_uid
+        display_name = clean_user
+
         try:
-            live_item = await asyncio.to_thread(self._sync_tiktok_live, clean_user)
+            live_item, fetched_sec_uid, nick, avatar = await asyncio.to_thread(self._sync_tiktok_web_profile, clean_user)
             if live_item:
                 results.append(live_item)
+            if fetched_sec_uid:
+                known_sec_uid = fetched_sec_uid
+            if nick:
+                display_name = nick
         except Exception:
             pass
+
+        if not any(r.get("is_live") for r in results):
+            try:
+                live_item = await asyncio.to_thread(self._sync_tiktok_live, clean_user)
+                if live_item:
+                    results.append(live_item)
+            except Exception:
+                pass
+
+        if known_sec_uid:
+            try:
+                sec_videos = await asyncio.to_thread(self._sync_tiktok_secuid_videos, known_sec_uid, clean_user, display_name)
+                if sec_videos:
+                    results.extend(sec_videos)
+                    return results
+            except Exception:
+                pass
 
         try:
             embed_results = await asyncio.to_thread(self._sync_tiktok_embed, clean_user)
             if embed_results:
+                if known_sec_uid:
+                    for er in embed_results:
+                        er["sec_uid"] = known_sec_uid
                 results.extend(embed_results)
                 return results
         except Exception:
@@ -1025,11 +1139,12 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                     results.append({
                         "video_id": vid,
                         "title": clean_hyperlink_title(entry.get("title")) or f"TikTok Video by @{clean_user}",
-                        "creator": entry.get("uploader") or clean_user,
+                        "creator": entry.get("uploader") or display_name,
                         "url": url,
                         "thumbnail": entry.get("thumbnail"),
                         "description": entry.get("title") or "",
                         "is_live": False,
+                        "sec_uid": known_sec_uid,
                     })
         except Exception:
             pass
@@ -1248,8 +1363,11 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                             await asyncio.sleep(2)
 
                 elif platform == "tiktok":
-                    items = await self._fetch_tiktok_content(identifier)
+                    items = await self._fetch_tiktok_content(identifier, target.get("sec_uid"))
                     for item in items:
+                        if item.get("sec_uid") and not target.get("sec_uid"):
+                            target["sec_uid"] = item["sec_uid"]
+                            self._save_config()
                         vid = item["video_id"]
                         if self._is_id_posted(vid):
                             continue
@@ -1499,7 +1617,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
     @commands.is_owner()
     async def tt_add(self, ctx: commands.Context, username: str, target_channel: discord.TextChannel = None):
         channel_to_use = target_channel or ctx.channel
-        clean_user = normalize_tiktok_username(username)
+        clean_user = await async_resolve_tiktok_username(username)
         if not clean_user:
             return await ctx.send("Nama pengguna atau tautan akun TikTok tidak valid.", ephemeral=True)
 
@@ -1515,6 +1633,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
             "platform": "tiktok",
             "identifier": clean_user,
             "display_name": clean_user,
+            "sec_uid": None,
             "target_guild_id": ctx.guild.id if ctx.guild else None,
             "target_channel_id": channel_to_use.id,
             "content": "@everyone {ai_hype}",
@@ -1531,6 +1650,9 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
         current_items = await self._fetch_tiktok_content(clean_user)
         for it in current_items:
+            if it.get("sec_uid") and not new_target.get("sec_uid"):
+                new_target["sec_uid"] = it["sec_uid"]
+                self._save_config()
             if it["video_id"] not in self.cache["posted_ids"]:
                 self.cache["posted_ids"].append(it["video_id"])
         self._save_cache()
@@ -1540,11 +1662,11 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
     @tt_group.command(name="remove", description="Hapus akun TikTok dari pemantauan")
     @commands.is_owner()
     async def tt_remove(self, ctx: commands.Context, username: str):
-        clean_user = normalize_tiktok_username(username)
+        clean_user = await async_resolve_tiktok_username(username)
         before_count = len(self.config["targets"])
         self.config["targets"] = [
             t for t in self.config["targets"]
-            if not (t.get("platform") == "tiktok" and t.get("identifier").lower() == clean_user)
+            if not (t.get("platform") == "tiktok" and t.get("identifier").lower() == clean_user.lower())
         ]
         if len(self.config["targets"]) < before_count:
             self._save_config()
@@ -1557,9 +1679,9 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
     async def tt_config(self, ctx: commands.Context, target: Optional[str] = None):
         found = None
         if target:
-            clean = normalize_tiktok_username(target)
+            clean = await async_resolve_tiktok_username(target)
             for t in self.config.get("targets", []):
-                if t.get("platform") == "tiktok" and (t.get("identifier", "").lower() == clean or clean in t.get("display_name", "").lower() or t.get("id") == clean):
+                if t.get("platform") == "tiktok" and (t.get("identifier", "").lower() == clean.lower() or clean.lower() in t.get("display_name", "").lower() or t.get("id") == clean):
                     found = t
                     break
             if not found:
@@ -1590,10 +1712,10 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         tombol: Optional[str] = None,
         gaya: Optional[Literal["kartu", "teks"]] = None
     ):
-        clean = normalize_tiktok_username(target)
+        clean = await async_resolve_tiktok_username(target)
         found = None
         for t in self.config.get("targets", []):
-            if t.get("platform") == "tiktok" and (t.get("identifier", "").lower() == clean or clean in t.get("display_name", "").lower() or t.get("id") == clean):
+            if t.get("platform") == "tiktok" and (t.get("identifier", "").lower() == clean.lower() or clean.lower() in t.get("display_name", "").lower() or t.get("id") == clean):
                 found = t
                 break
         if not found:
@@ -1701,8 +1823,11 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         targets = [t for t in self.config["targets"] if t.get("platform") == "tiktok" and t.get("enabled", True)]
         found_any = 0
         for t in targets:
-            items = await self._fetch_tiktok_content(t["identifier"])
+            items = await self._fetch_tiktok_content(t["identifier"], t.get("sec_uid"))
             for it in items:
+                if it.get("sec_uid") and not t.get("sec_uid"):
+                    t["sec_uid"] = it["sec_uid"]
+                    self._save_config()
                 vid = it["video_id"]
                 if self._is_id_posted(vid):
                     continue
@@ -1739,17 +1864,32 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
     @commands.command(name="socialremove", aliases=["rmsocial", "hapussocial"])
     @commands.is_owner()
     async def social_remove(self, ctx: commands.Context, target: str):
-        clean_user = normalize_tiktok_username(target)
+        clean_user = await async_resolve_tiktok_username(target)
         raw_clean = target.lstrip("@").strip().lower()
         before_count = len(self.config["targets"])
         self.config["targets"] = [
             t for t in self.config["targets"]
-            if not (clean_user in (t.get("identifier", "").lower(), t.get("display_name", "").lower(), t.get("id")) or raw_clean in (t.get("identifier", "").lower(), t.get("display_name", "").lower(), t.get("id")))
+            if not (clean_user.lower() in (t.get("identifier", "").lower(), t.get("display_name", "").lower(), t.get("id")) or raw_clean in (t.get("identifier", "").lower(), t.get("display_name", "").lower(), t.get("id")))
         ]
         if len(self.config["targets"]) < before_count:
             self._save_config()
             return await ctx.send(f"Target `{target}` berhasil dihapus dari pemantauan.", ephemeral=True)
         await ctx.send(f"Target `{target}` tidak ditemukan.", ephemeral=True)
+
+    @commands.command(name="ttadd", aliases=["addtt", "tiktokadd", "tambahtt"])
+    @commands.is_owner()
+    async def ttadd_cmd(self, ctx: commands.Context, username: str, target_channel: Optional[discord.TextChannel] = None):
+        return await self.tt_add(ctx, username, target_channel)
+
+    @commands.command(name="ttremove", aliases=["removett", "tiktokremove", "deltt", "ttdel", "hapustt"])
+    @commands.is_owner()
+    async def ttremove_cmd(self, ctx: commands.Context, username: str):
+        return await self.tt_remove(ctx, username)
+
+    @commands.command(name="ttconfig", aliases=["configtt", "tiktokconfig", "settingtt"])
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def ttconfig_cmd(self, ctx: commands.Context, target: Optional[str] = None):
+        return await self.tt_config(ctx, target)
 
     @commands.command(name="sociallist", aliases=["listsocial"])
     @commands.is_owner()
@@ -1823,8 +1963,11 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                         self.cache["posted_ids"].append(vid)
                         found_any += 1
             elif platform == "tiktok":
-                items = await self._fetch_tiktok_content(t["identifier"])
+                items = await self._fetch_tiktok_content(t["identifier"], t.get("sec_uid"))
                 for it in items:
+                    if it.get("sec_uid") and not t.get("sec_uid"):
+                        t["sec_uid"] = it["sec_uid"]
+                        self._save_config()
                     vid = it["video_id"]
                     if vid in self.cache["posted_ids"]:
                         continue
