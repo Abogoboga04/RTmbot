@@ -426,6 +426,7 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
 
         self.config = self._load_config()
         self.cache = self._load_cache()
+        self.live_states = {}
 
         self.http_headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -867,15 +868,17 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         clean_user = normalize_tiktok_username(username)
         if not clean_user:
             return None, None, None, None
-        url = f"https://www.tiktok.com/@{clean_user}/"
+        url = f"https://www.tiktok.com/@{clean_user}"
         try:
             from curl_cffi import requests as cffi_requests
             s = cffi_requests.Session(impersonate="chrome")
-            s.headers.update({
+            mobile_headers = {
+                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
                 "Referer": "https://www.tiktok.com/",
-                "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8",
-            })
-            r = s.get(url, timeout=10)
+            }
+            r = s.get(url, headers=mobile_headers, timeout=10)
             if r.status_code == 200:
                 text = r.text
                 idx = text.find("__UNIVERSAL_DATA_FOR_REHYDRATION__")
@@ -957,10 +960,10 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         clean_user = normalize_tiktok_username(username)
         creator_name = display_name or clean_user
         ydl_opts = {
+            "extract_flat": True,
             "quiet": True,
             "no_warnings": True,
-            "playlist_items": "1:3",
-            "socket_timeout": 12,
+            "socket_timeout": 10,
             "logger": _SilentYDLLogger(),
         }
         try:
@@ -969,27 +972,34 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         except Exception:
             pass
         try:
+            import itertools
+            from yt_dlp.extractor.tiktok import TikTokUserIE
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(f"tiktokuser:{sec_uid}", download=False)
-                if not info or "entries" not in info:
+                ie = TikTokUserIE(ydl)
+                entries = list(itertools.islice(ie._entries(sec_uid, clean_user), 5))
+                if not entries:
                     return []
                 results = []
-                for entry in info.get("entries", []):
+                for entry in entries:
                     if not entry:
                         continue
                     vid = str(entry.get("id") or "")
                     if not vid:
                         continue
                     url = f"https://www.tiktok.com/@{clean_user}/video/{vid}"
-                    uploader = entry.get("uploader") or creator_name
-                    title_raw = entry.get("title") or f"TikTok Video by @{clean_user}"
+                    uploader = entry.get("uploader") or entry.get("channel") or creator_name
+                    raw_title = entry.get("title") or entry.get("description") or ""
+                    cleaned_title = clean_hyperlink_title(raw_title) or f"TikTok Video by @{clean_user}"
+                    t_url = entry.get("thumbnail")
+                    if not t_url and entry.get("thumbnails"):
+                        t_url = entry["thumbnails"][0].get("url")
                     results.append({
                         "video_id": vid,
-                        "title": clean_hyperlink_title(title_raw) or f"TikTok Video by @{clean_user}",
+                        "title": cleaned_title,
                         "creator": uploader,
                         "url": url,
-                        "thumbnail": entry.get("thumbnail"),
-                        "description": title_raw,
+                        "thumbnail": t_url,
+                        "description": raw_title or cleaned_title,
                         "is_live": False,
                         "sec_uid": sec_uid,
                     })
@@ -1001,15 +1011,18 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         clean_user = normalize_tiktok_username(username)
         if not clean_user:
             return []
-        url = f"https://www.tiktok.com/embed/@{clean_user}/"
+        url = f"https://www.tiktok.com/embed/@{clean_user}"
         try:
             from curl_cffi import requests as cffi_requests
             s = cffi_requests.Session(impersonate="chrome")
             s.headers.update({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 "Referer": "https://www.tiktok.com/",
                 "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8",
             })
             r = s.get(url, timeout=10)
+            if r.status_code != 200:
+                return []
             text = r.text
             idx = text.find("__FRONTITY_CONNECT_STATE__")
             if idx == -1:
@@ -1038,7 +1051,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                             "creator": display_name,
                             "url": f"https://www.tiktok.com/@{clean_user}/video/{vid}",
                             "thumbnail": cover,
-                            "description": desc,
+                            "description": desc or f"TikTok Video by @{clean_user}",
                             "is_live": False,
                         })
             results.sort(key=lambda x: int(x["video_id"]) if x["video_id"].isdigit() else 0, reverse=True)
@@ -1080,71 +1093,88 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         known_sec_uid = sec_uid
         display_name = clean_user
 
+        if known_sec_uid:
+            try:
+                sec_videos = await asyncio.to_thread(self._sync_tiktok_secuid_videos, known_sec_uid, clean_user, display_name)
+                if sec_videos:
+                    results.extend(sec_videos)
+            except Exception:
+                pass
+
+        live_item = None
         try:
             live_item, fetched_sec_uid, nick, avatar = await asyncio.to_thread(self._sync_tiktok_web_profile, clean_user)
-            if live_item:
-                results.append(live_item)
-            if fetched_sec_uid:
+            if fetched_sec_uid and not known_sec_uid:
                 known_sec_uid = fetched_sec_uid
             if nick:
                 display_name = nick
         except Exception:
             pass
 
-        if not any(r.get("is_live") for r in results):
-            try:
-                live_item = await asyncio.to_thread(self._sync_tiktok_live, clean_user)
-                if live_item:
-                    results.append(live_item)
-            except Exception:
-                pass
-
-        if known_sec_uid:
+        if not results and known_sec_uid:
             try:
                 sec_videos = await asyncio.to_thread(self._sync_tiktok_secuid_videos, known_sec_uid, clean_user, display_name)
                 if sec_videos:
                     results.extend(sec_videos)
-                    return results
             except Exception:
                 pass
 
-        try:
-            embed_results = await asyncio.to_thread(self._sync_tiktok_embed, clean_user)
-            if embed_results:
-                if known_sec_uid:
-                    for er in embed_results:
-                        er["sec_uid"] = known_sec_uid
-                results.extend(embed_results)
-                return results
-        except Exception:
-            pass
+        if not results:
+            try:
+                embed_results = await asyncio.to_thread(self._sync_tiktok_embed, clean_user)
+                if embed_results:
+                    if known_sec_uid:
+                        for er in embed_results:
+                            er["sec_uid"] = known_sec_uid
+                    results.extend(embed_results)
+            except Exception:
+                pass
 
-        try:
-            data = await asyncio.to_thread(self._sync_tiktok_profile, clean_user)
-            if data and "entries" in data:
-                for entry in data.get("entries", []):
-                    if not entry:
-                        continue
-                    vid = str(entry.get("id"))
-                    if not vid:
-                        continue
+        if not results:
+            try:
+                data = await asyncio.to_thread(self._sync_tiktok_profile, clean_user)
+                if data and "entries" in data:
+                    for entry in data.get("entries", []):
+                        if not entry:
+                            continue
+                        vid = str(entry.get("id") or "")
+                        if not vid:
+                            continue
 
-                    url = entry.get("url")
-                    if not url or not url.startswith("http"):
-                        url = f"https://www.tiktok.com/@{clean_user}/video/{vid}"
+                        url = entry.get("url")
+                        if not url or not url.startswith("http"):
+                            url = f"https://www.tiktok.com/@{clean_user}/video/{vid}"
 
-                    results.append({
-                        "video_id": vid,
-                        "title": clean_hyperlink_title(entry.get("title")) or f"TikTok Video by @{clean_user}",
-                        "creator": entry.get("uploader") or display_name,
-                        "url": url,
-                        "thumbnail": entry.get("thumbnail"),
-                        "description": entry.get("title") or "",
-                        "is_live": False,
-                        "sec_uid": known_sec_uid,
-                    })
-        except Exception:
-            pass
+                        t_url = entry.get("thumbnail")
+                        if not t_url and entry.get("thumbnails"):
+                            t_url = entry["thumbnails"][0].get("url")
+
+                        results.append({
+                            "video_id": vid,
+                            "title": clean_hyperlink_title(entry.get("title")) or f"TikTok Video by @{clean_user}",
+                            "creator": entry.get("uploader") or display_name,
+                            "url": url,
+                            "thumbnail": t_url,
+                            "description": entry.get("title") or "",
+                            "is_live": False,
+                            "sec_uid": known_sec_uid,
+                        })
+            except Exception:
+                pass
+
+        if known_sec_uid:
+            for item in results:
+                if not item.get("sec_uid"):
+                    item["sec_uid"] = known_sec_uid
+
+        was_live = self.live_states.get(clean_user, False)
+        if live_item:
+            if not was_live:
+                self.live_states[clean_user] = True
+                results.insert(0, live_item)
+        else:
+            if was_live:
+                self.live_states[clean_user] = False
 
         return results
 
@@ -1371,7 +1401,8 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
                         success = await self._send_content_card(target, item)
                         if success:
-                            self._record_posted_id(vid)
+                            if not item.get("is_live"):
+                                self._record_posted_id(vid)
                             await asyncio.sleep(2)
 
             except Exception:
@@ -1649,9 +1680,11 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         for it in current_items:
             if it.get("sec_uid") and not new_target.get("sec_uid"):
                 new_target["sec_uid"] = it["sec_uid"]
-                self._save_config()
-            if it["video_id"] not in self.cache["posted_ids"]:
+            if it.get("creator") and new_target.get("display_name") == clean_user:
+                new_target["display_name"] = it["creator"]
+            if not it.get("is_live") and it["video_id"] not in self.cache["posted_ids"]:
                 self.cache["posted_ids"].append(it["video_id"])
+        self._save_config()
         self._save_cache()
 
         await ctx.send(f"Berhasil menambahkan TikTok **@{clean_user}** ke pemantauan di {channel_to_use.mention}.", ephemeral=True)
@@ -1829,7 +1862,8 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                 if self._is_id_posted(vid):
                     continue
                 if await self._send_content_card(t, it):
-                    self._record_posted_id(vid)
+                    if not it.get("is_live"):
+                        self._record_posted_id(vid)
                     found_any += 1
         await ctx.send(f"Pengecekan selesai. Ditemukan dan dikirim: {found_any} video TikTok baru.", ephemeral=True)
 
@@ -1969,7 +2003,8 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                     if vid in self.cache["posted_ids"]:
                         continue
                     if await self._send_content_card(t, it):
-                        self.cache["posted_ids"].append(vid)
+                        if not it.get("is_live"):
+                            self.cache["posted_ids"].append(vid)
                         found_any += 1
         self._save_cache()
         await ctx.send(f"Pengecekan serentak selesai. Ditemukan dan dikirim: {found_any} konten baru.", ephemeral=True)

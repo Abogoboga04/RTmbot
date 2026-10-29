@@ -27,3 +27,4 @@ pilmoji
 yt-dlp-youtube-oauth2
 edge-tts
 pytubefix
+curl_cffi>=0.7.0
