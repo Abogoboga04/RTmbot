@@ -668,6 +668,29 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
         owner_id = str(os.getenv("BOT_OWNER_ID", "1000737066822410311"))
         return uid == owner_id or uid == "1000737066822410311"
 
+    async def generate_booster_shoutout(self, guild_name: str, member_name: str, boost_count: int, tier: str) -> str:
+        prompt = (
+            f"Kamu adalah Raka, bot maskot Discord anak tongkrongan yang cerdas, asik, ceplas-ceplos, dan loyal. "
+            f"Warga server bernama '{member_name}' baru saja mem-boost server '{guild_name}'! "
+            f"Dengan boost ini, server sekarang punya total {boost_count} Boosts ({tier}). "
+            f"Buat 1-2 kalimat ucapan terima kasih/shoutout apresiasi yang super asik, hangat, kocak/pujian ala sultan tongkrongan buat si booster. "
+            f"Dilarang kaku/robotik, dilarang mention diri sendiri, jangan gunakan tag aksi ($$ACTION), jangan gunakan tanda kutip di awal/akhir kalimat. "
+            f"Langsung tulis kalimat ucapannya saja!"
+        )
+        try:
+            coro = generate_smart_response(prompt)
+            resp = await asyncio.wait_for(coro, timeout=5.0)
+            text = (resp.text or "").strip().replace('"', '').replace("'", "")
+            text = self.clean_ai_chat_response(text)
+            if text and len(text) > 10:
+                return text
+        except Exception:
+            pass
+        return (
+            f"GILAAK! Makasih banyak buat {member_name} udah nge-boost {guild_name}! "
+            f"Server kita sekarang resmi melesat ke {tier} ({boost_count} Boosts). Lu resmi jadi sultan kehormatan tongkrongan hari ini! 🚀💎"
+        )
+
     @tasks.loop(minutes=30)
     async def cleanup_task(self):
         now = time.time()

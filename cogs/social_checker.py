@@ -1547,6 +1547,98 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
         return results
 
+    async def _enrich_instagram_media(self, content_data: dict) -> dict:
+        sc = content_data.get("shortcode")
+        url = content_data.get("url") or ""
+        if not sc and url:
+            m = re.search(r'instagram\.com\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)', url)
+            if m:
+                sc = m.group(1)
+        if not sc:
+            return {}
+
+        def _fetch_instaloader():
+            try:
+                import instaloader
+                L = instaloader.Instaloader(quiet=True)
+                p = instaloader.Post.from_shortcode(L.context, sc)
+                v_url = p.video_url if p.is_video else None
+                m_list = []
+                if p.typename == "GraphSidecar":
+                    for s_node in p.get_sidecar_nodes():
+                        m_list.append({
+                            "url": s_node.video_url if s_node.is_video else s_node.display_url,
+                            "is_video": s_node.is_video
+                        })
+                return {
+                    "video_url": v_url,
+                    "media_list": m_list,
+                    "is_reel": p.is_video or content_data.get("is_reel", False),
+                    "thumbnail": p.url or content_data.get("thumbnail")
+                }
+            except Exception:
+                return None
+
+        enriched = await asyncio.to_thread(_fetch_instaloader)
+        if enriched and (enriched.get("video_url") or enriched.get("media_list")):
+            return enriched
+
+        def _fetch_ytdlp():
+            try:
+                import yt_dlp
+                ydl_opts = {
+                    "quiet": True,
+                    "skip_download": True,
+                    "extract_flat": False,
+                    "no_warnings": True
+                }
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                    if not info:
+                        return None
+                    entries = info.get("entries")
+                    if entries:
+                        m_list = []
+                        for entry in entries:
+                            m_list.append({
+                                "url": entry.get("url"),
+                                "is_video": entry.get("ext") == "mp4" or entry.get("vcodec") != "none"
+                            })
+                        return {"media_list": m_list, "video_url": None}
+                    v_url = info.get("url") if (info.get("ext") == "mp4" or info.get("vcodec") != "none") else None
+                    return {"video_url": v_url, "media_list": []}
+            except Exception:
+                return None
+
+        if url:
+            ytdlp_res = await asyncio.to_thread(_fetch_ytdlp)
+            if ytdlp_res:
+                return ytdlp_res
+
+        return {}
+
+    async def _try_fetch_story_media(self, username: str) -> tuple:
+        session_id = os.getenv("IG_SESSION_ID") or self.config.get("instagram_session_id")
+        if not session_id or not username:
+            return None, False
+
+        clean_user = normalize_instagram_username(username)
+
+        def _fetch_story():
+            try:
+                import instaloader
+                L = instaloader.Instaloader(quiet=True)
+                L.context._session.cookies.set("sessionid", session_id, domain=".instagram.com")
+                profile = instaloader.Profile.from_username(L.context, clean_user)
+                for story in L.get_stories(userids=[profile.userid]):
+                    for item in story.get_items():
+                        return (item.video_url if item.is_video else item.url), item.is_video
+                return None, False
+            except Exception:
+                return None, False
+
+        return await asyncio.to_thread(_fetch_story)
+
     async def _send_content_card(self, target: dict, content_data: dict):
         channel = self.bot.get_channel(target["target_channel_id"])
         if not channel:
@@ -1563,6 +1655,22 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         is_story = content_data.get("is_story", False)
         is_reel = content_data.get("is_reel", False)
         thumbnail = content_data.get("thumbnail")
+
+        if platform == "instagram" and not is_story:
+            enriched = await self._enrich_instagram_media(content_data)
+            if enriched:
+                content_data.update(enriched)
+                thumbnail = content_data.get("thumbnail") or thumbnail
+                is_reel = content_data.get("is_reel", is_reel)
+
+        if platform == "instagram" and is_story:
+            story_media_url, is_v = await self._try_fetch_story_media(creator or target.get("identifier"))
+            if story_media_url:
+                if is_v:
+                    content_data["video_url"] = story_media_url
+                else:
+                    content_data["thumbnail"] = story_media_url
+                    thumbnail = story_media_url
 
         desc = content_data.get("description") or title or url
         desc = clean_hyperlink_title(desc) if desc else ""
@@ -1621,10 +1729,63 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
         files = None
         attachment_fn = None
-        if thumbnail:
+
+        video_url = content_data.get("video_url")
+        media_list = content_data.get("media_list") or []
+
+        if video_url:
             try:
                 import io
-                timeout = aiohttp.ClientTimeout(total=5)
+                timeout = aiohttp.ClientTimeout(total=25)
+                dl_headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Referer": "https://www.instagram.com/"
+                }
+                async with aiohttp.ClientSession(timeout=timeout, headers=dl_headers) as session:
+                    async with session.get(video_url) as v_resp:
+                        if v_resp.status == 200:
+                            c_len = v_resp.content_length
+                            if c_len is None or c_len <= 24 * 1024 * 1024:
+                                v_bytes = await v_resp.read()
+                                if len(v_bytes) <= 24 * 1024 * 1024:
+                                    files = [discord.File(io.BytesIO(v_bytes), filename="instagram_video.mp4")]
+                                    attachment_fn = "instagram_video.mp4"
+            except Exception:
+                files = None
+                attachment_fn = None
+
+        if not files and media_list and len(media_list) > 1:
+            try:
+                import io
+                timeout = aiohttp.ClientTimeout(total=20)
+                dl_headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Referer": "https://www.instagram.com/"
+                }
+                c_files = []
+                async with aiohttp.ClientSession(timeout=timeout, headers=dl_headers) as session:
+                    for idx, m_item in enumerate(media_list[:10]):
+                        m_u = m_item.get("url") if isinstance(m_item, dict) else str(m_item)
+                        is_v = m_item.get("is_video") if isinstance(m_item, dict) else False
+                        ext = "mp4" if is_v else "jpg"
+                        try:
+                            async with session.get(m_u) as m_resp:
+                                if m_resp.status == 200:
+                                    b = await m_resp.read()
+                                    if len(b) <= 24 * 1024 * 1024:
+                                        c_files.append(discord.File(io.BytesIO(b), filename=f"slide_{idx+1}.{ext}"))
+                        except Exception:
+                            pass
+                if c_files:
+                    files = c_files
+                    attachment_fn = files[0].filename
+            except Exception:
+                pass
+
+        if not files and thumbnail:
+            try:
+                import io
+                timeout = aiohttp.ClientTimeout(total=8)
                 dl_headers = {
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
                 }
@@ -1642,7 +1803,6 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
             except Exception:
                 files = None
                 attachment_fn = None
-
 
         if use_card:
             card = build_v2_card(
@@ -1663,7 +1823,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         send_content = intro_text
         if url not in send_content:
             send_content = f"{send_content}\n{url}"
-        await channel.send(content=send_content, view=fallback_view)
+        await channel.send(content=send_content, files=files, view=fallback_view)
         return True
 
     @tasks.loop(seconds=30)
@@ -1721,8 +1881,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
                         success = await self._send_content_card(target, item)
                         if success:
-                            if not item.get("is_story"):
-                                self._record_posted_id(vid)
+                            self._record_posted_id(vid)
                             await asyncio.sleep(2)
 
             except Exception:
@@ -2406,8 +2565,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                 if self._is_id_posted(vid):
                     continue
                 if await self._send_content_card(t, it):
-                    if not it.get("is_story"):
-                        self._record_posted_id(vid)
+                    self._record_posted_id(vid)
                     found_any += 1
         await ctx.send(f"Pengecekan selesai. Ditemukan dan dikirim: {found_any} konten Instagram baru.", ephemeral=True)
 

@@ -64,7 +64,7 @@ def get_or_create_member_serial_id(guild: discord.Guild, member: discord.Member)
 
 FANCY_MAP = {
     'ᴀ':'A','ʙ':'B','ᴄ':'C','ᴅ':'D','ᴇ':'E','ғ':'F','ɢ':'G','ʜ':'H','ɪ':'I','ᴊ':'J','ᴋ':'K','ʟ':'L','ᴍ':'M',
-    'ɴ':'N','ᴏ':'O','ᴘ':'P','ǫ':'Q','ʀ':'R','ꜱ':'S','s':'S','ᴛ':'T','ᴜ':'U','ᴠ':'V','ᴡ':'W','x':'X','ʏ':'Y','ᴢ':'Z',
+    'ɴ':'N','ᴏ':'O','ᴘ':'P','ǫ':'Q','ʀ':'R','ꜱ':'S','ᴛ':'T','ᴜ':'U','ᴠ':'V','ᴡ':'W','x':'X','ʏ':'Y','ᴢ':'Z',
     '⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9',
     '₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9',
     'ᵃ':'a','ᵇ':'b','ᶜ':'c','ᵈ':'d','ᵉ':'e','ᶠ':'f','ᵍ':'g','ʰ':'h','ⁱ':'i','ʲ':'j','ᵏ':'k','ˡ':'l','ᵐ':'m',
@@ -1036,6 +1036,268 @@ async def generate_weekly_leaderboard_card(
         tb = fonts["footer"].getbbox(ts_text)
         tw = tb[2] - tb[0]
         draw.text((W - 45 - tw, 636), ts_text, font=fonts["footer"], fill=(100, 116, 139, 255))
+
+        buf = io.BytesIO()
+        card.save(buf, format="PNG")
+        buf.seek(0)
+        return buf
+
+    return await asyncio.to_thread(_render)
+
+
+def get_booster_card_fonts():
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    asset_fonts = os.path.join(base_dir, "assets", "fonts")
+    search_dirs = [
+        asset_fonts,
+        os.path.join(base_dir, "data", "fonts"),
+        r"C:\Windows\Fonts",
+        "/usr/share/fonts/truetype/dejavu",
+        "/usr/share/fonts/truetype/liberation",
+        "/usr/share/fonts/opentype/noto",
+        "/usr/share/fonts/truetype/noto",
+        "/usr/share/fonts",
+        "/usr/local/share/fonts"
+    ]
+
+    def find_font(filenames):
+        for fn in filenames:
+            for d in search_dirs:
+                if not os.path.exists(d):
+                    continue
+                p = os.path.join(d, fn)
+                if os.path.isfile(p):
+                    return p
+        return None
+
+    f_sans_bold = find_font(["arialbd.ttf", "DejaVuSans-Bold.ttf", "LiberationSans-Bold.ttf"])
+    f_sans_reg = find_font(["arial.ttf", "DejaVuSans.ttf", "LiberationSans-Regular.ttf"])
+    f_cjk_bold = find_font(["msyhbd.ttc", "NotoSansCJK-Bold.ttc", "NotoSansCJKsc-Bold.otf", "segoeuib.ttf", "malgunbd.ttf", "DejaVuSans-Bold.ttf"])
+    f_cjk_reg = find_font(["msyh.ttc", "NotoSansCJK-Regular.ttc", "NotoSansCJKsc-Regular.otf", "segoeui.ttf", "malgun.ttf", "DejaVuSans.ttf"])
+
+    cmap_sans_bold = get_font_cmap(f_sans_bold)
+    cmap_sans_reg = get_font_cmap(f_sans_reg)
+    cmap_cjk_bold = get_font_cmap(f_cjk_bold)
+    cmap_cjk_reg = get_font_cmap(f_cjk_reg)
+
+    def load_font(path, size):
+        try:
+            if path and os.path.exists(path):
+                return ImageFont.truetype(path, size)
+        except Exception:
+            pass
+        return ImageFont.load_default()
+
+    return {
+        "header_title": load_font(f_sans_bold, 20),
+        "header_sub": load_font(f_sans_bold, 13),
+        "name": load_font(f_sans_bold, 36),
+        "name_cjk": load_font(f_cjk_bold, 36),
+        "tag": load_font(f_sans_reg, 19),
+        "tag_cjk": load_font(f_cjk_reg, 19),
+        "badge": load_font(f_sans_bold, 14),
+        "box_label": load_font(f_sans_bold, 13),
+        "box_val": load_font(f_sans_bold, 21),
+        "box_val_cjk": load_font(f_cjk_bold, 21),
+        "bar_text": load_font(f_sans_bold, 13),
+        "bar_text_cjk": load_font(f_cjk_bold, 13),
+        "footer": load_font(f_sans_reg, 14),
+        "footer_cjk": load_font(f_cjk_reg, 14),
+        "name_23": load_font(f_sans_bold, 54),
+        "cmap_sans_bold": cmap_sans_bold,
+        "cmap_sans_reg": cmap_sans_reg,
+        "cmap_cjk_bold": cmap_cjk_bold,
+        "cmap_cjk_reg": cmap_cjk_reg,
+    }
+
+
+async def generate_booster_card(
+    bot: discord.Client,
+    guild: discord.Guild,
+    member: discord.Member,
+    boost_count: int = 1,
+    tier: str = "Tier 1",
+    custom_bg_url: str = None
+) -> io.BytesIO:
+    avatar_bytes = None
+    if member:
+        try:
+            avatar_bytes = await member.display_avatar.replace(size=256, format="png").read()
+        except Exception:
+            pass
+
+    custom_bg_bytes = None
+    if custom_bg_url and str(custom_bg_url).startswith("http"):
+        try:
+            timeout = aiohttp.ClientTimeout(total=5)
+            async with aiohttp.ClientSession(timeout=timeout) as sess:
+                async with sess.get(custom_bg_url) as r:
+                    if r.status == 200:
+                        custom_bg_bytes = await r.read()
+        except Exception:
+            pass
+
+    safe_name = clean_display_text(member.display_name if member else "Booster")
+    safe_tag = clean_display_text(member.name if member else "booster")
+    safe_guild = clean_display_text(guild.name if guild else "Server")
+
+    def _render() -> io.BytesIO:
+        W, H = 1050, 580
+        fonts = get_booster_card_fonts()
+
+        if custom_bg_bytes:
+            try:
+                raw_bg = Image.open(io.BytesIO(custom_bg_bytes)).convert("RGBA")
+                bg_w, bg_h = raw_bg.size
+                ratio = max(W / bg_w, H / bg_h)
+                new_size = (int(bg_w * ratio), int(bg_h * ratio))
+                raw_bg = raw_bg.resize(new_size, Image.Resampling.LANCZOS)
+                crop_x = (new_size[0] - W) // 2
+                crop_y = (new_size[1] - H) // 2
+                card = raw_bg.crop((crop_x, crop_y, crop_x + W, crop_y + H))
+                dark_tint = Image.new("RGBA", (W, H), (10, 6, 20, 215))
+                card = Image.alpha_composite(card, dark_tint)
+            except Exception:
+                card = Image.new("RGBA", (W, H), (11, 7, 22, 255))
+        else:
+            card = Image.new("RGBA", (W, H), (11, 7, 22, 255))
+            draw_bg = ImageDraw.Draw(card)
+            for y in range(H):
+                r = int(10 + (26 - 10) * (y / H))
+                g = int(6 + (12 - 6) * (y / H))
+                b = int(20 + (46 - 20) * (y / H))
+                draw_bg.line([(0, y), (W, y)], fill=(r, g, b, 255))
+
+        draw = ImageDraw.Draw(card)
+
+        for p_idx, (sx, sy) in enumerate([
+            (75, 80), (140, 510), (280, 75), (420, 95), (600, 70), (780, 110),
+            (950, 85), (980, 480), (480, 530), (720, 520), (880, 390)
+        ]):
+            r_out = 4 if p_idx % 2 == 0 else 3
+            draw_star(draw, sx, sy, r_outer=r_out, r_inner=1, fill=(244, 127, 255, 120), outline=(0, 240, 255, 100))
+
+        draw.rounded_rectangle([(14, 14), (W - 14, H - 14)], radius=26, outline=(244, 127, 255, 230), width=3)
+        draw.rounded_rectangle([(20, 20), (W - 20, H - 20)], radius=22, outline=(0, 240, 255, 80), width=1)
+
+        draw.rounded_rectangle([(45, 42), (325, 78)], radius=18, fill=(35, 16, 58, 220), outline=(244, 127, 255, 120), width=1)
+        draw_star(draw, 64, 60, r_outer=6, r_inner=3, fill=(244, 127, 255, 255), outline=(255, 255, 255, 200))
+        draw.text((78, 51), "DISCORD NITRO BOOSTER", font=fonts["header_sub"], fill=(244, 127, 255, 255))
+
+        draw.text((W - 310, 50), "OFFICIAL SERVER BOOSTER", font=fonts["header_sub"], fill=(180, 170, 215, 255))
+        draw.line([(45, 96), (W - 45, 96)], fill=(244, 127, 255, 60), width=1)
+
+        cx, cy, radius = 185, 290, 90
+        draw.ellipse([(cx - radius - 12, cy - radius - 12), (cx + radius + 12, cy + radius + 12)], outline=(0, 240, 255, 120), width=2)
+        draw.ellipse([(cx - radius - 5, cy - radius - 5), (cx + radius + 5, cy + radius + 5)], outline=(244, 127, 255, 255), width=4)
+
+        if avatar_bytes:
+            try:
+                av_img = Image.open(io.BytesIO(avatar_bytes)).convert("RGBA").resize((radius * 2, radius * 2), Image.Resampling.LANCZOS)
+                mask = Image.new("L", (radius * 2, radius * 2), 0)
+                ImageDraw.Draw(mask).ellipse([(0, 0), (radius * 2 - 1, radius * 2 - 1)], fill=255)
+                card.paste(av_img, (cx - radius, cy - radius), mask)
+            except Exception:
+                draw_fallback_avatar(card, cx, cy, radius, safe_name[0].upper() if safe_name else "B", (75, 25, 110, 255), fonts)
+        else:
+            draw_fallback_avatar(card, cx, cy, radius, safe_name[0].upper() if safe_name else "B", (75, 25, 110, 255), fonts)
+
+        draw.rounded_rectangle([(85, 415), (285, 448)], radius=16, fill=(244, 127, 255, 235), outline=(255, 255, 255, 180), width=1)
+        draw_star(draw, 105, 431, r_outer=5, r_inner=2, fill=(22, 10, 38, 255), outline=(22, 10, 38, 255))
+        draw_star(draw, 265, 431, r_outer=5, r_inner=2, fill=(22, 10, 38, 255), outline=(22, 10, 38, 255))
+        draw.text((118, 423), "SERVER BOOSTER", font=fonts["badge"], fill=(22, 10, 38, 255))
+
+        tx = 335
+        display_name_clipped = safe_name[:22] + ".." if len(safe_name) > 24 else safe_name
+        draw_text_with_fallback(
+            draw, (tx, 135), display_name_clipped,
+            fonts["name"], fonts["name_cjk"],
+            fonts["cmap_sans_bold"], fonts["cmap_cjk_bold"],
+            (255, 255, 255, 255)
+        )
+
+        tag_clipped = f"@{safe_tag[:26]}"
+        draw_text_with_fallback(
+            draw, (tx, 185), tag_clipped,
+            fonts["tag"], fonts["tag_cjk"],
+            fonts["cmap_sans_reg"], fonts["cmap_cjk_reg"],
+            (195, 185, 225, 255)
+        )
+
+        draw.line([(tx, 225), (W - 55, 225)], fill=(244, 127, 255, 80), width=1)
+
+        box_top = 245
+        box_bot = 380
+        draw.rounded_rectangle([(tx, box_top), (W - 55, box_bot)], radius=18, fill=(24, 14, 46, 200), outline=(244, 127, 255, 90), width=1)
+        mid_x = tx + (W - 55 - tx) // 2
+        draw.line([(mid_x, box_top + 16), (mid_x, box_bot - 16)], fill=(244, 127, 255, 60), width=1)
+
+        draw.text((tx + 24, box_top + 20), "STATUS SERVER", font=fonts["box_label"], fill=(185, 175, 220, 255))
+        g_name_clipped = safe_guild[:20] + ".." if len(safe_guild) > 22 else safe_guild
+        draw_text_with_fallback(
+            draw, (tx + 24, box_top + 48), g_name_clipped,
+            fonts["box_val"], fonts["box_val_cjk"],
+            fonts["cmap_sans_bold"], fonts["cmap_cjk_bold"],
+            (255, 255, 255, 255)
+        )
+        draw.text((tx + 24, box_top + 84), "Komunitas Resmi", font=fonts["header_sub"], fill=(0, 240, 255, 220))
+
+        draw.text((mid_x + 24, box_top + 20), "LEVEL TIER SERVER", font=fonts["box_label"], fill=(185, 175, 220, 255))
+        tier_val_str = f"{tier} • {boost_count} Boosts"
+        draw_text_with_fallback(
+            draw, (mid_x + 24, box_top + 48), tier_val_str,
+            fonts["box_val"], fonts["box_val_cjk"],
+            fonts["cmap_sans_bold"], fonts["cmap_cjk_bold"],
+            (255, 215, 0, 255)
+        )
+        draw.text((mid_x + 24, box_top + 84), "Status Keaktifan: Maksimal", font=fonts["header_sub"], fill=(244, 127, 255, 220))
+
+        if boost_count < 2:
+            target_needed = 2
+            target_tier_str = "Tier 1"
+            pct = max(0.08, min(1.0, boost_count / 2))
+            rem_str = f"{2 - boost_count} Boosts lagi menuju {target_tier_str}"
+        elif boost_count < 7:
+            target_needed = 7
+            target_tier_str = "Tier 2"
+            pct = max(0.08, min(1.0, (boost_count - 2) / (7 - 2)))
+            rem_str = f"{7 - boost_count} Boosts lagi menuju {target_tier_str}"
+        elif boost_count < 14:
+            target_needed = 14
+            target_tier_str = "Tier 3"
+            pct = max(0.08, min(1.0, (boost_count - 7) / (14 - 7)))
+            rem_str = f"{14 - boost_count} Boosts lagi menuju {target_tier_str}"
+        else:
+            target_needed = boost_count
+            target_tier_str = "Tier 3 (Maksimal)"
+            pct = 1.0
+            rem_str = "Tingkat Tertinggi Server Telah Tercapai!"
+
+        pct_display = int(pct * 100)
+        progress_label = f"Progress: {boost_count} Boosts ({pct_display}%) • {rem_str}"
+        draw_text_with_fallback(
+            draw, (tx + 2, 400), progress_label,
+            fonts["bar_text"], fonts["bar_text_cjk"],
+            fonts["cmap_sans_bold"], fonts["cmap_cjk_bold"],
+            (225, 215, 250, 255)
+        )
+
+        bar_x1 = tx
+        bar_x2 = W - 55
+        bar_y1 = 426
+        bar_y2 = 448
+        draw.rounded_rectangle([(bar_x1, bar_y1), (bar_x2, bar_y2)], radius=11, fill=(36, 20, 58, 255), outline=(75, 45, 110, 255), width=1)
+        fill_w = int((bar_x2 - bar_x1) * pct)
+        if fill_w > 12:
+            draw.rounded_rectangle([(bar_x1 + 2, bar_y1 + 2), (bar_x1 + fill_w - 2, bar_y2 - 2)], radius=9, fill=(244, 127, 255, 255))
+
+        footer_text = "Terima kasih banyak telah menjadi Server Booster dan memajukan server ini! 💜"
+        draw_text_with_fallback(
+            draw, (tx + 2, 482), footer_text,
+            fonts["footer"], fonts["footer_cjk"],
+            fonts["cmap_sans_reg"], fonts["cmap_cjk_reg"],
+            (175, 165, 210, 255)
+        )
 
         buf = io.BytesIO()
         card.save(buf, format="PNG")

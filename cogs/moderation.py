@@ -973,6 +973,47 @@ class BoosterMessageModal(discord.ui.Modal, title="Atur Pesan Sambutan Booster")
         await interaction.followup.send(embed=self.cog._create_embed(description="✅ Format pesan booster berhasil disimpan!", color=self.cog.color_success), ephemeral=True)
 
 
+class BoosterInteractionView(discord.ui.View):
+    def __init__(self, booster_member: discord.Member, guild: discord.Guild):
+        super().__init__(timeout=None)
+        self.booster_id = booster_member.id if booster_member else 0
+        self.booster_name = booster_member.display_name if booster_member else "Booster"
+        self.guild = guild
+        self.wished_users = set()
+
+    @discord.ui.button(label="Ucapkan Selamat", style=discord.ButtonStyle.primary, emoji="🎉", custom_id="booster_wish_btn")
+    async def wish_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id in self.wished_users:
+            return await interaction.response.send_message("Kamu sudah memberikan ucapan selamat kepada booster ini!", ephemeral=True)
+        if interaction.user.id == self.booster_id:
+            return await interaction.response.send_message("Terima kasih atas boost-mu! Kamu adalah booster kehormatan server ini! 💜", ephemeral=True)
+        self.wished_users.add(interaction.user.id)
+        await interaction.response.send_message(
+            f"🎉 Kamu ({interaction.user.mention}) telah mengucapkan selamat dan terima kasih kepada **{self.booster_name}** atas dukungannya!",
+            ephemeral=True
+        )
+
+    @discord.ui.button(label="Fasilitas Booster", style=discord.ButtonStyle.secondary, emoji="💎", custom_id="booster_perks_btn")
+    async def perks_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        tier_map = {0: "Level 0", 1: "Tier 1", 2: "Tier 2", 3: "Tier 3"}
+        curr_tier = tier_map.get(self.guild.premium_tier, f"Tier {self.guild.premium_tier}")
+        embed = discord.Embed(
+            title=f"💎 Keuntungan & Fasilitas Server Booster • {self.guild.name}",
+            description=(
+                f"Status Server saat ini: **{curr_tier}** ({self.guild.premium_subscription_count or 0} Boosts)\n\n"
+                "✨ **Keuntungan Eksklusif Server Booster:**\n"
+                "• **Role Khusus & Badge Nitro**: Warna nama istimewa dan ikon kristal di profil server.\n"
+                "• **Kualitas Audio HD**: Saluran suara jernih hingga 128 - 384 Kbps.\n"
+                "• **Batas Upload Lebih Besar**: Kemampuan berbagi file lebih leluasa.\n"
+                "• **Slot Custom Emoji & Stiker**: Membuka hingga 250+ emoji & stiker server eksklusif.\n"
+                "• **Akses Channel Privat**: Akses ke lounge dan ruang obrolan rahasia para booster.\n\n"
+                "*Terima kasih atas setiap dukunganmu untuk kemajuan komunitas ini!*"
+            ),
+            color=0xF47FFF
+        )
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
 class AutoRoleSetupView(discord.ui.View):
     def __init__(self, cog, guild, author):
         super().__init__(timeout=180)
@@ -1136,6 +1177,30 @@ class BoosterSetupView(discord.ui.View):
         self.cog.save_settings()
         status_str = "🟢 Diaktifkan" if settings["boost_enabled"] else "🔴 Dinonaktifkan"
         await interaction.response.send_message(f"Status pesan booster kini: **{status_str}**", ephemeral=True)
+
+    @discord.ui.button(label="Toggle AI Shoutout", style=discord.ButtonStyle.secondary, emoji="🤖", row=2)
+    async def toggle_ai_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        settings = self.cog.get_guild_settings(self.guild.id)
+        current = settings.get("boost_ai_greeting", True)
+        settings["boost_ai_greeting"] = not current
+        self.cog.save_settings()
+        status_str = "🟢 Aktif (Ucapan Dinamis Raka)" if settings["boost_ai_greeting"] else "🔴 Nonaktif (Hanya Template Statis)"
+        await interaction.response.send_message(f"AI Booster Shoutout kini: **{status_str}**", ephemeral=True)
+
+    @discord.ui.button(label="Ganti Mode Tampilan", style=discord.ButtonStyle.secondary, emoji="🖼️", row=2)
+    async def mode_display_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        settings = self.cog.get_guild_settings(self.guild.id)
+        modes = ["card_and_message", "card_only", "message_only"]
+        current = settings.get("boost_display_mode", "card_and_message")
+        next_mode = modes[(modes.index(current) + 1) % len(modes)] if current in modes else "card_and_message"
+        settings["boost_display_mode"] = next_mode
+        self.cog.save_settings()
+        mode_labels = {
+            "card_and_message": "Card HD + Pesan V2 (Paling Lengkap & Mewah)",
+            "card_only": "Card Gambar HD Saja",
+            "message_only": "Pesan Teks / Embed Saja"
+        }
+        await interaction.response.send_message(f"Mode tampilan booster kini: **{mode_labels.get(next_mode)}**", ephemeral=True)
 
 
 class TicketMessageModal(discord.ui.Modal, title="Atur Pesan Panel Tiket"):
@@ -3534,6 +3599,15 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         tier_map = {0: "Level 0", 1: "Tier 1", 2: "Tier 2", 3: "Tier 3"}
         tier = tier_map.get(guild.premium_tier, f"Tier {guild.premium_tier}")
 
+        ai_shoutout = None
+        if guild_settings.get("boost_ai_greeting", True):
+            gemini_cog = self.bot.get_cog("Cyber Defense & AI Raka")
+            if gemini_cog and hasattr(gemini_cog, "generate_booster_shoutout"):
+                try:
+                    ai_shoutout = await gemini_cog.generate_booster_shoutout(guild.name, member.display_name, boost_count, tier)
+                except Exception:
+                    ai_shoutout = None
+
         default_msg = (
             "🎉 **BOOSTER BARU!** Terima kasih banyak {user_mention} telah mem-boost **{server}**! 💜\n"
             "Berkat dukunganmu, server kita sekarang memiliki **{boost_count} Boosts** ({tier})! Nikmati role dan fasilitas eksklusifmu! 🚀"
@@ -3551,19 +3625,71 @@ class SentinelGuard(commands.Cog, name="Sentinel Moderation"):
         except Exception:
             formatted_msg = raw_template
 
+        card_description = f"{ai_shoutout}\n\n{formatted_msg}" if ai_shoutout else formatted_msg
+
+        display_mode = guild_settings.get("boost_display_mode", "card_and_message")
+        custom_bg_url = guild_settings.get("boost_image_url")
+
+        files = []
+        attachment_fn = None
+        if display_mode != "message_only":
+            try:
+                from cogs.card_generator import generate_booster_card
+                card_buf = await generate_booster_card(self.bot, guild, member, boost_count, tier, custom_bg_url=custom_bg_url)
+                if card_buf:
+                    files = [discord.File(card_buf, filename="booster_card.png")]
+                    attachment_fn = "booster_card.png"
+            except Exception:
+                files = []
+                attachment_fn = None
+
+        interaction_view = BoosterInteractionView(member, guild)
+
+        if display_mode == "card_only" and files:
+            try:
+                await channel.send(content=f"🚀 **Server Boosted by {member.mention}!**", file=files[0], view=interaction_view)
+                return
+            except Exception:
+                pass
+
         from cogs.v2_layout import build_v2_card, send_v2_message
         card = build_v2_card(
             title=f"🚀 Server Boosted! • {guild.name}",
-            description=formatted_msg,
+            description=card_description,
             fields=[
                 {"name": "✨ Booster", "value": f"{member.mention} (`{member.name}`)"},
                 {"name": "💎 Level Server", "value": f"**{tier}** (`{boost_count}` Boosts)"}
             ],
             color=0xF47FFF,
-            media_url=guild_settings.get("boost_image_url") or None,
+            media_url=custom_bg_url if not attachment_fn else None,
+            attachment_filename=attachment_fn,
             footer="Server Boost Event • Terima kasih atas dukunganmu!"
         )
-        await send_v2_message(self.bot, channel.id, [card])
+
+        sent = False
+        try:
+            res = await send_v2_message(self.bot, channel.id, [card], files=files if files else None, view=interaction_view)
+            if not (isinstance(res, dict) and "error_msg" in res):
+                sent = True
+        except Exception:
+            sent = False
+
+        if not sent:
+            legacy_embed = discord.Embed(
+                title=f"🚀 Server Boosted! • {guild.name}",
+                description=card_description,
+                color=0xF47FFF
+            )
+            legacy_embed.add_field(name="✨ Booster", value=f"{member.mention} (`{member.name}`)", inline=True)
+            legacy_embed.add_field(name="💎 Level Server", value=f"**{tier}** (`{boost_count}` Boosts)", inline=True)
+            legacy_embed.set_footer(text="Server Boost Event • Terima kasih atas dukunganmu!")
+            if files:
+                legacy_embed.set_image(url="attachment://booster_card.png")
+                await channel.send(embed=legacy_embed, file=files[0], view=interaction_view)
+            else:
+                if custom_bg_url:
+                    legacy_embed.set_image(url=custom_bg_url)
+                await channel.send(embed=legacy_embed, view=interaction_view)
 
     @commands.Cog.listener()
     async def on_member_update(self, before: discord.Member, after: discord.Member):
