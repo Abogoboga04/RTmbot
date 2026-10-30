@@ -142,6 +142,61 @@ async def async_resolve_tiktok_username(raw: str) -> str:
             pass
     return clean
 
+def normalize_instagram_username(raw: str) -> str:
+    if not raw:
+        return ""
+    text = str(raw).strip()
+    if "?" in text:
+        text = text.split("?")[0]
+    m = re.search(r'@([a-zA-Z0-9_.-]+)', text)
+    if m:
+        return m.group(1).lower().rstrip("/")
+    if "instagram.com" in text:
+        clean_url = text.rstrip("/")
+        parts = [p for p in clean_url.split("/") if p]
+        if parts:
+            cand = parts[-1].lstrip("@")
+            if cand and not cand.startswith("http") and "instagram.com" not in cand and cand not in ("p", "reel", "reels", "tv", "stories"):
+                return cand.lower()
+    clean = text.lstrip("@").strip().lower()
+    clean = clean.split("/")[0]
+    return clean
+
+async def async_resolve_instagram_username(raw: str) -> str:
+    if not raw:
+        return ""
+    text = str(raw).strip()
+    norm = normalize_instagram_username(text)
+    if norm and ("instagram.com" not in norm and not norm.startswith("http")):
+        return norm
+    if "instagram.com" in text:
+        m_post = re.search(r'instagram\.com\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)', text)
+        if m_post:
+            shortcode = m_post.group(1)
+            try:
+                import instaloader
+                def _get_owner(sc: str):
+                    L = instaloader.Instaloader(quiet=True)
+                    post = instaloader.Post.from_shortcode(L.context, sc)
+                    return post.owner_username
+                owner = await asyncio.to_thread(_get_owner, shortcode)
+                if owner:
+                    return owner.lower()
+            except Exception:
+                pass
+        try:
+            from curl_cffi import requests as cffi_requests
+            def _resolve_ig_url(target_url: str):
+                s = cffi_requests.Session(impersonate="chrome")
+                resp = s.head(target_url, allow_redirects=True, timeout=8)
+                return resp.url
+            final_url = await asyncio.to_thread(_resolve_ig_url, text)
+            resolved_clean = normalize_instagram_username(final_url)
+            if resolved_clean:
+                return resolved_clean
+        except Exception:
+            pass
+    return norm
 
 
 class SocialFormatEditorModal(discord.ui.Modal, title="Format Notifikasi"):
@@ -242,7 +297,8 @@ class SocialCheckerStudioView(discord.ui.View):
 
             options = []
             for t in targets[:25]:
-                p_name = "YouTube" if t.get("platform") == "youtube" else "TikTok"
+                plat_code = t.get("platform", "youtube")
+                p_name = "YouTube" if plat_code == "youtube" else ("TikTok" if plat_code == "tiktok" else "Instagram")
                 d_name = t.get("display_name", t.get("identifier"))
                 is_selected = (self.target and self.target.get("id") == t.get("id"))
                 options.append(discord.SelectOption(
@@ -313,7 +369,14 @@ class SocialCheckerStudioView(discord.ui.View):
         content_val = self.target.get("content") or self.target.get("custom_template") or "@everyone {ai_hype}"
         title_tmpl = self.target.get("card_title") or "[{judul}]({url})"
         desc_tmpl = self.target.get("card_desc") or "{deskripsi}"
-        btn_label = self.target.get("button_label") or ("Buka di TikTok" if self.target.get("platform") == "tiktok" else "Tonton di YouTube")
+        target_plat = self.target.get("platform")
+        if target_plat == "tiktok":
+            default_btn = "Buka di TikTok"
+        elif target_plat == "instagram":
+            default_btn = "Buka di Instagram"
+        else:
+            default_btn = "Tonton di YouTube"
+        btn_label = self.target.get("button_label") or default_btn
         use_card = self.target.get("use_card", True)
         card_status = "Kartu" if use_card else "Teks biasa"
         is_enabled = self.target.get("enabled", True)
@@ -379,11 +442,19 @@ class SocialCheckerStudioView(discord.ui.View):
         if not ch:
             return await interaction.followup.send("Kanal tujuan belum diatur atau tidak ditemukan.", ephemeral=True)
 
-        is_tiktok = self.target.get("platform") == "tiktok"
+        plat = self.target.get("platform", "youtube")
         d_name = self.target.get("display_name", self.target.get("identifier"))
-        target_ident = normalize_tiktok_username(self.target.get("identifier")) if is_tiktok else self.target.get("identifier")
-        sample_url = f"https://www.tiktok.com/@{target_ident}" if is_tiktok else "https://www.youtube.com"
-        sample_thumb = "https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=800" if is_tiktok else "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800"
+        if plat == "tiktok":
+            target_ident = normalize_tiktok_username(self.target.get("identifier"))
+            sample_url = f"https://www.tiktok.com/@{target_ident}"
+            sample_thumb = "https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=800"
+        elif plat == "instagram":
+            target_ident = normalize_instagram_username(self.target.get("identifier"))
+            sample_url = f"https://www.instagram.com/{target_ident}/"
+            sample_thumb = "https://images.unsplash.com/photo-1611262588024-d12430b98920?w=800"
+        else:
+            sample_url = "https://www.youtube.com"
+            sample_thumb = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800"
         sample_item = {
             "video_id": "test_sample_" + str(uuid.uuid4())[:6],
             "title": f"Uji Coba Konten {d_name}",
@@ -427,6 +498,7 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
         self.config = self._load_config()
         self.cache = self._load_cache()
         self.live_states = {}
+        self.ig_story_states = {}
 
         self.http_headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -617,11 +689,16 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
             except Exception:
                 pass
 
-    async def _generate_ai_hype(self, creator: str, title: str, platform: str, is_live: bool = False) -> str:
+    async def _generate_ai_hype(self, creator: str, title: str, platform: str, is_live: bool = False, is_story: bool = False, is_reel: bool = False) -> str:
         if not API_KEYS:
-            return self._fallback_hype(creator, platform, is_live)
+            return self._fallback_hype(creator, platform, is_live, is_story, is_reel)
 
-        tipe_konten = "Live Streaming TikTok" if (platform == "tiktok" and is_live) else ("Video TikTok" if platform == "tiktok" else ("Live Streaming YouTube" if is_live else "Video Baru YouTube"))
+        if platform == "tiktok":
+            tipe_konten = "Live Streaming TikTok" if is_live else "Video TikTok"
+        elif platform == "instagram":
+            tipe_konten = "Story Instagram" if is_story else ("Reels Instagram" if is_reel else "Postingan Foto/Video Instagram")
+        else:
+            tipe_konten = "Live Streaming YouTube" if is_live else "Video Baru YouTube"
 
         info_lines = []
         if creator:
@@ -641,7 +718,8 @@ Panduan gaya & aturan mutlak:
 1. Hubungkan sapaan kamu secara alami dengan judul atau topik kontennya di atas. Jangan buat pujian kosong yang tidak nyambung dengan isi videonya.
 2. Gunakan bahasa obrolan Discord/tongkrongan Indonesia yang asik, santai, dan luwes.
 3. Sesuaikan dengan situasinya:
-   - Kalau video santai/keseharian/vlog, sapa warga server dengan santai dan ajak nonton.
+   - Kalau video santai/keseharian/vlog/reels, sapa warga server dengan santai dan ajak nonton.
+   - Kalau story Instagram, ingatkan warga server untuk intip story sebelum hilang dalam 24 jam.
    - Kalau live streaming, ajak warga server langsung merapat ke live chat.
 4. Singkat, padat (cukup 1-2 kalimat). Jangan pakai hashtag dan jangan tulis URL link di dalam teks karena link sudah disediakan di tombol.
 5. PENTING: DILARANG KERAS menyertakan kalimat pembuka/basa-basi apapun seperti "Siap!", "Berikut adalah...", "Ini dia pengumumannya:", "Tentu!", atau tanda kutip pembuka/penutup.
@@ -662,7 +740,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                         if cleaned:
                             return cleaned
                 except asyncio.TimeoutError:
-                    return self._fallback_hype(creator, platform, is_live)
+                    return self._fallback_hype(creator, platform, is_live, is_story, is_reel)
                 except google_exceptions.ResourceExhausted:
                     if rotate_api_key():
                         await asyncio.sleep(1)
@@ -672,13 +750,19 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                 except Exception:
                     break
 
-        return self._fallback_hype(creator, platform, is_live)
+        return self._fallback_hype(creator, platform, is_live, is_story, is_reel)
 
-    def _fallback_hype(self, creator: str, platform: str, is_live: bool) -> str:
+    def _fallback_hype(self, creator: str, platform: str, is_live: bool, is_story: bool = False, is_reel: bool = False) -> str:
         if platform == "tiktok":
             if is_live:
                 return f"**{creator}** sedang live streaming di TikTok sekarang! Yuk tonton keseruannya!"
             return f"Video TikTok terbaru dari **{creator}** sudah tayang!"
+        elif platform == "instagram":
+            if is_story:
+                return f"**{creator}** baru saja membagikan Instagram Story baru! Yuk intip sebelum 24 jam!"
+            if is_reel:
+                return f"Reel terbaru dari **{creator}** sudah rilis di Instagram! Tonton sekarang yuk!"
+            return f"Postingan terbaru dari **{creator}** sudah tayang di Instagram!"
         if is_live:
             return f"**{creator}** sedang melangsungkan live streaming sekarang!"
         return f"Video terbaru dari **{creator}** sudah rilis!"
@@ -1257,6 +1341,212 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
         return meta
 
+    def _sync_instagram_web_profile(self, username: str):
+        clean_user = normalize_instagram_username(username)
+        if not clean_user:
+            return None, [], None
+        url = f"https://www.instagram.com/{clean_user}/"
+        try:
+            from curl_cffi import requests as cffi_requests
+            s = cffi_requests.Session(impersonate="chrome")
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept-Language": "en-US,en;q=0.9",
+            }
+            r = s.get(url, headers=headers, timeout=12)
+            if r.status_code != 200:
+                return None, [], None
+
+            matches = re.findall(r'<script type="application/json"[^>]*data-sjs[^>]*>(.*?)</script>', r.text, re.DOTALL)
+            user_info = None
+            timeline_items = []
+            latest_reel_media = 0
+
+            for m in matches:
+                if not user_info and "latest_reel_media" in m:
+                    try:
+                        d = json.loads(m)
+                        def _find_user(obj):
+                            nonlocal user_info, latest_reel_media
+                            if isinstance(obj, dict):
+                                if "latest_reel_media" in obj:
+                                    user_info = obj
+                                    latest_reel_media = int(obj.get("latest_reel_media") or 0)
+                                    return
+                                for v in obj.values():
+                                    if user_info:
+                                        break
+                                    _find_user(v)
+                            elif isinstance(obj, list):
+                                for it in obj:
+                                    if user_info:
+                                        break
+                                    _find_user(it)
+                        _find_user(d)
+                    except Exception:
+                        pass
+
+                if not timeline_items and "polaris_ordered_timeline_connection" in m:
+                    try:
+                        d = json.loads(m)
+                        def _find_timeline(obj):
+                            nonlocal timeline_items
+                            if isinstance(obj, dict):
+                                if "polaris_ordered_timeline_connection" in obj:
+                                    conn = obj.get("polaris_ordered_timeline_connection") or {}
+                                    edges = conn.get("edges") or []
+                                    timeline_items = edges
+                                    return
+                                for v in obj.values():
+                                    if timeline_items:
+                                        break
+                                    _find_timeline(v)
+                            elif isinstance(obj, list):
+                                for it in obj:
+                                    if timeline_items:
+                                        break
+                                    _find_timeline(it)
+                        _find_timeline(d)
+                    except Exception:
+                        pass
+
+                if user_info and timeline_items:
+                    break
+
+            parsed_posts = []
+            display_name = user_info.get("full_name") or user_info.get("username") or clean_user if user_info else clean_user
+            avatar_url = user_info.get("profile_pic_url_hd") or user_info.get("profile_pic_url") if user_info else None
+
+            for edge in timeline_items:
+                node = edge.get("node") if isinstance(edge, dict) else None
+                if not node or not isinstance(node, dict):
+                    continue
+                code = node.get("code")
+                if not code:
+                    continue
+                pk = str(node.get("pk") or code)
+                prod_type = node.get("product_type") or ""
+                is_reel = (prod_type == "clips" or node.get("media_type") == 2)
+                caption_obj = node.get("caption") or {}
+                raw_caption = caption_obj.get("text", "") if isinstance(caption_obj, dict) else str(caption_obj or "")
+                clean_caption = clean_hyperlink_title(raw_caption) or (f"Instagram Reel by @{clean_user}" if is_reel else f"Instagram Post by @{clean_user}")
+                thumb = node.get("display_uri")
+                post_url = f"https://www.instagram.com/reel/{code}/" if is_reel else f"https://www.instagram.com/p/{code}/"
+
+                parsed_posts.append({
+                    "video_id": f"ig_{code}",
+                    "shortcode": code,
+                    "pk": pk,
+                    "title": clean_caption,
+                    "creator": display_name,
+                    "url": post_url,
+                    "thumbnail": thumb,
+                    "description": raw_caption or clean_caption,
+                    "is_live": False,
+                    "is_story": False,
+                    "is_reel": is_reel,
+                })
+
+            story_item = None
+            if latest_reel_media and latest_reel_media > 0:
+                story_item = {
+                    "video_id": f"ig_story_{clean_user}_{latest_reel_media}",
+                    "latest_reel_media": latest_reel_media,
+                    "title": f"Story Instagram Baru - @{clean_user}",
+                    "creator": display_name,
+                    "url": f"https://www.instagram.com/stories/{clean_user}/",
+                    "thumbnail": avatar_url,
+                    "description": f"Kreator @{clean_user} baru saja mengunggah Instagram Story baru!",
+                    "is_live": False,
+                    "is_story": True,
+                    "is_reel": False,
+                }
+
+            return user_info, parsed_posts, story_item
+        except Exception:
+            return None, [], None
+
+    async def _fetch_single_instagram_metadata(self, url: str) -> dict:
+        canonical_url = url.strip()
+        m_code = re.search(r'instagram\.com\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)', canonical_url)
+        if not m_code:
+            return None
+        shortcode = m_code.group(1)
+        meta = None
+        try:
+            import instaloader
+            def _get_instaloader_post(sc: str):
+                L = instaloader.Instaloader(quiet=True)
+                p = instaloader.Post.from_shortcode(L.context, sc)
+                return {
+                    "video_id": f"ig_{sc}",
+                    "shortcode": sc,
+                    "title": clean_hyperlink_title(p.caption) or f"Instagram Post by @{p.owner_username}",
+                    "creator": p.owner_username,
+                    "url": f"https://www.instagram.com/reel/{sc}/" if p.is_video else f"https://www.instagram.com/p/{sc}/",
+                    "thumbnail": p.url,
+                    "description": p.caption or "",
+                    "is_live": False,
+                    "is_story": False,
+                    "is_reel": p.is_video,
+                }
+            meta = await asyncio.to_thread(_get_instaloader_post, shortcode)
+        except Exception:
+            pass
+
+        if not meta or not meta.get("thumbnail"):
+            try:
+                from curl_cffi import requests as cffi_requests
+                def _get_html_meta(target_url: str):
+                    s = cffi_requests.Session(impersonate="chrome")
+                    r = s.get(target_url, timeout=10)
+                    if r.status_code == 200:
+                        m_img = re.search(r'property="og:image"\s+content="([^"]+)"', r.text)
+                        m_title = re.search(r'property="og:title"\s+content="([^"]+)"', r.text)
+                        m_desc = re.search(r'property="og:description"\s+content="([^"]+)"', r.text)
+                        img_url = m_img.group(1).replace("&amp;", "&") if m_img else None
+                        title_text = m_title.group(1) if m_title else "Instagram Post"
+                        desc_text = m_desc.group(1) if m_desc else ""
+                        return {
+                            "video_id": f"ig_{shortcode}",
+                            "shortcode": shortcode,
+                            "title": clean_hyperlink_title(title_text) or "Instagram Post",
+                            "creator": "Instagram Creator",
+                            "url": target_url,
+                            "thumbnail": img_url,
+                            "description": desc_text,
+                            "is_live": False,
+                            "is_story": False,
+                            "is_reel": "reel" in target_url,
+                        }
+                    return None
+                meta = await asyncio.to_thread(_get_html_meta, canonical_url)
+            except Exception:
+                pass
+        return meta
+
+    async def _fetch_instagram_content(self, username: str):
+        clean_user = normalize_instagram_username(username)
+        if not clean_user:
+            return []
+
+        user_info, parsed_posts, story_item = await asyncio.to_thread(self._sync_instagram_web_profile, clean_user)
+        results = []
+
+        if story_item:
+            story_ts = story_item.get("latest_reel_media", 0)
+            last_ts = self.ig_story_states.get(clean_user, 0)
+            if story_ts > last_ts:
+                self.ig_story_states[clean_user] = story_ts
+                results.append(story_item)
+        else:
+            self.ig_story_states[clean_user] = 0
+
+        if parsed_posts:
+            results.extend(parsed_posts)
+
+        return results
+
     async def _send_content_card(self, target: dict, content_data: dict):
         channel = self.bot.get_channel(target["target_channel_id"])
         if not channel:
@@ -1270,6 +1560,8 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         url = content_data.get("url", "")
         platform = target.get("platform", "youtube")
         is_live = content_data.get("is_live", False)
+        is_story = content_data.get("is_story", False)
+        is_reel = content_data.get("is_reel", False)
         thumbnail = content_data.get("thumbnail")
 
         desc = content_data.get("description") or title or url
@@ -1277,7 +1569,12 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
         clean_card_title = clean_hyperlink_title(title)
         if not clean_card_title:
-            clean_card_title = "Video TikTok" if platform == "tiktok" else "Video YouTube"
+            if platform == "tiktok":
+                clean_card_title = "Video TikTok"
+            elif platform == "instagram":
+                clean_card_title = "Instagram Story" if is_story else ("Instagram Reel" if is_reel else "Postingan Instagram")
+            else:
+                clean_card_title = "Video YouTube"
 
         raw_content = target.get("content") or target.get("custom_template")
         if not raw_content:
@@ -1285,7 +1582,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
         intro_text = raw_content
         if "{ai_hype}" in intro_text or "{aihype}" in intro_text:
-            ai_text = await self._generate_ai_hype(creator, clean_card_title, platform, is_live)
+            ai_text = await self._generate_ai_hype(creator, clean_card_title, platform, is_live, is_story, is_reel)
             intro_text = intro_text.replace("{ai_hype}", ai_text).replace("{aihype}", ai_text)
 
         intro_text = intro_text.replace("{judul}", clean_card_title)
@@ -1297,6 +1594,13 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
         if platform == "tiktok":
             default_btn = "Tonton Live TikTok" if is_live else "Tonton di TikTok"
+        elif platform == "instagram":
+            if is_story:
+                default_btn = "Buka Story di Instagram"
+            elif is_reel:
+                default_btn = "Tonton Reel di Instagram"
+            else:
+                default_btn = "Buka di Instagram"
         else:
             default_btn = "Tonton Live" if is_live else "Tonton Video"
         btn_label = target.get("button_label") or default_btn
@@ -1326,6 +1630,8 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                 }
                 if "tiktok" in str(thumbnail):
                     dl_headers["Referer"] = "https://www.tiktok.com/"
+                elif "instagram" in str(thumbnail) or "cdninstagram" in str(thumbnail):
+                    dl_headers["Referer"] = "https://www.instagram.com/"
                 async with aiohttp.ClientSession(timeout=timeout, headers=dl_headers) as session:
                     async with session.get(thumbnail) as img_resp:
                         if img_resp.status == 200:
@@ -1336,6 +1642,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
             except Exception:
                 files = None
                 attachment_fn = None
+
 
         if use_card:
             card = build_v2_card(
@@ -1402,6 +1709,19 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                         success = await self._send_content_card(target, item)
                         if success:
                             if not item.get("is_live"):
+                                self._record_posted_id(vid)
+                            await asyncio.sleep(2)
+
+                elif platform == "instagram":
+                    items = await self._fetch_instagram_content(identifier)
+                    for item in items:
+                        vid = item["video_id"]
+                        if self._is_id_posted(vid):
+                            continue
+
+                        success = await self._send_content_card(target, item)
+                        if success:
+                            if not item.get("is_story"):
                                 self._record_posted_id(vid)
                             await asyncio.sleep(2)
 
@@ -1867,6 +2187,230 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                     found_any += 1
         await ctx.send(f"Pengecekan selesai. Ditemukan dan dikirim: {found_any} video TikTok baru.", ephemeral=True)
 
+    @commands.hybrid_group(name="ig", description="Manajemen pemantauan Instagram")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def ig_group(self, ctx: commands.Context):
+        if ctx.invoked_subcommand is None:
+            await ctx.send("Gunakan `/ig add`, `/ig remove`, `/ig list`, `/ig config`, `/ig edit`, `/ig test`, `/ig check`.", ephemeral=True)
+
+    @ig_group.command(name="add", description="Tambah akun Instagram untuk dipantau")
+    @commands.is_owner()
+    async def ig_add(self, ctx: commands.Context, username: str, target_channel: Optional[discord.TextChannel] = None):
+        channel_to_use = target_channel or ctx.channel
+        clean_user = await async_resolve_instagram_username(username)
+        if not clean_user:
+            return await ctx.send("Nama pengguna atau tautan akun Instagram tidak valid.", ephemeral=True)
+
+        for t in self.config["targets"]:
+            if t.get("platform") == "instagram" and t.get("identifier").lower() == clean_user.lower():
+                t["target_channel_id"] = channel_to_use.id
+                t["target_guild_id"] = ctx.guild.id if ctx.guild else None
+                self._save_config()
+                return await ctx.send(f"Akun Instagram **@{clean_user}** sudah terdaftar, target diperbarui ke {channel_to_use.mention}.", ephemeral=True)
+
+        new_target = {
+            "id": str(uuid.uuid4())[:8],
+            "platform": "instagram",
+            "identifier": clean_user,
+            "display_name": clean_user,
+            "target_guild_id": ctx.guild.id if ctx.guild else None,
+            "target_channel_id": channel_to_use.id,
+            "content": "@everyone {ai_hype}",
+            "custom_template": "@everyone {ai_hype}",
+            "card_title": "[{judul}]({url})",
+            "card_desc": "{deskripsi}",
+            "button_label": None,
+            "use_card": True,
+            "enabled": True,
+            "added_at": datetime.now(timezone.utc).isoformat(),
+        }
+        self.config["targets"].append(new_target)
+        self._save_config()
+
+        current_items = await self._fetch_instagram_content(clean_user)
+        for it in current_items:
+            if it.get("creator") and new_target.get("display_name") == clean_user:
+                new_target["display_name"] = it["creator"]
+            if not it.get("is_story") and it["video_id"] not in self.cache["posted_ids"]:
+                self.cache["posted_ids"].append(it["video_id"])
+        self._save_config()
+        self._save_cache()
+
+        await ctx.send(f"Berhasil menambahkan Instagram **@{clean_user}** ke pemantauan di {channel_to_use.mention}.", ephemeral=True)
+
+    @ig_group.command(name="remove", description="Hapus akun Instagram dari pemantauan")
+    @commands.is_owner()
+    async def ig_remove(self, ctx: commands.Context, username: str):
+        clean_user = await async_resolve_instagram_username(username)
+        before_count = len(self.config["targets"])
+        self.config["targets"] = [
+            t for t in self.config["targets"]
+            if not (t.get("platform") == "instagram" and t.get("identifier").lower() == clean_user.lower())
+        ]
+        if len(self.config["targets"]) < before_count:
+            self._save_config()
+            return await ctx.send(f"Akun Instagram `@{clean_user}` berhasil dihapus dari pemantauan.", ephemeral=True)
+        await ctx.send(f"Akun Instagram `@{clean_user}` tidak ditemukan.", ephemeral=True)
+
+    @ig_group.command(name="config", description="Buka panel pengaturan untuk akun Instagram")
+    @app_commands.describe(target="Nama pengguna atau ID Instagram yang ingin diatur (opsional)")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def ig_config(self, ctx: commands.Context, target: Optional[str] = None):
+        found = None
+        if target:
+            clean = await async_resolve_instagram_username(target)
+            for t in self.config.get("targets", []):
+                if t.get("platform") == "instagram" and (t.get("identifier", "").lower() == clean.lower() or clean.lower() in t.get("display_name", "").lower() or t.get("id") == clean):
+                    found = t
+                    break
+            if not found:
+                return await ctx.send(f"Akun Instagram `@{target}` tidak ditemukan.", ephemeral=True)
+
+        view = SocialCheckerStudioView(self, ctx.guild, ctx.author, platform_filter="instagram", initial_target=found)
+        await ctx.send(embed=view.build_embed(), view=view, ephemeral=True)
+
+    @ig_group.command(name="edit", description="Ubah pengaturan akun Instagram langsung dalam satu perintah")
+    @app_commands.describe(
+        target="Nama pengguna atau ID Instagram yang ingin diubah",
+        kanal="Kanal Discord tujuan notifikasi",
+        pesan_biasa="Isi pesan biasa (Gunakan {ai_hype} untuk AI)",
+        judul="Pola judul notifikasi",
+        deskripsi="Pola deskripsi konten",
+        tombol="Teks tombol link",
+        gaya="Gaya tampilan pesan (kartu / teks)"
+    )
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def ig_edit(
+        self,
+        ctx: commands.Context,
+        target: str,
+        kanal: Optional[discord.TextChannel] = None,
+        pesan_biasa: Optional[str] = None,
+        judul: Optional[str] = None,
+        deskripsi: Optional[str] = None,
+        tombol: Optional[str] = None,
+        gaya: Optional[Literal["kartu", "teks"]] = None
+    ):
+        clean = await async_resolve_instagram_username(target)
+        found = None
+        for t in self.config["targets"]:
+            if t.get("platform") == "instagram" and (t.get("identifier", "").lower() == clean.lower() or clean.lower() in t.get("display_name", "").lower() or t.get("id") == clean):
+                found = t
+                break
+
+        if not found:
+            return await ctx.send(f"Akun Instagram `@{target}` tidak ditemukan.", ephemeral=True)
+
+        changes = []
+        if kanal:
+            found["target_channel_id"] = kanal.id
+            changes.append(f"Kanal: {kanal.mention}")
+        if pesan_biasa is not None:
+            found["content"] = pesan_biasa.strip()
+            changes.append(f"Pesan Biasa: `{pesan_biasa.strip()[:60]}`")
+        if judul is not None:
+            found["card_title"] = judul.strip()
+            changes.append(f"Judul: `{judul.strip()[:60]}`")
+        if deskripsi is not None:
+            found["card_desc"] = deskripsi.strip()
+            changes.append(f"Deskripsi: `{deskripsi.strip()[:60]}`")
+        if tombol is not None:
+            found["button_label"] = tombol.strip()
+            changes.append(f"Tombol: `{tombol.strip()}`")
+        if gaya:
+            found["use_card"] = (gaya == "kartu")
+            changes.append(f"Gaya: `{'Kartu' if found['use_card'] else 'Teks'}`")
+
+        if not changes:
+            return await ctx.send("Tidak ada opsi yang diubah. Isi salah satu parameter untuk mengubah pengaturan.", ephemeral=True)
+
+        self._save_config()
+        await ctx.send(f"Pengaturan untuk **@{found['display_name']}** diperbarui:\n" + "\n".join(f"- {c}" for c in changes), ephemeral=True)
+
+    @ig_group.command(name="list", description="Daftar akun Instagram yang dipantau")
+    @commands.is_owner()
+    async def ig_list(self, ctx: commands.Context):
+        ig_targets = [t for t in self.config["targets"] if t.get("platform") == "instagram"]
+        if not ig_targets:
+            return await ctx.send("Belum ada akun Instagram yang dipantau.", ephemeral=True)
+
+        lines = ["**Daftar Pemantauan Instagram:**"]
+        for idx, t in enumerate(ig_targets, 1):
+            status = "AKTIF" if t.get("enabled", True) else "NONAKTIF"
+            ch_mention = f"<#{t['target_channel_id']}>"
+            lines.append(f"{idx}. **@{t['display_name']}** - {ch_mention} [{status}] Mode: `{t.get('message_mode', 'ai')}` Mention: `{t.get('mention_role')}`")
+        await ctx.send("\n".join(lines), ephemeral=True)
+
+    @ig_group.command(name="test", description="Kirim uji coba notifikasi untuk URL Instagram")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def ig_test(self, ctx: commands.Context, url: str, channel: Optional[discord.TextChannel] = None):
+        target_channel = channel or ctx.channel
+        await ctx.defer(ephemeral=True)
+        try:
+            meta = await self._fetch_single_instagram_metadata(url)
+            if not meta or not meta.get("video_id"):
+                return await ctx.send("❌ Gagal mengekstrak metadata Instagram. Pastikan URL valid dan postingan bersifat publik.", ephemeral=True)
+
+            existing_target = None
+            clean_creator = normalize_instagram_username(meta["creator"]) or meta["creator"].lower().lstrip("@")
+            for t in self.config.get("targets", []):
+                if t.get("platform") == "instagram" and t.get("identifier", "").lower() == clean_creator:
+                    existing_target = t
+                    break
+
+            dummy_target = {
+                "platform": "instagram",
+                "identifier": clean_creator,
+                "display_name": meta["creator"],
+                "target_channel_id": target_channel.id,
+                "mention_role": existing_target.get("mention_role", "none") if existing_target else "none",
+                "message_mode": existing_target.get("message_mode", "ai") if existing_target else "ai",
+                "custom_template": existing_target.get("custom_template") if existing_target else None,
+                "card_title": existing_target.get("card_title") if existing_target else None,
+                "card_desc": existing_target.get("card_desc") if existing_target else None,
+                "button_label": existing_target.get("button_label") if existing_target else None,
+                "use_card": existing_target.get("use_card", True) if existing_target else True,
+            }
+            card_sent = await self._send_content_card(dummy_target, meta)
+
+            embed = discord.Embed(
+                title="📸 Preview Pengujian Notifikasi Instagram",
+                description="Pengujian notifikasi berhasil diproses dengan detail konten di bawah ini:",
+                color=0xE1306C
+            )
+            embed.add_field(name="👤 Kreator / Akun", value=f"**@{meta['creator']}**", inline=True)
+            embed.add_field(name="🆔 ID Konten", value=f"`{meta['video_id']}`", inline=True)
+            embed.add_field(name="📢 Saluran Target", value=target_channel.mention, inline=True)
+            caption_preview = meta['title'][:250] + ("..." if len(meta['title']) > 250 else "")
+            embed.add_field(name="📝 Caption / Judul", value=caption_preview, inline=False)
+            embed.add_field(name="🔗 Tautan Konten", value=f"[Buka di Instagram]({meta['url']})", inline=False)
+            status_text = f"✅ Notifikasi berhasil dikirim ke {target_channel.mention}." if card_sent else f"⚠️ Gagal mengirim notifikasi ke {target_channel.mention}."
+            embed.add_field(name="⚡ Status Pengiriman", value=status_text, inline=False)
+            if meta.get("thumbnail"):
+                embed.set_thumbnail(url=meta["thumbnail"])
+            embed.set_footer(text="Gunakan link postingan atau reels Instagram publik untuk preview format notifikasi.")
+            await ctx.send(embed=embed, ephemeral=True)
+        except Exception as e:
+            await ctx.send(f"❌ Terjadi kesalahan saat menguji URL Instagram: {e}", ephemeral=True)
+
+    @ig_group.command(name="check", description="Paksa cek pembaruan Instagram sekarang")
+    @commands.is_owner()
+    async def ig_check(self, ctx: commands.Context):
+        await ctx.defer(ephemeral=True)
+        targets = [t for t in self.config["targets"] if t.get("platform") == "instagram" and t.get("enabled", True)]
+        found_any = 0
+        for t in targets:
+            items = await self._fetch_instagram_content(t["identifier"])
+            for it in items:
+                vid = it["video_id"]
+                if self._is_id_posted(vid):
+                    continue
+                if await self._send_content_card(t, it):
+                    if not it.get("is_story"):
+                        self._record_posted_id(vid)
+                    found_any += 1
+        await ctx.send(f"Pengecekan selesai. Ditemukan dan dikirim: {found_any} konten Instagram baru.", ephemeral=True)
+
     @commands.hybrid_command(name="social", aliases=["sosmed", "socialhub", "socialstudio"], description="Buka studio pengaturan notifikasi YouTube dan TikTok")
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
     async def social_studio(self, ctx: commands.Context, target: Optional[str] = None):
@@ -1884,23 +2428,26 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
     @commands.command(name="socialadd", aliases=["addsocial", "tambahsocial"])
     @commands.is_owner()
-    async def social_add(self, ctx: commands.Context, platform: Literal["youtube", "tiktok"], target: str, kanal: Optional[discord.TextChannel] = None):
+    async def social_add(self, ctx: commands.Context, platform: Literal["youtube", "tiktok", "instagram"], target: str, kanal: Optional[discord.TextChannel] = None):
         channel_to_use = kanal or ctx.channel
         plat = platform.lower()
         if plat == "youtube":
             return await self.yt_add(ctx, target, channel_to_use)
         elif plat == "tiktok":
             return await self.tt_add(ctx, target, channel_to_use)
+        elif plat == "instagram":
+            return await self.ig_add(ctx, target, channel_to_use)
 
     @commands.command(name="socialremove", aliases=["rmsocial", "hapussocial"])
     @commands.is_owner()
     async def social_remove(self, ctx: commands.Context, target: str):
         clean_user = await async_resolve_tiktok_username(target)
+        clean_ig = await async_resolve_instagram_username(target)
         raw_clean = target.lstrip("@").strip().lower()
         before_count = len(self.config["targets"])
         self.config["targets"] = [
             t for t in self.config["targets"]
-            if not (clean_user.lower() in (t.get("identifier", "").lower(), t.get("display_name", "").lower(), t.get("id")) or raw_clean in (t.get("identifier", "").lower(), t.get("display_name", "").lower(), t.get("id")))
+            if not (clean_user.lower() in (t.get("identifier", "").lower(), t.get("display_name", "").lower(), t.get("id")) or clean_ig.lower() in (t.get("identifier", "").lower(), t.get("display_name", "").lower(), t.get("id")) or raw_clean in (t.get("identifier", "").lower(), t.get("display_name", "").lower(), t.get("id")))
         ]
         if len(self.config["targets"]) < before_count:
             self._save_config()
@@ -1921,6 +2468,21 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
     async def ttconfig_cmd(self, ctx: commands.Context, target: Optional[str] = None):
         return await self.tt_config(ctx, target)
+
+    @commands.command(name="igadd", aliases=["addig", "instagramadd", "tambahig"])
+    @commands.is_owner()
+    async def igadd_cmd(self, ctx: commands.Context, username: str, target_channel: Optional[discord.TextChannel] = None):
+        return await self.ig_add(ctx, username, target_channel)
+
+    @commands.command(name="igremove", aliases=["removeig", "instagramremove", "delig", "igdel", "hapusig"])
+    @commands.is_owner()
+    async def igremove_cmd(self, ctx: commands.Context, username: str):
+        return await self.ig_remove(ctx, username)
+
+    @commands.command(name="igconfig", aliases=["configig", "instagramconfig", "settingig"])
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def igconfig_cmd(self, ctx: commands.Context, target: Optional[str] = None):
+        return await self.ig_config(ctx, target)
 
     @commands.command(name="sociallist", aliases=["listsocial"])
     @commands.is_owner()
@@ -1944,6 +2506,8 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         clean_url = url.strip()
         if "tiktok.com" in clean_url:
             return await self.tt_test(ctx, clean_url, target_ch)
+        elif "instagram.com" in clean_url:
+            return await self.ig_test(ctx, clean_url, target_ch)
         else:
             return await self.yt_test(ctx, clean_url, target_ch)
 
@@ -2006,8 +2570,19 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                         if not it.get("is_live"):
                             self.cache["posted_ids"].append(vid)
                         found_any += 1
+            elif platform == "instagram":
+                items = await self._fetch_instagram_content(t["identifier"])
+                for it in items:
+                    vid = it["video_id"]
+                    if vid in self.cache["posted_ids"]:
+                        continue
+                    if await self._send_content_card(t, it):
+                        if not it.get("is_story"):
+                            self.cache["posted_ids"].append(vid)
+                        found_any += 1
         self._save_cache()
         await ctx.send(f"Pengecekan serentak selesai. Ditemukan dan dikirim: {found_any} konten baru.", ephemeral=True)
+
 
     @checker_group.command(name="interval", description="Ubah interval polling checker dalam detik")
     @commands.is_owner()
