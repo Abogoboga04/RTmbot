@@ -484,6 +484,426 @@ class SocialCheckerStudioView(discord.ui.View):
         await interaction.followup.send(f"Pemantauan untuk {d_name} berhasil dihapus.", ephemeral=True)
 
 
+class InstagramAddAccountModal(discord.ui.Modal, title="Tambah Akun Instagram"):
+    def __init__(self, cog, guild: discord.Guild, author: discord.Member, parent_view):
+        super().__init__()
+        self.cog = cog
+        self.guild = guild
+        self.author = author
+        self.parent_view = parent_view
+
+        self.username_input = discord.ui.TextInput(
+            label="Username Akun Instagram",
+            placeholder="Contoh: coretan_recehhh (tanpa @ atau link)",
+            max_length=60,
+            required=True
+        )
+        self.add_item(self.username_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        raw_user = self.username_input.value.strip()
+        clean_user = await async_resolve_instagram_username(raw_user)
+        if not clean_user:
+            return await interaction.followup.send("Nama pengguna Instagram tidak valid atau tidak ditemukan.", ephemeral=True)
+
+        found_existing = None
+        for t in self.cog.config.get("targets", []):
+            if t.get("platform") == "instagram" and t.get("identifier", "").lower() == clean_user.lower():
+                found_existing = t
+                break
+
+        if found_existing:
+            self.parent_view.target = found_existing
+            self.parent_view.update_components()
+            await interaction.followup.send(f"Akun **@{clean_user}** sudah terdaftar dalam pemantauan.", ephemeral=True)
+            return
+
+        new_target = {
+            "id": str(uuid.uuid4())[:8],
+            "platform": "instagram",
+            "identifier": clean_user,
+            "display_name": clean_user,
+            "target_guild_id": self.guild.id if self.guild else None,
+            "target_channel_id": interaction.channel_id,
+            "content": "@everyone {ai_hype}",
+            "custom_template": "@everyone {ai_hype}",
+            "card_title": "[{judul}]({url})",
+            "card_desc": "{deskripsi}",
+            "button_label": None,
+            "use_card": True,
+            "enabled": True,
+            "feed_enabled": True,
+            "reels_enabled": True,
+            "stories_enabled": True,
+            "added_at": datetime.now(timezone.utc).isoformat(),
+        }
+        self.cog.config["targets"].append(new_target)
+        self.cog._save_config()
+
+        current_items = await self.cog._fetch_instagram_content(clean_user)
+        for it in current_items:
+            if it.get("creator") and new_target.get("display_name") == clean_user:
+                new_target["display_name"] = it["creator"]
+            if not it.get("is_story") and it["video_id"] not in self.cog.cache["posted_ids"]:
+                self.cog.cache["posted_ids"].append(it["video_id"])
+        self.cog._save_config()
+        self.cog._save_cache()
+
+        self.parent_view.target = new_target
+        self.parent_view.update_components()
+        await interaction.edit_original_response(embed=self.parent_view.build_embed(), view=self.parent_view)
+        await interaction.followup.send(f"Berhasil menambahkan akun Instagram **@{clean_user}**!", ephemeral=True)
+
+
+class InstagramStudioView(discord.ui.View):
+    def __init__(self, cog, guild: discord.Guild, author: discord.Member, initial_target: Optional[dict] = None):
+        super().__init__(timeout=300)
+        self.cog = cog
+        self.guild = guild
+        self.author = author
+        self.target = initial_target
+        self.update_components()
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author.id:
+            await interaction.response.send_message("Menu konfigurasi ini hanya dapat diakses oleh pemanggil.", ephemeral=True)
+            return False
+        return True
+
+    def get_targets(self) -> list:
+        targets = [t for t in self.cog.config.get("targets", []) if t.get("platform") == "instagram"]
+        if self.guild:
+            g_targets = [t for t in targets if t.get("target_guild_id") == self.guild.id]
+            if g_targets:
+                return g_targets
+        return targets
+
+    def update_components(self):
+        self.clear_items()
+        targets = self.get_targets()
+
+        if targets:
+            if not self.target or self.target not in targets:
+                self.target = targets[0]
+
+            options = []
+            for t in targets[:25]:
+                d_name = t.get("display_name", t.get("identifier"))
+                ident = t.get("identifier")
+                feed_st = "F:ON" if t.get("feed_enabled", True) else "F:OFF"
+                reel_st = "R:ON" if t.get("reels_enabled", True) else "R:OFF"
+                story_st = "S:ON" if t.get("stories_enabled", True) else "S:OFF"
+                desc = f"@{ident} ({feed_st} | {reel_st} | {story_st})"
+                is_selected = (self.target and self.target.get("id") == t.get("id"))
+                options.append(discord.SelectOption(
+                    label=d_name[:80],
+                    description=desc[:100],
+                    value=t.get("id", ident),
+                    default=is_selected,
+                    emoji="📸"
+                ))
+
+            target_select = discord.ui.Select(
+                placeholder="Pilih Akun Instagram yang Ingin Diatur",
+                options=options,
+                row=0
+            )
+            target_select.callback = self.target_select_callback
+            self.add_item(target_select)
+
+        if self.target:
+            channel_select = discord.ui.ChannelSelect(
+                channel_types=[discord.ChannelType.text],
+                placeholder="Pilih Kanal Discord untuk Notifikasi",
+                min_values=1,
+                max_values=1,
+                row=1
+            )
+            channel_select.callback = self.channel_select_callback
+            self.add_item(channel_select)
+
+            feed_active = self.target.get("feed_enabled", True)
+            btn_feed = discord.ui.Button(
+                label=f"📸 Feed: {'AKTIF' if feed_active else 'MATI'}",
+                style=discord.ButtonStyle.success if feed_active else discord.ButtonStyle.secondary,
+                row=2
+            )
+            btn_feed.callback = self.btn_feed_callback
+            self.add_item(btn_feed)
+
+            reels_active = self.target.get("reels_enabled", True)
+            btn_reels = discord.ui.Button(
+                label=f"🎬 Reels: {'AKTIF' if reels_active else 'MATI'}",
+                style=discord.ButtonStyle.success if reels_active else discord.ButtonStyle.secondary,
+                row=2
+            )
+            btn_reels.callback = self.btn_reels_callback
+            self.add_item(btn_reels)
+
+            stories_active = self.target.get("stories_enabled", True)
+            btn_stories = discord.ui.Button(
+                label=f"⏳ Story: {'AKTIF' if stories_active else 'MATI'}",
+                style=discord.ButtonStyle.success if stories_active else discord.ButtonStyle.secondary,
+                row=2
+            )
+            btn_stories.callback = self.btn_stories_callback
+            self.add_item(btn_stories)
+
+            raw_c = self.target.get("content") or ""
+            ai_active = "{ai_hype}" in raw_c or "{aihype}" in raw_c
+            btn_ai = discord.ui.Button(
+                label=f"🤖 AI Hype: {'ON' if ai_active else 'OFF'}",
+                style=discord.ButtonStyle.primary if ai_active else discord.ButtonStyle.secondary,
+                row=2
+            )
+            btn_ai.callback = self.btn_ai_callback
+            self.add_item(btn_ai)
+
+            curr_mention = "@everyone" if "@everyone" in raw_c else ("@here" if "@here" in raw_c else "Mati")
+            btn_mention = discord.ui.Button(
+                label=f"📢 Mention: {curr_mention}",
+                style=discord.ButtonStyle.secondary,
+                row=3
+            )
+            btn_mention.callback = self.btn_mention_callback
+            self.add_item(btn_mention)
+
+            use_card = self.target.get("use_card", True)
+            btn_card = discord.ui.Button(
+                label=f"🎨 Tampilan: {'Kartu V2' if use_card else 'Teks'}",
+                style=discord.ButtonStyle.secondary,
+                row=3
+            )
+            btn_card.callback = self.btn_card_callback
+            self.add_item(btn_card)
+
+            btn_format = discord.ui.Button(
+                label="✏️ Edit Pesan",
+                style=discord.ButtonStyle.secondary,
+                row=3
+            )
+            btn_format.callback = self.btn_format_callback
+            self.add_item(btn_format)
+
+            is_active = self.target.get("enabled", True)
+            btn_status = discord.ui.Button(
+                label=f"⏸️ {'Status: Aktif' if is_active else 'Status: Dijeda'}",
+                style=discord.ButtonStyle.success if is_active else discord.ButtonStyle.secondary,
+                row=3
+            )
+            btn_status.callback = self.btn_status_callback
+            self.add_item(btn_status)
+
+            btn_test = discord.ui.Button(
+                label="🧪 Tes Kirim",
+                style=discord.ButtonStyle.primary,
+                row=4
+            )
+            btn_test.callback = self.btn_test_callback
+            self.add_item(btn_test)
+
+            btn_add = discord.ui.Button(
+                label="➕ Tambah Akun",
+                style=discord.ButtonStyle.success,
+                row=4
+            )
+            btn_add.callback = self.btn_add_callback
+            self.add_item(btn_add)
+
+            btn_delete = discord.ui.Button(
+                label="🗑️ Hapus Akun",
+                style=discord.ButtonStyle.danger,
+                row=4
+            )
+            btn_delete.callback = self.btn_delete_callback
+            self.add_item(btn_delete)
+        else:
+            btn_add = discord.ui.Button(
+                label="➕ Tambah Akun Instagram Baru",
+                style=discord.ButtonStyle.success,
+                row=0
+            )
+            btn_add.callback = self.btn_add_callback
+            self.add_item(btn_add)
+
+    def build_embed(self) -> discord.Embed:
+        if not self.target:
+            embed = discord.Embed(
+                title="📸 Pengaturan All-in-One Instagram",
+                description="Belum ada akun Instagram yang dipantau di server ini.\nKlik tombol **➕ Tambah Akun Instagram Baru** di bawah untuk mulai memantau.",
+                color=0xE1306C
+            )
+            return embed
+
+        name = self.target.get("display_name", self.target.get("identifier"))
+        ident = self.target.get("identifier")
+        ch_id = self.target.get("target_channel_id")
+        ch_str = f"<#{ch_id}>" if ch_id else "*(Belum diatur)*"
+
+        feed_st = "🟢 Aktif" if self.target.get("feed_enabled", True) else "🔴 Mati"
+        reels_st = "🟢 Aktif" if self.target.get("reels_enabled", True) else "🔴 Mati"
+        stories_st = "🟢 Aktif" if self.target.get("stories_enabled", True) else "🔴 Mati"
+
+        content_val = self.target.get("content") or self.target.get("custom_template") or "@everyone {ai_hype}"
+        ai_st = "🟢 Aktif" if ("{ai_hype}" in content_val or "{aihype}" in content_val) else "⚪ Tidak Aktif"
+        mention_st = "@everyone" if "@everyone" in content_val else ("@here" if "@here" in content_val else "Tanpa Mention")
+        card_st = "Kartu V2 Interaktif" if self.target.get("use_card", True) else "Teks Biasa"
+        is_active = self.target.get("enabled", True)
+        status_st = "🟢 Berjalan (Aktif)" if is_active else "⏸️ Dijeda"
+
+        embed = discord.Embed(
+            title=f"📸 All-in-One Studio Instagram: @{ident}",
+            description=(
+                f"**Nama Tampilan:** **{name}**\n"
+                f"**Status Pemantauan:** {status_st}\n"
+                f"**Kanal Tujuan Discord:** {ch_str}\n"
+                f"**Gaya Tampilan Pesan:** `{card_st}`\n\n"
+                f"**Filter Konten Granular:**\n"
+                f"• 📸 Postingan Feed (Foto/Album): **{feed_st}**\n"
+                f"• 🎬 Reels Video: **{reels_st}**\n"
+                f"• ⏳ Story (24 Jam): **{stories_st}**\n\n"
+                f"**Pengaturan Notifikasi & AI:**\n"
+                f"• 🤖 AI Hype: **{ai_st}**\n"
+                f"• 📢 Mention: **{mention_st}**\n"
+                f"• 💬 Pesan Notifikasi: `{content_val}`\n"
+                f"• 🏷️ Pola Judul Kartu: `{self.target.get('card_title', '[{judul}]({url})')}`"
+            ),
+            color=0xE1306C
+        )
+        embed.set_footer(text="Gunakan tombol dan menu di bawah untuk mengubah pengaturan langsung secara instan.")
+        return embed
+
+    async def target_select_callback(self, interaction: discord.Interaction):
+        selected_val = interaction.data["values"][0]
+        targets = self.get_targets()
+        found = next((t for t in targets if t.get("id") == selected_val or t.get("identifier") == selected_val), None)
+        if found:
+            self.target = found
+            self.update_components()
+            await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def channel_select_callback(self, interaction: discord.Interaction):
+        selected_channel_id = int(interaction.data["values"][0])
+        self.target["target_channel_id"] = selected_channel_id
+        if interaction.guild:
+            self.target["target_guild_id"] = interaction.guild.id
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_feed_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("feed_enabled", True)
+        self.target["feed_enabled"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_reels_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("reels_enabled", True)
+        self.target["reels_enabled"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_stories_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("stories_enabled", True)
+        self.target["stories_enabled"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_ai_callback(self, interaction: discord.Interaction):
+        curr_text = self.target.get("content") or self.target.get("custom_template") or ""
+        if "{ai_hype}" in curr_text:
+            curr_text = curr_text.replace("{ai_hype}", "").strip()
+        elif "{aihype}" in curr_text:
+            curr_text = curr_text.replace("{aihype}", "").strip()
+        else:
+            curr_text = f"{curr_text} {{ai_hype}}".strip()
+        self.target["content"] = curr_text
+        self.target["custom_template"] = curr_text
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_mention_callback(self, interaction: discord.Interaction):
+        curr_text = self.target.get("content") or self.target.get("custom_template") or ""
+        if "@everyone" in curr_text:
+            curr_text = curr_text.replace("@everyone", "@here").strip()
+        elif "@here" in curr_text:
+            curr_text = curr_text.replace("@here", "").strip()
+        else:
+            curr_text = f"@everyone {curr_text}".strip()
+        self.target["content"] = curr_text
+        self.target["custom_template"] = curr_text
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_card_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("use_card", True)
+        self.target["use_card"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_status_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("enabled", True)
+        self.target["enabled"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_format_callback(self, interaction: discord.Interaction):
+        modal = SocialFormatEditorModal(self.cog, self.target, self.author, self)
+        await interaction.response.send_modal(modal)
+
+    async def btn_add_callback(self, interaction: discord.Interaction):
+        modal = InstagramAddAccountModal(self.cog, self.guild, self.author, self)
+        await interaction.response.send_modal(modal)
+
+    async def btn_delete_callback(self, interaction: discord.Interaction):
+        t_id = self.target.get("id") or self.target.get("identifier")
+        d_name = self.target.get("display_name", self.target.get("identifier"))
+        self.cog.config["targets"] = [t for t in self.cog.config.get("targets", []) if (t.get("id") != t_id and t.get("identifier") != t_id)]
+        self.cog._save_config()
+        self.target = None
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+        await interaction.followup.send(f"Akun Instagram **{d_name}** berhasil dihapus dari pemantauan.", ephemeral=True)
+
+    async def btn_test_callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        ch_id = self.target.get("target_channel_id")
+        ch = interaction.guild.get_channel(ch_id) if ch_id and interaction.guild else None
+        if not ch:
+            return await interaction.followup.send("Kanal tujuan belum diatur atau tidak ditemukan di server ini.", ephemeral=True)
+
+        clean_user = self.target.get("identifier")
+        items = await self.cog._fetch_instagram_content(clean_user)
+        test_item = items[0] if items else None
+        if not test_item:
+            test_item = {
+                "video_id": f"test_ig_{clean_user}",
+                "shortcode": "test",
+                "title": f"Postingan Terbaru @{clean_user}",
+                "creator": self.target.get("display_name", clean_user),
+                "url": f"https://www.instagram.com/{clean_user}/",
+                "thumbnail": "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=800",
+                "description": f"Halo semua! Ini adalah simulasi uji coba notifikasi Instagram untuk akun @{clean_user}.",
+                "is_live": False,
+                "is_story": False,
+                "is_reel": False,
+            }
+
+        sent = await self.cog._send_content_card(self.target, test_item)
+        if sent:
+            await interaction.followup.send(f"Berhasil mengirimkan preview notifikasi ke {ch.mention}!", ephemeral=True)
+        else:
+            await interaction.followup.send(f"Gagal mengirim preview ke {ch.mention}. Pastikan izin bot mencukupi.", ephemeral=True)
+
+
 class SocialChecker(commands.Cog, name="Social Media Checker"):
     def __init__(self, bot):
         self.bot = bot
@@ -1433,6 +1853,24 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                 thumb = node.get("display_uri")
                 post_url = f"https://www.instagram.com/reel/{code}/" if is_reel else f"https://www.instagram.com/p/{code}/"
 
+                carousel_list = []
+                if "carousel_media" in node and isinstance(node["carousel_media"], list):
+                    for cm in node["carousel_media"]:
+                        if isinstance(cm, dict):
+                            is_v = bool(cm.get("is_video") or cm.get("media_type") == 2)
+                            u = cm.get("video_url") if is_v else (cm.get("display_uri") or cm.get("display_url"))
+                            if u:
+                                carousel_list.append({"url": u, "is_video": is_v})
+                elif "edge_sidecar_to_children" in node:
+                    edges = (node.get("edge_sidecar_to_children") or {}).get("edges") or []
+                    for ed in edges:
+                        s_n = ed.get("node") if isinstance(ed, dict) else None
+                        if s_n and isinstance(s_n, dict):
+                            is_v = bool(s_n.get("is_video") or s_n.get("media_type") == 2)
+                            u = s_n.get("video_url") if is_v else (s_n.get("display_url") or s_n.get("display_uri"))
+                            if u:
+                                carousel_list.append({"url": u, "is_video": is_v})
+
                 parsed_posts.append({
                     "video_id": f"ig_{code}",
                     "shortcode": code,
@@ -1445,6 +1883,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                     "is_live": False,
                     "is_story": False,
                     "is_reel": is_reel,
+                    "media_list": carousel_list,
                 })
 
             story_item = None
@@ -1583,6 +2022,67 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         if enriched and (enriched.get("video_url") or enriched.get("media_list")):
             return enriched
 
+        def _fetch_curl_cffi():
+            try:
+                from curl_cffi import requests as cffi_requests
+                s = cffi_requests.Session(impersonate="chrome")
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept-Language": "en-US,en;q=0.9",
+                }
+                target_url = f"https://www.instagram.com/p/{sc}/"
+                r = s.get(target_url, headers=headers, timeout=12)
+                if r.status_code != 200:
+                    return None
+                scripts = re.findall(r'<script type="application/json"[^>]*data-sjs[^>]*>(.*?)</script>', r.text, re.DOTALL)
+                c_items = []
+                for scr in scripts:
+                    if any(k in scr for k in ["carousel_media", "edge_sidecar_to_children", "display_uri", "display_url"]):
+                        try:
+                            d = json.loads(scr)
+                            def _scan(obj):
+                                if isinstance(obj, dict):
+                                    if "carousel_media" in obj and isinstance(obj["carousel_media"], list):
+                                        for cm in obj["carousel_media"]:
+                                            c_items.append(cm)
+                                    if "edge_sidecar_to_children" in obj:
+                                        edges = (obj.get("edge_sidecar_to_children") or {}).get("edges") or []
+                                        for ed in edges:
+                                            c_items.append(ed.get("node"))
+                                    for v in obj.values():
+                                        _scan(v)
+                                elif isinstance(obj, list):
+                                    for it in obj:
+                                        _scan(it)
+                            _scan(d)
+                        except Exception:
+                            pass
+                if c_items:
+                    m_list = []
+                    for item in c_items:
+                        if not item or not isinstance(item, dict):
+                            continue
+                        is_v = bool(item.get("is_video") or item.get("media_type") == 2)
+                        v_u = item.get("video_url")
+                        d_u = item.get("display_uri") or item.get("display_url") or item.get("url")
+                        u = v_u if (is_v and v_u) else d_u
+                        if u and u not in [x.get("url") for x in m_list]:
+                            m_list.append({"url": u, "is_video": is_v})
+                    if m_list:
+                        return {
+                            "video_url": None,
+                            "media_list": m_list,
+                            "is_reel": content_data.get("is_reel", False),
+                            "thumbnail": m_list[0].get("url") or content_data.get("thumbnail")
+                        }
+                return None
+            except Exception:
+                return None
+
+        cffi_res = await asyncio.to_thread(_fetch_curl_cffi)
+        if cffi_res and (cffi_res.get("media_list") and len(cffi_res.get("media_list")) > 0):
+            return cffi_res
+
         def _fetch_ytdlp():
             try:
                 import yt_dlp
@@ -1655,6 +2155,14 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         is_story = content_data.get("is_story", False)
         is_reel = content_data.get("is_reel", False)
         thumbnail = content_data.get("thumbnail")
+
+        if platform == "instagram":
+            if is_story and not target.get("stories_enabled", True):
+                return False
+            if is_reel and not target.get("reels_enabled", True):
+                return False
+            if not is_story and not is_reel and not target.get("feed_enabled", True):
+                return False
 
         if platform == "instagram" and not is_story:
             enriched = await self._enrich_instagram_media(content_data)
@@ -1729,6 +2237,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
         files = None
         attachment_fn = None
+        attachment_fns = None
 
         video_url = content_data.get("video_url")
         media_list = content_data.get("media_list") or []
@@ -1778,6 +2287,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                             pass
                 if c_files:
                     files = c_files
+                    attachment_fns = [f.filename for f in c_files]
                     attachment_fn = files[0].filename
             except Exception:
                 pass
@@ -1810,8 +2320,9 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                 description=final_card_desc,
                 color=None,
                 buttons=buttons,
-                attachment_filename=attachment_fn,
-                media_url=thumbnail if not attachment_fn else None,
+                attachment_filename=attachment_fn if not attachment_fns else None,
+                attachment_filenames=attachment_fns,
+                media_url=thumbnail if not (attachment_fn or attachment_fns) else None,
             )
             res = await send_v2_message(self.bot, channel.id, [card], files=files, content=intro_text)
             if not (isinstance(res, dict) and "error_msg" in res):
@@ -1877,6 +2388,18 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                     for item in items:
                         vid = item["video_id"]
                         if self._is_id_posted(vid):
+                            continue
+
+                        is_story = item.get("is_story", False)
+                        is_reel = item.get("is_reel", False)
+                        if is_story and not target.get("stories_enabled", True):
+                            self._record_posted_id(vid)
+                            continue
+                        if is_reel and not target.get("reels_enabled", True):
+                            self._record_posted_id(vid)
+                            continue
+                        if not is_story and not is_reel and not target.get("feed_enabled", True):
+                            self._record_posted_id(vid)
                             continue
 
                         success = await self._send_content_card(target, item)
@@ -2350,7 +2873,29 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
     async def ig_group(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
-            await ctx.send("Gunakan `/ig add`, `/ig remove`, `/ig list`, `/ig config`, `/ig edit`, `/ig test`, `/ig check`.", ephemeral=True)
+            await self.ig_setup(ctx)
+
+    @ig_group.command(name="setup", description="Dashboard All-in-One konfigurasi pemantauan Instagram")
+    @app_commands.describe(target="Nama pengguna atau ID Instagram yang ingin diatur (opsional)")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def ig_setup(self, ctx: commands.Context, target: Optional[str] = None):
+        found = None
+        if target:
+            clean = await async_resolve_instagram_username(target)
+            for t in self.config.get("targets", []):
+                if t.get("platform") == "instagram" and (t.get("identifier", "").lower() == clean.lower() or clean.lower() in t.get("display_name", "").lower() or t.get("id") == clean):
+                    found = t
+                    break
+            if not found:
+                return await ctx.send(f"Akun Instagram `@{target}` tidak ditemukan.", ephemeral=True)
+
+        view = InstagramStudioView(self, ctx.guild, ctx.author, initial_target=found)
+        await ctx.send(embed=view.build_embed(), view=view, ephemeral=True)
+
+    @ig_group.command(name="studio", description="Buka panel All-in-One Studio Instagram")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def ig_studio(self, ctx: commands.Context, target: Optional[str] = None):
+        await self.ig_setup(ctx, target)
 
     @ig_group.command(name="add", description="Tambah akun Instagram untuk dipantau")
     @commands.is_owner()
@@ -2381,6 +2926,9 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
             "button_label": None,
             "use_card": True,
             "enabled": True,
+            "feed_enabled": True,
+            "reels_enabled": True,
+            "stories_enabled": True,
             "added_at": datetime.now(timezone.utc).isoformat(),
         }
         self.config["targets"].append(new_target)
@@ -2411,22 +2959,11 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
             return await ctx.send(f"Akun Instagram `@{clean_user}` berhasil dihapus dari pemantauan.", ephemeral=True)
         await ctx.send(f"Akun Instagram `@{clean_user}` tidak ditemukan.", ephemeral=True)
 
-    @ig_group.command(name="config", description="Buka panel pengaturan untuk akun Instagram")
+    @ig_group.command(name="config", description="Buka panel pengaturan All-in-One untuk akun Instagram")
     @app_commands.describe(target="Nama pengguna atau ID Instagram yang ingin diatur (opsional)")
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
     async def ig_config(self, ctx: commands.Context, target: Optional[str] = None):
-        found = None
-        if target:
-            clean = await async_resolve_instagram_username(target)
-            for t in self.config.get("targets", []):
-                if t.get("platform") == "instagram" and (t.get("identifier", "").lower() == clean.lower() or clean.lower() in t.get("display_name", "").lower() or t.get("id") == clean):
-                    found = t
-                    break
-            if not found:
-                return await ctx.send(f"Akun Instagram `@{target}` tidak ditemukan.", ephemeral=True)
-
-        view = SocialCheckerStudioView(self, ctx.guild, ctx.author, platform_filter="instagram", initial_target=found)
-        await ctx.send(embed=view.build_embed(), view=view, ephemeral=True)
+        await self.ig_setup(ctx, target)
 
     @ig_group.command(name="edit", description="Ubah pengaturan akun Instagram langsung dalam satu perintah")
     @app_commands.describe(
@@ -2563,6 +3100,17 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
             for it in items:
                 vid = it["video_id"]
                 if self._is_id_posted(vid):
+                    continue
+                is_story = it.get("is_story", False)
+                is_reel = it.get("is_reel", False)
+                if is_story and not t.get("stories_enabled", True):
+                    self._record_posted_id(vid)
+                    continue
+                if is_reel and not t.get("reels_enabled", True):
+                    self._record_posted_id(vid)
+                    continue
+                if not is_story and not is_reel and not t.get("feed_enabled", True):
+                    self._record_posted_id(vid)
                     continue
                 if await self._send_content_card(t, it):
                     self._record_posted_id(vid)

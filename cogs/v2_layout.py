@@ -2,7 +2,7 @@ import discord
 import json
 
 
-def build_v2_card(title: str = None, description: str = None, fields: list = None, color: int = None, buttons: list = None, footer: str = None, media_url: str = None, attachment_filename: str = None):
+def build_v2_card(title: str = None, description: str = None, fields: list = None, color: int = None, buttons: list = None, footer: str = None, media_url: str = None, attachment_filename: str = None, attachment_filenames: list = None):
     card_components = []
 
     content_text = ""
@@ -17,7 +17,13 @@ def build_v2_card(title: str = None, description: str = None, fields: list = Non
             value = field.get("value", "")
             content_text += f"**{name}**\n{value}\n\n"
 
-    has_media = bool(media_url or attachment_filename is not None)
+    all_attachments = []
+    if attachment_filenames:
+        all_attachments.extend([str(fn) for fn in attachment_filenames if fn])
+    elif attachment_filename is not None:
+        all_attachments.append(str(attachment_filename))
+
+    has_media = bool(media_url or all_attachments)
 
     if not has_media and footer:
         content_text += f"*{footer}*"
@@ -30,19 +36,24 @@ def build_v2_card(title: str = None, description: str = None, fields: list = Non
         })
 
     if has_media:
-        media_obj = {}
-        if attachment_filename is not None:
-            media_obj["url"] = f"attachment://{attachment_filename}"
+        if all_attachments:
+            chunk_size = 4
+            for c_idx in range(0, len(all_attachments), chunk_size):
+                chunk = all_attachments[c_idx:c_idx + chunk_size]
+                media_items = [{"media": {"url": f"attachment://{fn}"}} for fn in chunk]
+                card_components.append({
+                    "type": 12,
+                    "id": 150 + (c_idx // chunk_size),
+                    "items": media_items
+                })
         elif media_url:
-            media_obj["url"] = media_url
-
-        card_components.append({
-            "type": 12,
-            "id": 150,
-            "items": [{
-                "media": media_obj
-            }]
-        })
+            card_components.append({
+                "type": 12,
+                "id": 150,
+                "items": [{
+                    "media": {"url": media_url}
+                }]
+            })
 
         if footer:
             card_components.append({
