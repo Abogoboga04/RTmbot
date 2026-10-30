@@ -12,6 +12,9 @@
             "message_mode": "ai",
             "custom_template": null,
             "enabled": true,
+            "video_enabled": true,
+            "live_enabled": true,
+            "shorts_enabled": true,
             "added_at": "2026-10-21T12:58:20.509697+00:00",
             "use_card": true
         },
@@ -29,6 +32,8 @@
             "button_label": null,
             "use_card": true,
             "enabled": true,
+            "video_enabled": true,
+            "live_enabled": true,
             "added_at": "2026-10-22T23:26:05.756447+00:00",
             "sec_uid": "MS4wLjABAAAA8TE2gUd198-kRTGbxbVVrO4vHbkMP3q061fzxzFl46kVzaSYkTUi7Pn8CQSodGap"
         },
@@ -47,6 +52,8 @@
             "button_label": null,
             "use_card": true,
             "enabled": true,
+            "video_enabled": true,
+            "live_enabled": true,
             "added_at": "2026-10-29T19:53:57.117604+00:00"
         },
         {
@@ -56,8 +63,8 @@
             "display_name": "Quotes_recehhh",
             "target_guild_id": 1417636227179483221,
             "target_channel_id": 1562748905001848832,
-            "content": "@everyone {ai_hype}",
-            "custom_template": "@everyone {ai_hype}",
+            "content": "{ai_hype}",
+            "custom_template": "{ai_hype}",
             "card_title": "[{judul}]({url})",
             "card_desc": "{deskripsi}",
             "button_label": null,

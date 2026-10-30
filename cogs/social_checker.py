@@ -199,7 +199,7 @@ async def async_resolve_instagram_username(raw: str) -> str:
     return norm
 
 
-class SocialFormatEditorModal(discord.ui.Modal, title="Format Notifikasi"):
+class SocialFormatEditorModal(discord.ui.Modal, title="Edit Pesan Notifikasi"):
     def __init__(self, cog, target: dict, author: discord.Member, parent_view):
         super().__init__()
         self.cog = cog
@@ -213,32 +213,32 @@ class SocialFormatEditorModal(discord.ui.Modal, title="Format Notifikasi"):
         current_btn = target.get("button_label") or ""
 
         self.content_input = discord.ui.TextInput(
-            label="Isi Pesan Biasa",
+            label="Pesan Notifikasi & Mention",
             default=current_content,
-            placeholder="Contoh: @everyone {ai_hype} (Gunakan: {ai_hype}, {judul}, {channel}, {url})",
+            placeholder="Contoh: @everyone {ai_hype}\nBisa isi: @everyone, @here, @Role, {ai_hype}, {judul}, {url}",
             style=discord.TextStyle.paragraph,
             max_length=1500,
             required=True
         )
         self.title_input = discord.ui.TextInput(
-            label="Judul Utama",
+            label="Pola Judul Kartu",
             default=current_title,
-            placeholder="Variabel: {judul}, {channel}, {url}",
+            placeholder="Variabel: {judul}, {channel}, {creator}, {url}",
             max_length=256,
             required=True
         )
         self.desc_input = discord.ui.TextInput(
-            label="Deskripsi Utama",
+            label="Deskripsi Konten",
             default=current_desc,
             placeholder="Variabel: {deskripsi}, {judul}, {url}",
             style=discord.TextStyle.paragraph,
             max_length=1000,
-            required=True
+            required=False
         )
         self.btn_input = discord.ui.TextInput(
-            label="Label Tombol",
+            label="Label Tombol (Opsional)",
             default=current_btn,
-            placeholder="Kosongkan untuk otomatis (cth: Tonton di YouTube)",
+            placeholder="Kosongkan untuk otomatis platform (cth: Tonton di YouTube)",
             max_length=80,
             required=False
         )
@@ -650,28 +650,9 @@ class InstagramStudioView(discord.ui.View):
             btn_stories.callback = self.btn_stories_callback
             self.add_item(btn_stories)
 
-            raw_c = self.target.get("content") or ""
-            ai_active = "{ai_hype}" in raw_c or "{aihype}" in raw_c
-            btn_ai = discord.ui.Button(
-                label=f"🤖 AI Hype: {'ON' if ai_active else 'OFF'}",
-                style=discord.ButtonStyle.primary if ai_active else discord.ButtonStyle.secondary,
-                row=2
-            )
-            btn_ai.callback = self.btn_ai_callback
-            self.add_item(btn_ai)
-
-            curr_mention = "@everyone" if "@everyone" in raw_c else ("@here" if "@here" in raw_c else "Mati")
-            btn_mention = discord.ui.Button(
-                label=f"📢 Mention: {curr_mention}",
-                style=discord.ButtonStyle.secondary,
-                row=3
-            )
-            btn_mention.callback = self.btn_mention_callback
-            self.add_item(btn_mention)
-
             use_card = self.target.get("use_card", True)
             btn_card = discord.ui.Button(
-                label=f"🎨 Tampilan: {'Kartu V2' if use_card else 'Teks'}",
+                label=f"🎨 Gaya: {'Kartu' if use_card else 'Teks'}",
                 style=discord.ButtonStyle.secondary,
                 row=3
             )
@@ -698,7 +679,7 @@ class InstagramStudioView(discord.ui.View):
             btn_test = discord.ui.Button(
                 label="🧪 Tes Kirim",
                 style=discord.ButtonStyle.primary,
-                row=4
+                row=3
             )
             btn_test.callback = self.btn_test_callback
             self.add_item(btn_test)
@@ -730,7 +711,7 @@ class InstagramStudioView(discord.ui.View):
     def build_embed(self) -> discord.Embed:
         if not self.target:
             embed = discord.Embed(
-                title="📸 Pengaturan All-in-One Instagram",
+                title="📸 Studio Konfigurasi Instagram",
                 description="Belum ada akun Instagram yang dipantau di server ini.\nKlik tombol **➕ Tambah Akun Instagram Baru** di bawah untuk mulai memantau.",
                 color=0xE1306C
             )
@@ -746,32 +727,31 @@ class InstagramStudioView(discord.ui.View):
         stories_st = "🟢 Aktif" if self.target.get("stories_enabled", True) else "🔴 Mati"
 
         content_val = self.target.get("content") or self.target.get("custom_template") or "@everyone {ai_hype}"
-        ai_st = "🟢 Aktif" if ("{ai_hype}" in content_val or "{aihype}" in content_val) else "⚪ Tidak Aktif"
-        mention_st = "@everyone" if "@everyone" in content_val else ("@here" if "@here" in content_val else "Tanpa Mention")
-        card_st = "Kartu V2 Interaktif" if self.target.get("use_card", True) else "Teks Biasa"
+        card_st = "Kartu" if self.target.get("use_card", True) else "Teks Biasa"
         is_active = self.target.get("enabled", True)
         status_st = "🟢 Berjalan (Aktif)" if is_active else "⏸️ Dijeda"
+        card_title = self.target.get("card_title", "[{judul}]({url})")
+        card_desc = self.target.get("card_desc", "{deskripsi}")
 
         embed = discord.Embed(
             title=f"📸 All-in-One Studio Instagram: @{ident}",
             description=(
-                f"**Nama Tampilan:** **{name}**\n"
+                f"**Nama Akun:** **{name}**\n"
                 f"**Status Pemantauan:** {status_st}\n"
                 f"**Kanal Tujuan Discord:** {ch_str}\n"
                 f"**Gaya Tampilan Pesan:** `{card_st}`\n\n"
-                f"**Filter Konten Granular:**\n"
+                f"**Filter Konten:**\n"
                 f"• 📸 Postingan Feed (Foto/Album): **{feed_st}**\n"
                 f"• 🎬 Reels Video: **{reels_st}**\n"
                 f"• ⏳ Story (24 Jam): **{stories_st}**\n\n"
-                f"**Pengaturan Notifikasi & AI:**\n"
-                f"• 🤖 AI Hype: **{ai_st}**\n"
-                f"• 📢 Mention: **{mention_st}**\n"
-                f"• 💬 Pesan Notifikasi: `{content_val}`\n"
-                f"• 🏷️ Pola Judul Kartu: `{self.target.get('card_title', '[{judul}]({url})')}`"
+                f"**Pesan Notifikasi:**\n"
+                f"• 💬 Format Pesan: `{content_val}`\n"
+                f"• 🏷️ Pola Judul: `{card_title}`\n"
+                f"• 📝 Pola Deskripsi: `{card_desc}`"
             ),
             color=0xE1306C
         )
-        embed.set_footer(text="Gunakan tombol dan menu di bawah untuk mengubah pengaturan langsung secara instan.")
+        embed.set_footer(text="Gunakan tombol di bawah. Klik 'Edit Pesan' untuk mengatur teks, mention, dan AI Hype.")
         return embed
 
     async def target_select_callback(self, interaction: discord.Interaction):
@@ -809,34 +789,6 @@ class InstagramStudioView(discord.ui.View):
     async def btn_stories_callback(self, interaction: discord.Interaction):
         curr = self.target.get("stories_enabled", True)
         self.target["stories_enabled"] = not curr
-        self.cog._save_config()
-        self.update_components()
-        await interaction.response.edit_message(embed=self.build_embed(), view=self)
-
-    async def btn_ai_callback(self, interaction: discord.Interaction):
-        curr_text = self.target.get("content") or self.target.get("custom_template") or ""
-        if "{ai_hype}" in curr_text:
-            curr_text = curr_text.replace("{ai_hype}", "").strip()
-        elif "{aihype}" in curr_text:
-            curr_text = curr_text.replace("{aihype}", "").strip()
-        else:
-            curr_text = f"{curr_text} {{ai_hype}}".strip()
-        self.target["content"] = curr_text
-        self.target["custom_template"] = curr_text
-        self.cog._save_config()
-        self.update_components()
-        await interaction.response.edit_message(embed=self.build_embed(), view=self)
-
-    async def btn_mention_callback(self, interaction: discord.Interaction):
-        curr_text = self.target.get("content") or self.target.get("custom_template") or ""
-        if "@everyone" in curr_text:
-            curr_text = curr_text.replace("@everyone", "@here").strip()
-        elif "@here" in curr_text:
-            curr_text = curr_text.replace("@here", "").strip()
-        else:
-            curr_text = f"@everyone {curr_text}".strip()
-        self.target["content"] = curr_text
-        self.target["custom_template"] = curr_text
         self.cog._save_config()
         self.update_components()
         await interaction.response.edit_message(embed=self.build_embed(), view=self)
@@ -895,7 +847,743 @@ class InstagramStudioView(discord.ui.View):
                 "is_live": False,
                 "is_story": False,
                 "is_reel": False,
+                "force_test": True,
             }
+        else:
+            test_item = dict(test_item)
+            test_item["force_test"] = True
+
+        sent = await self.cog._send_content_card(self.target, test_item)
+        if sent:
+            await interaction.followup.send(f"Berhasil mengirimkan preview notifikasi ke {ch.mention}!", ephemeral=True)
+        else:
+            await interaction.followup.send(f"Gagal mengirim preview ke {ch.mention}. Pastikan izin bot mencukupi.", ephemeral=True)
+
+
+class TikTokAddAccountModal(discord.ui.Modal, title="Tambah Akun TikTok"):
+    def __init__(self, cog, guild: discord.Guild, author: discord.Member, parent_view):
+        super().__init__()
+        self.cog = cog
+        self.guild = guild
+        self.author = author
+        self.parent_view = parent_view
+
+        self.username_input = discord.ui.TextInput(
+            label="Username / Link Akun TikTok",
+            placeholder="Contoh: @khaby.lame atau https://www.tiktok.com/@khaby.lame",
+            max_length=100,
+            required=True
+        )
+        self.add_item(self.username_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        raw_user = self.username_input.value.strip()
+        clean_user = await async_resolve_tiktok_username(raw_user)
+        if not clean_user:
+            return await interaction.followup.send("Nama pengguna atau tautan akun TikTok tidak valid.", ephemeral=True)
+
+        found_existing = None
+        for t in self.cog.config.get("targets", []):
+            if t.get("platform") == "tiktok" and t.get("identifier", "").lower() == clean_user.lower():
+                found_existing = t
+                break
+
+        if found_existing:
+            self.parent_view.target = found_existing
+            self.parent_view.update_components()
+            await interaction.followup.send(f"Akun TikTok **@{clean_user}** sudah terdaftar dalam pemantauan.", ephemeral=True)
+            return
+
+        new_target = {
+            "id": str(uuid.uuid4())[:8],
+            "platform": "tiktok",
+            "identifier": clean_user,
+            "display_name": clean_user,
+            "sec_uid": None,
+            "target_guild_id": self.guild.id if self.guild else None,
+            "target_channel_id": interaction.channel_id,
+            "content": "@everyone {ai_hype}",
+            "custom_template": "@everyone {ai_hype}",
+            "card_title": "[{judul}]({url})",
+            "card_desc": "{deskripsi}",
+            "button_label": None,
+            "use_card": True,
+            "enabled": True,
+            "video_enabled": True,
+            "live_enabled": True,
+            "added_at": datetime.now(timezone.utc).isoformat(),
+        }
+        self.cog.config["targets"].append(new_target)
+        self.cog._save_config()
+
+        current_items = await self.cog._fetch_tiktok_content(clean_user)
+        for it in current_items:
+            if it.get("sec_uid") and not new_target.get("sec_uid"):
+                new_target["sec_uid"] = it["sec_uid"]
+            if it.get("creator") and new_target.get("display_name") == clean_user:
+                new_target["display_name"] = it["creator"]
+            if not it.get("is_live") and it["video_id"] not in self.cog.cache["posted_ids"]:
+                self.cog.cache["posted_ids"].append(it["video_id"])
+        self.cog._save_config()
+        self.cog._save_cache()
+
+        self.parent_view.target = new_target
+        self.parent_view.update_components()
+        await interaction.edit_original_response(embed=self.parent_view.build_embed(), view=self.parent_view)
+        await interaction.followup.send(f"Berhasil menambahkan akun TikTok **@{clean_user}**!", ephemeral=True)
+
+
+class TikTokStudioView(discord.ui.View):
+    def __init__(self, cog, guild: discord.Guild, author: discord.Member, initial_target: Optional[dict] = None):
+        super().__init__(timeout=300)
+        self.cog = cog
+        self.guild = guild
+        self.author = author
+        self.target = initial_target
+        self.update_components()
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author.id:
+            await interaction.response.send_message("Menu konfigurasi ini hanya dapat diakses oleh pemanggil.", ephemeral=True)
+            return False
+        return True
+
+    def get_targets(self) -> list:
+        targets = [t for t in self.cog.config.get("targets", []) if t.get("platform") == "tiktok"]
+        if self.guild:
+            g_targets = [t for t in targets if t.get("target_guild_id") == self.guild.id]
+            if g_targets:
+                return g_targets
+        return targets
+
+    def update_components(self):
+        self.clear_items()
+        targets = self.get_targets()
+
+        if targets:
+            if not self.target or self.target not in targets:
+                self.target = targets[0]
+
+            options = []
+            for t in targets[:25]:
+                d_name = t.get("display_name", t.get("identifier"))
+                ident = t.get("identifier")
+                vid_st = "V:ON" if t.get("video_enabled", True) else "V:OFF"
+                live_st = "L:ON" if t.get("live_enabled", True) else "L:OFF"
+                desc = f"@{ident} ({vid_st} | {live_st})"
+                is_selected = (self.target and self.target.get("id") == t.get("id"))
+                options.append(discord.SelectOption(
+                    label=d_name[:80],
+                    description=desc[:100],
+                    value=t.get("id", ident),
+                    default=is_selected,
+                    emoji="🎵"
+                ))
+
+            target_select = discord.ui.Select(
+                placeholder="Pilih Akun TikTok yang Ingin Diatur",
+                options=options,
+                row=0
+            )
+            target_select.callback = self.target_select_callback
+            self.add_item(target_select)
+
+        if self.target:
+            channel_select = discord.ui.ChannelSelect(
+                channel_types=[discord.ChannelType.text],
+                placeholder="Pilih Kanal Discord untuk Notifikasi",
+                min_values=1,
+                max_values=1,
+                row=1
+            )
+            channel_select.callback = self.channel_select_callback
+            self.add_item(channel_select)
+
+            video_active = self.target.get("video_enabled", True)
+            btn_video = discord.ui.Button(
+                label=f"🎬 Video: {'AKTIF' if video_active else 'MATI'}",
+                style=discord.ButtonStyle.success if video_active else discord.ButtonStyle.secondary,
+                row=2
+            )
+            btn_video.callback = self.btn_video_callback
+            self.add_item(btn_video)
+
+            live_active = self.target.get("live_enabled", True)
+            btn_live = discord.ui.Button(
+                label=f"🔴 Live: {'AKTIF' if live_active else 'MATI'}",
+                style=discord.ButtonStyle.success if live_active else discord.ButtonStyle.secondary,
+                row=2
+            )
+            btn_live.callback = self.btn_live_callback
+            self.add_item(btn_live)
+
+            use_card = self.target.get("use_card", True)
+            btn_card = discord.ui.Button(
+                label=f"🎨 Gaya: {'Kartu' if use_card else 'Teks'}",
+                style=discord.ButtonStyle.secondary,
+                row=3
+            )
+            btn_card.callback = self.btn_card_callback
+            self.add_item(btn_card)
+
+            btn_format = discord.ui.Button(
+                label="✏️ Edit Pesan",
+                style=discord.ButtonStyle.secondary,
+                row=3
+            )
+            btn_format.callback = self.btn_format_callback
+            self.add_item(btn_format)
+
+            is_active = self.target.get("enabled", True)
+            btn_status = discord.ui.Button(
+                label=f"⏸️ {'Status: Aktif' if is_active else 'Status: Dijeda'}",
+                style=discord.ButtonStyle.success if is_active else discord.ButtonStyle.secondary,
+                row=3
+            )
+            btn_status.callback = self.btn_status_callback
+            self.add_item(btn_status)
+
+            btn_test = discord.ui.Button(
+                label="🧪 Tes Kirim",
+                style=discord.ButtonStyle.primary,
+                row=3
+            )
+            btn_test.callback = self.btn_test_callback
+            self.add_item(btn_test)
+
+            btn_add = discord.ui.Button(
+                label="➕ Tambah Akun",
+                style=discord.ButtonStyle.success,
+                row=4
+            )
+            btn_add.callback = self.btn_add_callback
+            self.add_item(btn_add)
+
+            btn_delete = discord.ui.Button(
+                label="🗑️ Hapus Akun",
+                style=discord.ButtonStyle.danger,
+                row=4
+            )
+            btn_delete.callback = self.btn_delete_callback
+            self.add_item(btn_delete)
+        else:
+            btn_add = discord.ui.Button(
+                label="➕ Tambah Akun TikTok Baru",
+                style=discord.ButtonStyle.success,
+                row=0
+            )
+            btn_add.callback = self.btn_add_callback
+            self.add_item(btn_add)
+
+    def build_embed(self) -> discord.Embed:
+        if not self.target:
+            embed = discord.Embed(
+                title="🎵 Studio Konfigurasi TikTok",
+                description="Belum ada akun TikTok yang dipantau di server ini.\nKlik tombol **➕ Tambah Akun TikTok Baru** di bawah untuk mulai memantau.",
+                color=0x00F2FE
+            )
+            return embed
+
+        name = self.target.get("display_name", self.target.get("identifier"))
+        ident = self.target.get("identifier")
+        ch_id = self.target.get("target_channel_id")
+        ch_str = f"<#{ch_id}>" if ch_id else "*(Belum diatur)*"
+
+        video_st = "🟢 Aktif" if self.target.get("video_enabled", True) else "🔴 Mati"
+        live_st = "🟢 Aktif" if self.target.get("live_enabled", True) else "🔴 Mati"
+
+        content_val = self.target.get("content") or self.target.get("custom_template") or "@everyone {ai_hype}"
+        card_st = "Kartu" if self.target.get("use_card", True) else "Teks Biasa"
+        is_active = self.target.get("enabled", True)
+        status_st = "🟢 Berjalan (Aktif)" if is_active else "⏸️ Dijeda"
+        card_title = self.target.get("card_title", "[{judul}]({url})")
+        card_desc = self.target.get("card_desc", "{deskripsi}")
+
+        embed = discord.Embed(
+            title=f"🎵 All-in-One Studio TikTok: @{ident}",
+            description=(
+                f"**Nama Akun:** **{name}**\n"
+                f"**Status Pemantauan:** {status_st}\n"
+                f"**Kanal Tujuan Discord:** {ch_str}\n"
+                f"**Gaya Tampilan Pesan:** `{card_st}`\n\n"
+                f"**Filter Konten:**\n"
+                f"• 🎬 Video Feed: **{video_st}**\n"
+                f"• 🔴 Live Streaming: **{live_st}**\n\n"
+                f"**Pesan Notifikasi:**\n"
+                f"• 💬 Format Pesan: `{content_val}`\n"
+                f"• 🏷️ Pola Judul: `{card_title}`\n"
+                f"• 📝 Pola Deskripsi: `{card_desc}`"
+            ),
+            color=0x00F2FE
+        )
+        embed.set_footer(text="Gunakan tombol di bawah. Klik 'Edit Pesan' untuk mengatur teks, mention, dan AI Hype.")
+        return embed
+
+    async def target_select_callback(self, interaction: discord.Interaction):
+        selected_val = interaction.data["values"][0]
+        targets = self.get_targets()
+        found = next((t for t in targets if t.get("id") == selected_val or t.get("identifier") == selected_val), None)
+        if found:
+            self.target = found
+            self.update_components()
+            await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def channel_select_callback(self, interaction: discord.Interaction):
+        selected_channel_id = int(interaction.data["values"][0])
+        self.target["target_channel_id"] = selected_channel_id
+        if interaction.guild:
+            self.target["target_guild_id"] = interaction.guild.id
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_video_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("video_enabled", True)
+        self.target["video_enabled"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_live_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("live_enabled", True)
+        self.target["live_enabled"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_card_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("use_card", True)
+        self.target["use_card"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_status_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("enabled", True)
+        self.target["enabled"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_format_callback(self, interaction: discord.Interaction):
+        modal = SocialFormatEditorModal(self.cog, self.target, self.author, self)
+        await interaction.response.send_modal(modal)
+
+    async def btn_add_callback(self, interaction: discord.Interaction):
+        modal = TikTokAddAccountModal(self.cog, self.guild, self.author, self)
+        await interaction.response.send_modal(modal)
+
+    async def btn_delete_callback(self, interaction: discord.Interaction):
+        t_id = self.target.get("id") or self.target.get("identifier")
+        d_name = self.target.get("display_name", self.target.get("identifier"))
+        self.cog.config["targets"] = [t for t in self.cog.config.get("targets", []) if (t.get("id") != t_id and t.get("identifier") != t_id)]
+        self.cog._save_config()
+        self.target = None
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+        await interaction.followup.send(f"Akun TikTok **{d_name}** berhasil dihapus dari pemantauan.", ephemeral=True)
+
+    async def btn_test_callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        ch_id = self.target.get("target_channel_id")
+        ch = interaction.guild.get_channel(ch_id) if ch_id and interaction.guild else None
+        if not ch:
+            return await interaction.followup.send("Kanal tujuan belum diatur atau tidak ditemukan di server ini.", ephemeral=True)
+
+        clean_user = self.target.get("identifier")
+        items = await self.cog._fetch_tiktok_content(clean_user, self.target.get("sec_uid"))
+        test_item = items[0] if items else None
+        if not test_item:
+            test_item = {
+                "video_id": f"test_tt_{clean_user}",
+                "title": f"Video Terbaru @{clean_user}",
+                "description": f"Halo semua! Ini adalah simulasi uji coba notifikasi TikTok untuk akun @{clean_user}.",
+                "creator": self.target.get("display_name", clean_user),
+                "url": f"https://www.tiktok.com/@{clean_user}",
+                "thumbnail": "https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=800",
+                "is_live": False,
+                "force_test": True,
+            }
+        else:
+            test_item = dict(test_item)
+            test_item["force_test"] = True
+
+        sent = await self.cog._send_content_card(self.target, test_item)
+        if sent:
+            await interaction.followup.send(f"Berhasil mengirimkan preview notifikasi ke {ch.mention}!", ephemeral=True)
+        else:
+            await interaction.followup.send(f"Gagal mengirim preview ke {ch.mention}. Pastikan izin bot mencukupi.", ephemeral=True)
+
+
+class YouTubeAddAccountModal(discord.ui.Modal, title="Tambah Channel YouTube"):
+    def __init__(self, cog, guild: discord.Guild, author: discord.Member, parent_view):
+        super().__init__()
+        self.cog = cog
+        self.guild = guild
+        self.author = author
+        self.parent_view = parent_view
+
+        self.channel_input = discord.ui.TextInput(
+            label="Channel ID / Handle / Link YouTube",
+            placeholder="Contoh: @MrBeast, UCX6OQ3DkcsbYNE6H8uQQuVA, atau link channel",
+            max_length=150,
+            required=True
+        )
+        self.add_item(self.channel_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        raw_ident = self.channel_input.value.strip()
+        cid, name = await self.cog._resolve_youtube_channel(raw_ident)
+        if not cid:
+            return await interaction.followup.send("Channel YouTube tidak valid atau tidak ditemukan.", ephemeral=True)
+
+        found_existing = None
+        for t in self.cog.config.get("targets", []):
+            if t.get("platform") == "youtube" and t.get("identifier") == cid:
+                found_existing = t
+                break
+
+        if found_existing:
+            self.parent_view.target = found_existing
+            self.parent_view.update_components()
+            await interaction.followup.send(f"Channel **{name}** (`{cid}`) sudah terdaftar dalam pemantauan.", ephemeral=True)
+            return
+
+        new_target = {
+            "id": str(uuid.uuid4())[:8],
+            "platform": "youtube",
+            "identifier": cid,
+            "display_name": name,
+            "target_guild_id": self.guild.id if self.guild else None,
+            "target_channel_id": interaction.channel_id,
+            "content": "@everyone {ai_hype}",
+            "custom_template": "@everyone {ai_hype}",
+            "card_title": "[{judul}]({url})",
+            "card_desc": "{deskripsi}",
+            "button_label": None,
+            "use_card": True,
+            "enabled": True,
+            "video_enabled": True,
+            "live_enabled": True,
+            "shorts_enabled": True,
+            "added_at": datetime.now(timezone.utc).isoformat(),
+        }
+        self.cog.config["targets"].append(new_target)
+        self.cog._save_config()
+
+        current_items = await self.cog._fetch_youtube_content(cid)
+        for it in current_items:
+            if not it.get("is_live") and it["video_id"] not in self.cog.cache["posted_ids"]:
+                self.cog.cache["posted_ids"].append(it["video_id"])
+        self.cog._save_cache()
+
+        self.parent_view.target = new_target
+        self.parent_view.update_components()
+        await interaction.edit_original_response(embed=self.parent_view.build_embed(), view=self.parent_view)
+        await interaction.followup.send(f"Berhasil menambahkan channel YouTube **{name}**!", ephemeral=True)
+
+
+class YouTubeStudioView(discord.ui.View):
+    def __init__(self, cog, guild: discord.Guild, author: discord.Member, initial_target: Optional[dict] = None):
+        super().__init__(timeout=300)
+        self.cog = cog
+        self.guild = guild
+        self.author = author
+        self.target = initial_target
+        self.update_components()
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author.id:
+            await interaction.response.send_message("Menu konfigurasi ini hanya dapat diakses oleh pemanggil.", ephemeral=True)
+            return False
+        return True
+
+    def get_targets(self) -> list:
+        targets = [t for t in self.cog.config.get("targets", []) if t.get("platform") == "youtube"]
+        if self.guild:
+            g_targets = [t for t in targets if t.get("target_guild_id") == self.guild.id]
+            if g_targets:
+                return g_targets
+        return targets
+
+    def update_components(self):
+        self.clear_items()
+        targets = self.get_targets()
+
+        if targets:
+            if not self.target or self.target not in targets:
+                self.target = targets[0]
+
+            options = []
+            for t in targets[:25]:
+                d_name = t.get("display_name", t.get("identifier"))
+                ident = t.get("identifier")
+                vid_st = "V:ON" if t.get("video_enabled", True) else "V:OFF"
+                live_st = "L:ON" if t.get("live_enabled", True) else "L:OFF"
+                short_st = "S:ON" if t.get("shorts_enabled", True) else "S:OFF"
+                desc = f"{ident[:30]} ({vid_st} | {live_st} | {short_st})"
+                is_selected = (self.target and self.target.get("id") == t.get("id"))
+                options.append(discord.SelectOption(
+                    label=d_name[:80],
+                    description=desc[:100],
+                    value=t.get("id", ident),
+                    default=is_selected,
+                    emoji="▶️"
+                ))
+
+            target_select = discord.ui.Select(
+                placeholder="Pilih Channel YouTube yang Ingin Diatur",
+                options=options,
+                row=0
+            )
+            target_select.callback = self.target_select_callback
+            self.add_item(target_select)
+
+        if self.target:
+            channel_select = discord.ui.ChannelSelect(
+                channel_types=[discord.ChannelType.text],
+                placeholder="Pilih Kanal Discord untuk Notifikasi",
+                min_values=1,
+                max_values=1,
+                row=1
+            )
+            channel_select.callback = self.channel_select_callback
+            self.add_item(channel_select)
+
+            video_active = self.target.get("video_enabled", True)
+            btn_video = discord.ui.Button(
+                label=f"📹 Video: {'AKTIF' if video_active else 'MATI'}",
+                style=discord.ButtonStyle.success if video_active else discord.ButtonStyle.secondary,
+                row=2
+            )
+            btn_video.callback = self.btn_video_callback
+            self.add_item(btn_video)
+
+            live_active = self.target.get("live_enabled", True)
+            btn_live = discord.ui.Button(
+                label=f"🔴 Live: {'AKTIF' if live_active else 'MATI'}",
+                style=discord.ButtonStyle.success if live_active else discord.ButtonStyle.secondary,
+                row=2
+            )
+            btn_live.callback = self.btn_live_callback
+            self.add_item(btn_live)
+
+            shorts_active = self.target.get("shorts_enabled", True)
+            btn_shorts = discord.ui.Button(
+                label=f"⚡ Shorts: {'AKTIF' if shorts_active else 'MATI'}",
+                style=discord.ButtonStyle.success if shorts_active else discord.ButtonStyle.secondary,
+                row=2
+            )
+            btn_shorts.callback = self.btn_shorts_callback
+            self.add_item(btn_shorts)
+
+            use_card = self.target.get("use_card", True)
+            btn_card = discord.ui.Button(
+                label=f"🎨 Gaya: {'Kartu' if use_card else 'Teks'}",
+                style=discord.ButtonStyle.secondary,
+                row=3
+            )
+            btn_card.callback = self.btn_card_callback
+            self.add_item(btn_card)
+
+            btn_format = discord.ui.Button(
+                label="✏️ Edit Pesan",
+                style=discord.ButtonStyle.secondary,
+                row=3
+            )
+            btn_format.callback = self.btn_format_callback
+            self.add_item(btn_format)
+
+            is_active = self.target.get("enabled", True)
+            btn_status = discord.ui.Button(
+                label=f"⏸️ {'Status: Aktif' if is_active else 'Status: Dijeda'}",
+                style=discord.ButtonStyle.success if is_active else discord.ButtonStyle.secondary,
+                row=3
+            )
+            btn_status.callback = self.btn_status_callback
+            self.add_item(btn_status)
+
+            btn_test = discord.ui.Button(
+                label="🧪 Tes Kirim",
+                style=discord.ButtonStyle.primary,
+                row=3
+            )
+            btn_test.callback = self.btn_test_callback
+            self.add_item(btn_test)
+
+            btn_add = discord.ui.Button(
+                label="➕ Tambah Channel",
+                style=discord.ButtonStyle.success,
+                row=4
+            )
+            btn_add.callback = self.btn_add_callback
+            self.add_item(btn_add)
+
+            btn_delete = discord.ui.Button(
+                label="🗑️ Hapus Channel",
+                style=discord.ButtonStyle.danger,
+                row=4
+            )
+            btn_delete.callback = self.btn_delete_callback
+            self.add_item(btn_delete)
+        else:
+            btn_add = discord.ui.Button(
+                label="➕ Tambah Channel YouTube Baru",
+                style=discord.ButtonStyle.success,
+                row=0
+            )
+            btn_add.callback = self.btn_add_callback
+            self.add_item(btn_add)
+
+    def build_embed(self) -> discord.Embed:
+        if not self.target:
+            embed = discord.Embed(
+                title="▶️ Studio Konfigurasi YouTube",
+                description="Belum ada channel YouTube yang dipantau di server ini.\nKlik tombol **➕ Tambah Channel YouTube Baru** di bawah untuk mulai memantau.",
+                color=0xFF0000
+            )
+            return embed
+
+        name = self.target.get("display_name", self.target.get("identifier"))
+        ident = self.target.get("identifier")
+        ch_id = self.target.get("target_channel_id")
+        ch_str = f"<#{ch_id}>" if ch_id else "*(Belum diatur)*"
+
+        video_st = "🟢 Aktif" if self.target.get("video_enabled", True) else "🔴 Mati"
+        live_st = "🟢 Aktif" if self.target.get("live_enabled", True) else "🔴 Mati"
+        shorts_st = "🟢 Aktif" if self.target.get("shorts_enabled", True) else "🔴 Mati"
+
+        content_val = self.target.get("content") or self.target.get("custom_template") or "@everyone {ai_hype}"
+        card_st = "Kartu" if self.target.get("use_card", True) else "Teks Biasa"
+        is_active = self.target.get("enabled", True)
+        status_st = "🟢 Berjalan (Aktif)" if is_active else "⏸️ Dijeda"
+        card_title = self.target.get("card_title", "[{judul}]({url})")
+        card_desc = self.target.get("card_desc", "{deskripsi}")
+
+        embed = discord.Embed(
+            title=f"▶️ All-in-One Studio YouTube: {name}",
+            description=(
+                f"**Nama Channel:** **{name}** (`{ident}`)\n"
+                f"**Status Pemantauan:** {status_st}\n"
+                f"**Kanal Tujuan Discord:** {ch_str}\n"
+                f"**Gaya Tampilan Pesan:** `{card_st}`\n\n"
+                f"**Filter Konten:**\n"
+                f"• 📹 Video Reguler: **{video_st}**\n"
+                f"• 🔴 Live Streaming: **{live_st}**\n"
+                f"• ⚡ Shorts: **{shorts_st}**\n\n"
+                f"**Pesan Notifikasi:**\n"
+                f"• 💬 Format Pesan: `{content_val}`\n"
+                f"• 🏷️ Pola Judul: `{card_title}`\n"
+                f"• 📝 Pola Deskripsi: `{card_desc}`"
+            ),
+            color=0xFF0000
+        )
+        embed.set_footer(text="Gunakan tombol di bawah. Klik 'Edit Pesan' untuk mengatur teks, mention, dan AI Hype.")
+        return embed
+
+    async def target_select_callback(self, interaction: discord.Interaction):
+        selected_val = interaction.data["values"][0]
+        targets = self.get_targets()
+        found = next((t for t in targets if t.get("id") == selected_val or t.get("identifier") == selected_val), None)
+        if found:
+            self.target = found
+            self.update_components()
+            await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def channel_select_callback(self, interaction: discord.Interaction):
+        selected_channel_id = int(interaction.data["values"][0])
+        self.target["target_channel_id"] = selected_channel_id
+        if interaction.guild:
+            self.target["target_guild_id"] = interaction.guild.id
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_video_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("video_enabled", True)
+        self.target["video_enabled"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_live_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("live_enabled", True)
+        self.target["live_enabled"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_shorts_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("shorts_enabled", True)
+        self.target["shorts_enabled"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_card_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("use_card", True)
+        self.target["use_card"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_status_callback(self, interaction: discord.Interaction):
+        curr = self.target.get("enabled", True)
+        self.target["enabled"] = not curr
+        self.cog._save_config()
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+
+    async def btn_format_callback(self, interaction: discord.Interaction):
+        modal = SocialFormatEditorModal(self.cog, self.target, self.author, self)
+        await interaction.response.send_modal(modal)
+
+    async def btn_add_callback(self, interaction: discord.Interaction):
+        modal = YouTubeAddAccountModal(self.cog, self.guild, self.author, self)
+        await interaction.response.send_modal(modal)
+
+    async def btn_delete_callback(self, interaction: discord.Interaction):
+        t_id = self.target.get("id") or self.target.get("identifier")
+        d_name = self.target.get("display_name", self.target.get("identifier"))
+        self.cog.config["targets"] = [t for t in self.cog.config.get("targets", []) if (t.get("id") != t_id and t.get("identifier") != t_id)]
+        self.cog._save_config()
+        self.target = None
+        self.update_components()
+        await interaction.response.edit_message(embed=self.build_embed(), view=self)
+        await interaction.followup.send(f"Channel YouTube **{d_name}** berhasil dihapus dari pemantauan.", ephemeral=True)
+
+    async def btn_test_callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        ch_id = self.target.get("target_channel_id")
+        ch = interaction.guild.get_channel(ch_id) if ch_id and interaction.guild else None
+        if not ch:
+            return await interaction.followup.send("Kanal tujuan belum diatur atau tidak ditemukan di server ini.", ephemeral=True)
+
+        cid = self.target.get("identifier")
+        d_name = self.target.get("display_name", cid)
+        items = await self.cog._fetch_youtube_content(cid)
+        test_item = items[0] if items else None
+        if not test_item:
+            test_item = {
+                "video_id": f"test_yt_{cid[:8]}",
+                "title": f"Video Terbaru {d_name}",
+                "description": f"Halo semua! Ini adalah simulasi uji coba notifikasi YouTube untuk channel {d_name}.",
+                "url": f"https://www.youtube.com/channel/{cid}",
+                "thumbnail": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800",
+                "is_live": False,
+                "is_short": False,
+                "creator": d_name,
+                "force_test": True,
+            }
+        else:
+            meta = await self.cog._fetch_youtube_metadata(test_item["video_id"], test_item.get("is_live", False))
+            if meta:
+                test_item = dict(meta)
+            else:
+                test_item = dict(test_item)
+            test_item["force_test"] = True
 
         sent = await self.cog._send_content_card(self.target, test_item)
         if sent:
@@ -2156,13 +2844,27 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         is_reel = content_data.get("is_reel", False)
         thumbnail = content_data.get("thumbnail")
 
-        if platform == "instagram":
-            if is_story and not target.get("stories_enabled", True):
-                return False
-            if is_reel and not target.get("reels_enabled", True):
-                return False
-            if not is_story and not is_reel and not target.get("feed_enabled", True):
-                return False
+        if not content_data.get("force_test", False):
+            if platform == "instagram":
+                if is_story and not target.get("stories_enabled", True):
+                    return False
+                if is_reel and not target.get("reels_enabled", True):
+                    return False
+                if not is_story and not is_reel and not target.get("feed_enabled", True):
+                    return False
+            elif platform == "tiktok":
+                if is_live and not target.get("live_enabled", True):
+                    return False
+                if not is_live and not target.get("video_enabled", True):
+                    return False
+            elif platform == "youtube":
+                is_short = content_data.get("is_short", False) or "/shorts/" in url
+                if is_live and not target.get("live_enabled", True):
+                    return False
+                if is_short and not target.get("shorts_enabled", True):
+                    return False
+                if not is_live and not is_short and not target.get("video_enabled", True):
+                    return False
 
         if platform == "instagram" and not is_story:
             enriched = await self._enrich_instagram_media(content_data)
@@ -2362,6 +3064,18 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                         if meta.get("channel_id") and meta["channel_id"] != identifier:
                             continue
 
+                        is_live = meta.get("is_live", False)
+                        is_short = meta.get("is_short", False) or "/shorts/" in meta.get("url", "")
+                        if is_live and not target.get("live_enabled", True):
+                            self._record_posted_id(vid)
+                            continue
+                        if is_short and not target.get("shorts_enabled", True):
+                            self._record_posted_id(vid)
+                            continue
+                        if not is_live and not is_short and not target.get("video_enabled", True):
+                            self._record_posted_id(vid)
+                            continue
+
                         success = await self._send_content_card(target, meta)
                         if success:
                             self._record_posted_id(vid)
@@ -2375,6 +3089,13 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                             self._save_config()
                         vid = item["video_id"]
                         if self._is_id_posted(vid):
+                            continue
+
+                        is_live = item.get("is_live", False)
+                        if is_live and not target.get("live_enabled", True):
+                            continue
+                        if not is_live and not target.get("video_enabled", True):
+                            self._record_posted_id(vid)
                             continue
 
                         success = await self._send_content_card(target, item)
@@ -2419,7 +3140,29 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
     async def yt_group(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
-            await ctx.send("Gunakan `/yt add`, `/yt remove`, `/yt list`, `/yt setchannel`, `/yt setmode`, `/yt check`.", ephemeral=True)
+            await self.yt_setup(ctx)
+
+    @yt_group.command(name="setup", description="Dashboard All-in-One konfigurasi pemantauan YouTube")
+    @app_commands.describe(target="Nama channel atau ID YouTube yang ingin diatur (opsional)")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def yt_setup(self, ctx: commands.Context, target: Optional[str] = None):
+        found = None
+        if target:
+            clean = target.strip().lower()
+            for t in self.config.get("targets", []):
+                if t.get("platform") == "youtube" and (t.get("identifier", "").lower() == clean or clean in t.get("display_name", "").lower() or t.get("id") == clean):
+                    found = t
+                    break
+            if not found:
+                return await ctx.send(f"Channel `{target}` tidak ditemukan.", ephemeral=True)
+
+        view = YouTubeStudioView(self, ctx.guild, ctx.author, initial_target=found)
+        await ctx.send(embed=view.build_embed(), view=view, ephemeral=True)
+
+    @yt_group.command(name="studio", description="Buka panel All-in-One Studio YouTube")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def yt_studio(self, ctx: commands.Context, target: Optional[str] = None):
+        await self.yt_setup(ctx, target)
 
     @yt_group.command(name="add", description="Tambah channel YouTube untuk dipantau")
     @commands.is_owner()
@@ -2451,6 +3194,9 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
             "button_label": None,
             "use_card": True,
             "enabled": True,
+            "video_enabled": True,
+            "live_enabled": True,
+            "shorts_enabled": True,
             "added_at": datetime.now(timezone.utc).isoformat(),
         }
         self.config["targets"].append(new_target)
@@ -2482,18 +3228,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
     @app_commands.describe(target="Nama channel atau ID YouTube yang ingin diatur (opsional)")
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
     async def yt_config(self, ctx: commands.Context, target: Optional[str] = None):
-        found = None
-        if target:
-            clean = target.strip().lower()
-            for t in self.config.get("targets", []):
-                if t.get("platform") == "youtube" and (t.get("identifier", "").lower() == clean or clean in t.get("display_name", "").lower() or t.get("id") == clean):
-                    found = t
-                    break
-            if not found:
-                return await ctx.send(f"Channel `{target}` tidak ditemukan.", ephemeral=True)
-
-        view = SocialCheckerStudioView(self, ctx.guild, ctx.author, platform_filter="youtube", initial_target=found)
-        await ctx.send(embed=view.build_embed(), view=view, ephemeral=True)
+        await self.yt_setup(ctx, target)
 
     @yt_group.command(name="edit", description="Ubah pengaturan channel YouTube langsung dalam satu perintah")
     @app_commands.describe(
@@ -2641,7 +3376,29 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
     async def tt_group(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
-            await ctx.send("Gunakan `/tt add`, `/tt remove`, `/tt list`, `/tt setchannel`, `/tt setmode`, `/tt check`.", ephemeral=True)
+            await self.tt_setup(ctx)
+
+    @tt_group.command(name="setup", description="Dashboard All-in-One konfigurasi pemantauan TikTok")
+    @app_commands.describe(target="Nama pengguna atau ID TikTok yang ingin diatur (opsional)")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def tt_setup(self, ctx: commands.Context, target: Optional[str] = None):
+        found = None
+        if target:
+            clean = await async_resolve_tiktok_username(target)
+            for t in self.config.get("targets", []):
+                if t.get("platform") == "tiktok" and (t.get("identifier", "").lower() == clean.lower() or clean.lower() in t.get("display_name", "").lower() or t.get("id") == clean):
+                    found = t
+                    break
+            if not found:
+                return await ctx.send(f"Akun TikTok `@{target}` tidak ditemukan.", ephemeral=True)
+
+        view = TikTokStudioView(self, ctx.guild, ctx.author, initial_target=found)
+        await ctx.send(embed=view.build_embed(), view=view, ephemeral=True)
+
+    @tt_group.command(name="studio", description="Buka panel All-in-One Studio TikTok")
+    @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
+    async def tt_studio(self, ctx: commands.Context, target: Optional[str] = None):
+        await self.tt_setup(ctx, target)
 
     @tt_group.command(name="add", description="Tambah akun TikTok untuk dipantau")
     @commands.is_owner()
@@ -2673,6 +3430,8 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
             "button_label": None,
             "use_card": True,
             "enabled": True,
+            "video_enabled": True,
+            "live_enabled": True,
             "added_at": datetime.now(timezone.utc).isoformat(),
         }
         self.config["targets"].append(new_target)
@@ -2709,18 +3468,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
     @app_commands.describe(target="Nama pengguna atau ID TikTok yang ingin diatur (opsional)")
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
     async def tt_config(self, ctx: commands.Context, target: Optional[str] = None):
-        found = None
-        if target:
-            clean = await async_resolve_tiktok_username(target)
-            for t in self.config.get("targets", []):
-                if t.get("platform") == "tiktok" and (t.get("identifier", "").lower() == clean.lower() or clean.lower() in t.get("display_name", "").lower() or t.get("id") == clean):
-                    found = t
-                    break
-            if not found:
-                return await ctx.send(f"Akun TikTok `@{target}` tidak ditemukan.", ephemeral=True)
-
-        view = SocialCheckerStudioView(self, ctx.guild, ctx.author, platform_filter="tiktok", initial_target=found)
-        await ctx.send(embed=view.build_embed(), view=view, ephemeral=True)
+        await self.tt_setup(ctx, target)
 
     @tt_group.command(name="edit", description="Ubah pengaturan akun TikTok langsung dalam satu perintah")
     @app_commands.describe(
@@ -3117,7 +3865,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                     found_any += 1
         await ctx.send(f"Pengecekan selesai. Ditemukan dan dikirim: {found_any} konten Instagram baru.", ephemeral=True)
 
-    @commands.hybrid_command(name="social", aliases=["sosmed", "socialhub", "socialstudio"], description="Buka studio pengaturan notifikasi YouTube dan TikTok")
+    @commands.hybrid_command(name="social", aliases=["sosmed", "socialhub", "socialstudio"], description="Buka studio pengaturan notifikasi media sosial")
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
     async def social_studio(self, ctx: commands.Context, target: Optional[str] = None):
         found = None
@@ -3129,8 +3877,27 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                     break
             if not found:
                 return await ctx.send(f"Target `{target}` tidak ditemukan.", ephemeral=True)
-        view = SocialCheckerStudioView(self, ctx.guild, ctx.author, initial_target=found)
-        await ctx.send(embed=view.build_embed(), view=view, ephemeral=True)
+
+        if found:
+            plat = found.get("platform")
+            if plat == "instagram":
+                view = InstagramStudioView(self, ctx.guild, ctx.author, initial_target=found)
+            elif plat == "tiktok":
+                view = TikTokStudioView(self, ctx.guild, ctx.author, initial_target=found)
+            else:
+                view = YouTubeStudioView(self, ctx.guild, ctx.author, initial_target=found)
+            return await ctx.send(embed=view.build_embed(), view=view, ephemeral=True)
+
+        yt_view = YouTubeStudioView(self, ctx.guild, ctx.author)
+        if yt_view.get_targets():
+            return await ctx.send(embed=yt_view.build_embed(), view=yt_view, ephemeral=True)
+        tt_view = TikTokStudioView(self, ctx.guild, ctx.author)
+        if tt_view.get_targets():
+            return await ctx.send(embed=tt_view.build_embed(), view=tt_view, ephemeral=True)
+        ig_view = InstagramStudioView(self, ctx.guild, ctx.author)
+        if ig_view.get_targets():
+            return await ctx.send(embed=ig_view.build_embed(), view=ig_view, ephemeral=True)
+        await ctx.send(embed=yt_view.build_embed(), view=yt_view, ephemeral=True)
 
     @commands.command(name="socialadd", aliases=["addsocial", "tambahsocial"])
     @commands.is_owner()
