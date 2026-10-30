@@ -56,6 +56,10 @@ URL_REGEX = re.compile(r'https?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|%[0-9a-fA-
 INVITE_REGEX = re.compile(r'(?:https?://)?(?:www\.)?(?:discord\.(?:gg|io|me|li)|discordapp\.com/invite)/[a-zA-Z0-9]+', re.IGNORECASE)
 SARA_REGEX = re.compile(r'\b(babi|anjing|monyet|hitam|cina|pribumi|kafir|yatim|lonte|bangsat|tolol|ngentot|memek|kontol)\b', re.IGNORECASE)
 
+class SafeFormatDict(dict):
+    def __missing__(self, key):
+        return "{" + key + "}"
+
 mongo_client = None
 mongo_db = None
 mongo_col = None
@@ -606,7 +610,7 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
            - Panggilan: Tuan, Bos, atau Bang.
            - Nada bicara: Akrab, santai, celetukan ringan, BUKAN budak robot kaku yang formal! Tapi loyalitas lu 100% mutlak kepada Owner. Jika ada user lain yang usil ke Owner, lu yang bakal pasang badan.
            - ATURAN ANTI-PREAMBLE & ANTI-BUDAK: DILARANG KERAS mengeluarkan pembuka robotik/budak seperti 'Siap, Tuan!', 'Siap, Bos!', 'Baik, Bos!', atau konfirmasi kerjaan ("Langsung gue gas tanya nih..."). Jika Owner menyuruh kamu menyapa atau bertanya ke orang lain di channel, LANGSUNG sapa/tanya orang tersebut tanpa kalimat konfirmasi terpisah!
-           - ATURAN ANTI SELF-MENTION: DILARANG KERAS me-mention atau menulis nama diri sendiri ('@{bot_name}', '<@{bot_id}>', 'RTMxBadut') di awal kalimat maupun di dalam pesan balasan!
+           - ATURAN ANTI SELF-MENTION: DILARANG KERAS me-mention atau menulis nama diri sendiri ('@{bot_name}', '<@{bot_id}>', '{bot_name}') di awal kalimat maupun di dalam pesan balasan!
         5. PERINTAH PENGIRIMAN PESAN:
            - Jika disuruh mengirim pesan ke channel atau user lain oleh Owner/user berwenang, gunakan tag aksi yang sesuai.
            - MENGAKUI PENGIRIMAN: Lu WAJIB mengakui secara terbuka dan jantan bahwa kamulah yang mengirim pesan tersebut (atas suruhan/perintah Tuan/Owner jika ditanya). Jangan pernah pura-pura tidak tahu atau berbohong bahwa bukan lu yang kirim.
@@ -896,6 +900,7 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
         creator_id = str(os.getenv("BOT_OWNER_ID", "1000737066822410311"))
         bot_name = "RTMxBadut"
         bot_username = "rtmbot"
+        bot_id = str(self.bot.user.id) if (self.bot and self.bot.user) else "123456789"
         if self.bot.user:
             bot_username = self.bot.user.name
             bot_name = self.bot.user.display_name
@@ -906,15 +911,17 @@ class IntelligenceCore(commands.Cog, name="Cyber Defense & AI Raka"):
                 if b_mem:
                     bot_name = b_mem.display_name
 
-        persona = self.default_persona.format(
-            wib_time=t,
-            learned_data=learned,
-            interaction_status=interaction_status,
-            override_lock=override_lock,
-            creator_id=creator_id,
-            bot_name=bot_name,
-            bot_username=bot_username
-        )
+        persona_vars = {
+            "wib_time": t,
+            "learned_data": learned,
+            "interaction_status": interaction_status,
+            "override_lock": override_lock,
+            "creator_id": creator_id,
+            "bot_name": bot_name,
+            "bot_username": bot_username,
+            "bot_id": bot_id
+        }
+        persona = self.default_persona.format_map(SafeFormatDict(persona_vars))
 
         realtime_user_context = ""
         try:
