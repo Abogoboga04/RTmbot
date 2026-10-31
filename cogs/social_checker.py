@@ -374,6 +374,10 @@ class SocialCheckerStudioView(discord.ui.View):
             btn_delete.callback = self.btn_delete_callback
             self.add_item(btn_delete)
 
+            btn_clearcache = discord.ui.Button(label="🧹 Bersihkan Cache", style=discord.ButtonStyle.secondary, row=3)
+            btn_clearcache.callback = self.btn_clearcache_callback
+            self.add_item(btn_clearcache)
+
     def build_embed(self) -> discord.Embed:
         if not self.target:
             embed = discord.Embed(
@@ -505,6 +509,18 @@ class SocialCheckerStudioView(discord.ui.View):
         self.update_components()
         await interaction.response.edit_message(embed=self.build_embed(), view=self)
         await interaction.followup.send(f"Pemantauan untuk {d_name} berhasil dihapus.", ephemeral=True)
+
+    async def btn_clearcache_callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        plat = self.target.get("platform")
+        ident = self.target.get("identifier")
+        d_name = self.target.get("display_name", ident)
+        count = await self.cog._clear_target_cache(plat, ident)
+        await interaction.followup.send(
+            f"🧹 Berhasil membersihkan **{count}** cache riwayat untuk **{d_name}** ({plat.capitalize()})!\n"
+            f"Pemeriksaan berikutnya akan mendeteksi ulang postingan/konten terbaru.",
+            ephemeral=True
+        )
 
 
 class InstagramAddAccountModal(discord.ui.Modal, title="Tambah Akun Instagram"):
@@ -722,6 +738,14 @@ class InstagramStudioView(discord.ui.View):
             )
             btn_delete.callback = self.btn_delete_callback
             self.add_item(btn_delete)
+
+            btn_clearcache = discord.ui.Button(
+                label="🧹 Bersihkan Cache",
+                style=discord.ButtonStyle.secondary,
+                row=4
+            )
+            btn_clearcache.callback = self.btn_clearcache_callback
+            self.add_item(btn_clearcache)
         else:
             btn_add = discord.ui.Button(
                 label="➕ Tambah Akun Instagram Baru",
@@ -881,6 +905,17 @@ class InstagramStudioView(discord.ui.View):
             await interaction.followup.send(f"Berhasil mengirimkan preview notifikasi ke {ch.mention}!", ephemeral=True)
         else:
             await interaction.followup.send(f"Gagal mengirim preview ke {ch.mention}. Pastikan izin bot mencukupi.", ephemeral=True)
+
+    async def btn_clearcache_callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        ident = self.target.get("identifier")
+        d_name = self.target.get("display_name", ident)
+        count = await self.cog._clear_target_cache("instagram", ident)
+        await interaction.followup.send(
+            f"🧹 Berhasil membersihkan **{count}** cache riwayat untuk Instagram **@{d_name}**!\n"
+            f"Pemeriksaan berikutnya akan otomatis mendeteksi ulang postingan/story terbaru.",
+            ephemeral=True
+        )
 
 
 class TikTokAddAccountModal(discord.ui.Modal, title="Tambah Akun TikTok"):
@@ -1090,6 +1125,14 @@ class TikTokStudioView(discord.ui.View):
             )
             btn_delete.callback = self.btn_delete_callback
             self.add_item(btn_delete)
+
+            btn_clearcache = discord.ui.Button(
+                label="🧹 Bersihkan Cache",
+                style=discord.ButtonStyle.secondary,
+                row=4
+            )
+            btn_clearcache.callback = self.btn_clearcache_callback
+            self.add_item(btn_clearcache)
         else:
             btn_add = discord.ui.Button(
                 label="➕ Tambah Akun TikTok Baru",
@@ -1237,6 +1280,17 @@ class TikTokStudioView(discord.ui.View):
             await interaction.followup.send(f"Berhasil mengirimkan preview notifikasi ke {ch.mention}!", ephemeral=True)
         else:
             await interaction.followup.send(f"Gagal mengirim preview ke {ch.mention}. Pastikan izin bot mencukupi.", ephemeral=True)
+
+    async def btn_clearcache_callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        ident = self.target.get("identifier")
+        d_name = self.target.get("display_name", ident)
+        count = await self.cog._clear_target_cache("tiktok", ident)
+        await interaction.followup.send(
+            f"🧹 Berhasil membersihkan **{count}** cache riwayat untuk TikTok **@{d_name}**!\n"
+            f"Pemeriksaan berikutnya akan otomatis mendeteksi ulang video/live terbaru.",
+            ephemeral=True
+        )
 
 
 class YouTubeAddAccountModal(discord.ui.Modal, title="Tambah Channel YouTube"):
@@ -1451,6 +1505,14 @@ class YouTubeStudioView(discord.ui.View):
             )
             btn_delete.callback = self.btn_delete_callback
             self.add_item(btn_delete)
+
+            btn_clearcache = discord.ui.Button(
+                label="🧹 Bersihkan Cache",
+                style=discord.ButtonStyle.secondary,
+                row=4
+            )
+            btn_clearcache.callback = self.btn_clearcache_callback
+            self.add_item(btn_clearcache)
         else:
             btn_add = discord.ui.Button(
                 label="➕ Tambah Channel YouTube Baru",
@@ -1613,6 +1675,17 @@ class YouTubeStudioView(discord.ui.View):
             await interaction.followup.send(f"Berhasil mengirimkan preview notifikasi ke {ch.mention}!", ephemeral=True)
         else:
             await interaction.followup.send(f"Gagal mengirim preview ke {ch.mention}. Pastikan izin bot mencukupi.", ephemeral=True)
+
+    async def btn_clearcache_callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        ident = self.target.get("identifier")
+        d_name = self.target.get("display_name", ident)
+        count = await self.cog._clear_target_cache("youtube", ident)
+        await interaction.followup.send(
+            f"🧹 Berhasil membersihkan **{count}** cache riwayat untuk channel **{d_name}**!\n"
+            f"Pemeriksaan berikutnya akan otomatis mendeteksi ulang video terbaru.",
+            ephemeral=True
+        )
 
 
 class SocialChecker(commands.Cog, name="Social Media Checker"):
@@ -1819,6 +1892,118 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
                 )
             except Exception:
                 pass
+
+    async def _clear_target_cache(self, platform: Optional[str] = None, identifier: Optional[str] = None) -> int:
+        removals = set()
+
+        if platform == "instagram":
+            if identifier:
+                clean_user = normalize_instagram_username(identifier)
+                if clean_user in self.ig_story_states:
+                    self.ig_story_states.pop(clean_user, None)
+                for vid in list(self.cache.get("posted_ids", [])):
+                    if vid.startswith(f"ig_story_{clean_user}_"):
+                        removals.add(vid)
+                try:
+                    items = await self._fetch_instagram_content(clean_user)
+                    for item in items:
+                        vid = item.get("video_id")
+                        if vid and vid in self.cache.get("posted_ids", []):
+                            removals.add(vid)
+                except Exception:
+                    pass
+                if not removals:
+                    ig_targets = [t for t in self.config.get("targets", []) if t.get("platform") == "instagram"]
+                    if len(ig_targets) <= 1:
+                        for vid in list(self.cache.get("posted_ids", [])):
+                            if vid.startswith("ig_"):
+                                removals.add(vid)
+            else:
+                for vid in list(self.cache.get("posted_ids", [])):
+                    if vid.startswith("ig_"):
+                        removals.add(vid)
+                self.ig_story_states.clear()
+
+        elif platform == "tiktok":
+            if identifier:
+                clean_user = normalize_tiktok_username(identifier)
+                if clean_user in self.live_states:
+                    self.live_states.pop(clean_user, None)
+                for vid in list(self.cache.get("posted_ids", [])):
+                    if vid.startswith(f"tt_{clean_user}_"):
+                        removals.add(vid)
+                try:
+                    items = await self._fetch_tiktok_content(clean_user)
+                    for item in items:
+                        vid = item.get("video_id")
+                        if vid and vid in self.cache.get("posted_ids", []):
+                            removals.add(vid)
+                except Exception:
+                    pass
+                if not removals:
+                    tt_targets = [t for t in self.config.get("targets", []) if t.get("platform") == "tiktok"]
+                    if len(tt_targets) <= 1:
+                        for vid in list(self.cache.get("posted_ids", [])):
+                            if vid.startswith("tt_") or (vid.isdigit() and len(vid) >= 15):
+                                removals.add(vid)
+            else:
+                for vid in list(self.cache.get("posted_ids", [])):
+                    if vid.startswith("tt_") or (vid.isdigit() and len(vid) >= 15):
+                        removals.add(vid)
+                self.live_states.clear()
+
+        elif platform == "youtube":
+            if identifier:
+                clean_user = identifier.strip()
+                if clean_user in self.live_states:
+                    self.live_states.pop(clean_user, None)
+                try:
+                    items = await self._fetch_youtube_content(clean_user)
+                    for item in items:
+                        vid = item.get("video_id")
+                        if vid and vid in self.cache.get("posted_ids", []):
+                            removals.add(vid)
+                except Exception:
+                    pass
+                if not removals:
+                    yt_targets = [t for t in self.config.get("targets", []) if t.get("platform") == "youtube"]
+                    if len(yt_targets) <= 1:
+                        for vid in list(self.cache.get("posted_ids", [])):
+                            if not vid.startswith("ig_") and not vid.startswith("tt_") and not (vid.isdigit() and len(vid) >= 15):
+                                removals.add(vid)
+            else:
+                for vid in list(self.cache.get("posted_ids", [])):
+                    if not vid.startswith("ig_") and not vid.startswith("tt_") and not (vid.isdigit() and len(vid) >= 15):
+                        removals.add(vid)
+                self.live_states.clear()
+
+        else:
+            for vid in list(self.cache.get("posted_ids", [])):
+                removals.add(vid)
+            self.ig_story_states.clear()
+            self.live_states.clear()
+
+        removed_count = len(removals)
+        if removals:
+            self.cache["posted_ids"] = [x for x in self.cache.get("posted_ids", []) if x not in removals]
+            try:
+                os.makedirs(os.path.dirname(self.cache_file), exist_ok=True)
+                with open(self.cache_file, "w", encoding="utf-8") as f:
+                    json.dump(self.cache, f, indent=4)
+            except Exception:
+                pass
+
+            self._ensure_mongo()
+            if self.cache_col is not None:
+                try:
+                    self.cache_col.update_one(
+                        {"_id": "social_checker_cache"},
+                        {"$pull": {"data.posted_ids": {"$in": list(removals)}}}
+                    )
+                except Exception:
+                    pass
+
+        return removed_count
 
     async def _generate_ai_hype(self, creator: str, title: str, platform: str, is_live: bool = False, is_story: bool = False, is_reel: bool = False) -> str:
         if not API_KEYS:
@@ -2546,7 +2731,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 "Accept-Language": "en-US,en;q=0.9",
             }
-            r = s.get(url, headers=headers, timeout=12)
+            r = s.get(url, headers=headers, timeout=6)
             if r.status_code != 200:
                 return None, [], None
 
@@ -2697,7 +2882,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.9",
             }
-            r = s.get(url, headers=headers, timeout=12)
+            r = s.get(url, headers=headers, timeout=6)
             if r.status_code != 200:
                 return []
             matches = re.findall(r'<script type="application/json"[^>]*data-sjs[^>]*>(.*?)</script>', r.text, re.DOTALL)
@@ -3211,6 +3396,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
     async def _process_single_target(self, target: dict):
         platform = target.get("platform")
         identifier = target.get("identifier")
+        new_count = 0
 
         try:
             if platform == "youtube":
@@ -3239,7 +3425,12 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                     success = await self._send_content_card(target, meta)
                     if success:
                         self._record_posted_id(vid)
+                        new_count += 1
+                        print(f"[SocialChecker] [youtube] Channel: {identifier} | Sent NEW video: {vid}")
                         await asyncio.sleep(2)
+
+                if new_count == 0 and items:
+                    print(f"[SocialChecker] [youtube] Channel: {identifier} | {len(items)} items checked (all in cache / idle)")
 
             elif platform == "tiktok":
                 items = await self._fetch_tiktok_content(identifier, target.get("sec_uid"))
@@ -3262,7 +3453,12 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                     if success:
                         if not item.get("is_live"):
                             self._record_posted_id(vid)
+                        new_count += 1
+                        print(f"[SocialChecker] [tiktok] User: @{identifier} | Sent NEW {'live' if is_live else 'video'}: {vid}")
                         await asyncio.sleep(2)
+
+                if new_count == 0 and items:
+                    print(f"[SocialChecker] [tiktok] User: @{identifier} | {len(items)} items checked (all in cache / idle)")
 
             elif platform == "instagram":
                 items = await self._fetch_instagram_content(identifier)
@@ -3286,10 +3482,15 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                     success = await self._send_content_card(target, item)
                     if success:
                         self._record_posted_id(vid)
+                        new_count += 1
+                        print(f"[SocialChecker] [instagram] User: @{identifier} | Sent NEW post/reel/story: {vid}")
                         await asyncio.sleep(2)
 
-        except Exception:
-            pass
+                if new_count == 0 and items:
+                    print(f"[SocialChecker] [instagram] User: @{identifier} | {len(items)} items checked (all in cache / idle)")
+
+        except Exception as e:
+            print(f"[SocialChecker] [{platform}] Target: {identifier} | Error: {e}")
 
     @tasks.loop(seconds=30)
     async def checker_loop(self):
@@ -3297,12 +3498,16 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         if not targets:
             return
 
-        tasks = [asyncio.wait_for(self._process_single_target(t), timeout=10.0) for t in targets]
+        tasks = [asyncio.wait_for(self._process_single_target(t), timeout=25.0) for t in targets]
         await asyncio.gather(*tasks, return_exceptions=True)
 
     @checker_loop.before_loop
     async def before_checker_loop(self):
         await self.bot.wait_until_ready()
+
+    @checker_loop.error
+    async def on_checker_loop_error(self, error):
+        print(f"[SocialChecker] Error in checker loop: {error}")
 
 
     @commands.hybrid_group(name="yt", description="Manajemen pemantauan YouTube")
@@ -3399,64 +3604,16 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
     async def yt_config(self, ctx: commands.Context, target: Optional[str] = None):
         await self.yt_setup(ctx, target)
 
-    @yt_group.command(name="edit", description="Ubah pengaturan channel YouTube langsung dalam satu perintah")
-    @app_commands.describe(
-        target="Nama channel atau ID YouTube yang ingin diubah",
-        kanal="Kanal Discord tujuan notifikasi",
-        pesan_biasa="Isi pesan biasa (Gunakan {ai_hype} untuk AI)",
-        judul="Pola judul notifikasi",
-        deskripsi="Pola deskripsi konten",
-        tombol="Teks tombol link",
-        gaya="Gaya tampilan pesan (kartu / teks)"
-    )
+    @yt_group.command(name="clearcache", description="Bersihkan cache riwayat video YouTube agar bot mendeteksi ulang")
+    @app_commands.describe(target="Channel ID atau nama channel yang ingin dibersihkan cachenya (opsional)")
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
-    async def yt_edit(
-        self,
-        ctx: commands.Context,
-        target: str,
-        kanal: Optional[discord.TextChannel] = None,
-        pesan_biasa: Optional[str] = None,
-        judul: Optional[str] = None,
-        deskripsi: Optional[str] = None,
-        tombol: Optional[str] = None,
-        gaya: Optional[Literal["kartu", "teks"]] = None
-    ):
-        clean = target.strip().lower()
-        found = None
-        for t in self.config.get("targets", []):
-            if t.get("platform") == "youtube" and (t.get("identifier", "").lower() == clean or clean in t.get("display_name", "").lower() or t.get("id") == clean):
-                found = t
-                break
-        if not found:
-            return await ctx.send(f"Channel `{target}` tidak ditemukan.", ephemeral=True)
-
-        changes = []
-        if kanal:
-            found["target_channel_id"] = kanal.id
-            found["target_guild_id"] = kanal.guild.id
-            changes.append(f"Kanal: {kanal.mention}")
-        if pesan_biasa:
-            found["content"] = pesan_biasa.strip()
-            found["custom_template"] = pesan_biasa.strip()
-            changes.append(f"Pesan: `{pesan_biasa.strip()}`")
-        if judul:
-            found["card_title"] = judul.strip()
-            changes.append(f"Judul: `{judul.strip()}`")
-        if deskripsi:
-            found["card_desc"] = deskripsi.strip()
-            changes.append(f"Deskripsi: `{deskripsi.strip()}`")
-        if tombol:
-            found["button_label"] = tombol.strip()
-            changes.append(f"Tombol: `{tombol.strip()}`")
-        if gaya:
-            found["use_card"] = (gaya == "kartu")
-            changes.append(f"Gaya: `{'Kartu' if found['use_card'] else 'Teks'}`")
-
-        if not changes:
-            return await ctx.send("Tidak ada opsi yang diubah. Isi salah satu parameter untuk mengubah pengaturan.", ephemeral=True)
-
-        self._save_config()
-        await ctx.send(f"Pengaturan untuk **{found['display_name']}** diperbarui:\n" + "\n".join(f"- {c}" for c in changes), ephemeral=True)
+    async def yt_clearcache(self, ctx: commands.Context, target: Optional[str] = None):
+        await ctx.defer(ephemeral=True)
+        count = await self._clear_target_cache("youtube", target)
+        if target:
+            await ctx.send(f"🧹 Berhasil membersihkan **{count}** cache riwayat untuk YouTube target `{target}`! Video berikutnya akan dianggap baru.", ephemeral=True)
+        else:
+            await ctx.send(f"🧹 Berhasil membersihkan seluruh cache YouTube (**{count}** video)! Seluruh channel YouTube akan diperiksa ulang.", ephemeral=True)
 
 
     @yt_group.command(name="list", description="Daftar channel YouTube yang dipantau")
@@ -3639,64 +3796,16 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
     async def tt_config(self, ctx: commands.Context, target: Optional[str] = None):
         await self.tt_setup(ctx, target)
 
-    @tt_group.command(name="edit", description="Ubah pengaturan akun TikTok langsung dalam satu perintah")
-    @app_commands.describe(
-        target="Nama pengguna atau ID TikTok yang ingin diubah",
-        kanal="Kanal Discord tujuan notifikasi",
-        pesan_biasa="Isi pesan biasa (Gunakan {ai_hype} untuk AI)",
-        judul="Pola judul notifikasi",
-        deskripsi="Pola deskripsi konten",
-        tombol="Teks tombol link",
-        gaya="Gaya tampilan pesan (kartu / teks)"
-    )
+    @tt_group.command(name="clearcache", description="Bersihkan cache riwayat video/live TikTok agar bot mendeteksi ulang")
+    @app_commands.describe(target="Username TikTok yang ingin dibersihkan cachenya (opsional)")
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
-    async def tt_edit(
-        self,
-        ctx: commands.Context,
-        target: str,
-        kanal: Optional[discord.TextChannel] = None,
-        pesan_biasa: Optional[str] = None,
-        judul: Optional[str] = None,
-        deskripsi: Optional[str] = None,
-        tombol: Optional[str] = None,
-        gaya: Optional[Literal["kartu", "teks"]] = None
-    ):
-        clean = await async_resolve_tiktok_username(target)
-        found = None
-        for t in self.config.get("targets", []):
-            if t.get("platform") == "tiktok" and (t.get("identifier", "").lower() == clean.lower() or clean.lower() in t.get("display_name", "").lower() or t.get("id") == clean):
-                found = t
-                break
-        if not found:
-            return await ctx.send(f"Akun TikTok `@{target}` tidak ditemukan.", ephemeral=True)
-
-        changes = []
-        if kanal:
-            found["target_channel_id"] = kanal.id
-            found["target_guild_id"] = kanal.guild.id
-            changes.append(f"Kanal: {kanal.mention}")
-        if pesan_biasa:
-            found["content"] = pesan_biasa.strip()
-            found["custom_template"] = pesan_biasa.strip()
-            changes.append(f"Pesan: `{pesan_biasa.strip()}`")
-        if judul:
-            found["card_title"] = judul.strip()
-            changes.append(f"Judul: `{judul.strip()}`")
-        if deskripsi:
-            found["card_desc"] = deskripsi.strip()
-            changes.append(f"Deskripsi: `{deskripsi.strip()}`")
-        if tombol:
-            found["button_label"] = tombol.strip()
-            changes.append(f"Tombol: `{tombol.strip()}`")
-        if gaya:
-            found["use_card"] = (gaya == "kartu")
-            changes.append(f"Gaya: `{'Kartu' if found['use_card'] else 'Teks'}`")
-
-        if not changes:
-            return await ctx.send("Tidak ada opsi yang diubah. Isi salah satu parameter untuk mengubah pengaturan.", ephemeral=True)
-
-        self._save_config()
-        await ctx.send(f"Pengaturan untuk **@{found['display_name']}** diperbarui:\n" + "\n".join(f"- {c}" for c in changes), ephemeral=True)
+    async def tt_clearcache(self, ctx: commands.Context, target: Optional[str] = None):
+        await ctx.defer(ephemeral=True)
+        count = await self._clear_target_cache("tiktok", target)
+        if target:
+            await ctx.send(f"🧹 Berhasil membersihkan **{count}** cache riwayat untuk TikTok `@{target}`! Video/Live berikutnya akan dianggap baru.", ephemeral=True)
+        else:
+            await ctx.send(f"🧹 Berhasil membersihkan seluruh cache TikTok (**{count}** konten)! Seluruh akun TikTok akan diperiksa ulang.", ephemeral=True)
 
 
     @tt_group.command(name="list", description="Daftar akun TikTok yang dipantau")
@@ -3882,63 +3991,16 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
     async def ig_config(self, ctx: commands.Context, target: Optional[str] = None):
         await self.ig_setup(ctx, target)
 
-    @ig_group.command(name="edit", description="Ubah pengaturan akun Instagram langsung dalam satu perintah")
-    @app_commands.describe(
-        target="Nama pengguna atau ID Instagram yang ingin diubah",
-        kanal="Kanal Discord tujuan notifikasi",
-        pesan_biasa="Isi pesan biasa (Gunakan {ai_hype} untuk AI)",
-        judul="Pola judul notifikasi",
-        deskripsi="Pola deskripsi konten",
-        tombol="Teks tombol link",
-        gaya="Gaya tampilan pesan (kartu / teks)"
-    )
+    @ig_group.command(name="clearcache", description="Bersihkan cache riwayat postingan/reels/story Instagram agar bot mendeteksi ulang")
+    @app_commands.describe(target="Username Instagram yang ingin dibersihkan cachenya (opsional)")
     @commands.check_any(commands.is_owner(), commands.has_permissions(manage_guild=True))
-    async def ig_edit(
-        self,
-        ctx: commands.Context,
-        target: str,
-        kanal: Optional[discord.TextChannel] = None,
-        pesan_biasa: Optional[str] = None,
-        judul: Optional[str] = None,
-        deskripsi: Optional[str] = None,
-        tombol: Optional[str] = None,
-        gaya: Optional[Literal["kartu", "teks"]] = None
-    ):
-        clean = await async_resolve_instagram_username(target)
-        found = None
-        for t in self.config["targets"]:
-            if t.get("platform") == "instagram" and (t.get("identifier", "").lower() == clean.lower() or clean.lower() in t.get("display_name", "").lower() or t.get("id") == clean):
-                found = t
-                break
-
-        if not found:
-            return await ctx.send(f"Akun Instagram `@{target}` tidak ditemukan.", ephemeral=True)
-
-        changes = []
-        if kanal:
-            found["target_channel_id"] = kanal.id
-            changes.append(f"Kanal: {kanal.mention}")
-        if pesan_biasa is not None:
-            found["content"] = pesan_biasa.strip()
-            changes.append(f"Pesan Biasa: `{pesan_biasa.strip()[:60]}`")
-        if judul is not None:
-            found["card_title"] = judul.strip()
-            changes.append(f"Judul: `{judul.strip()[:60]}`")
-        if deskripsi is not None:
-            found["card_desc"] = deskripsi.strip()
-            changes.append(f"Deskripsi: `{deskripsi.strip()[:60]}`")
-        if tombol is not None:
-            found["button_label"] = tombol.strip()
-            changes.append(f"Tombol: `{tombol.strip()}`")
-        if gaya:
-            found["use_card"] = (gaya == "kartu")
-            changes.append(f"Gaya: `{'Kartu' if found['use_card'] else 'Teks'}`")
-
-        if not changes:
-            return await ctx.send("Tidak ada opsi yang diubah. Isi salah satu parameter untuk mengubah pengaturan.", ephemeral=True)
-
-        self._save_config()
-        await ctx.send(f"Pengaturan untuk **@{found['display_name']}** diperbarui:\n" + "\n".join(f"- {c}" for c in changes), ephemeral=True)
+    async def ig_clearcache(self, ctx: commands.Context, target: Optional[str] = None):
+        await ctx.defer(ephemeral=True)
+        count = await self._clear_target_cache("instagram", target)
+        if target:
+            await ctx.send(f"🧹 Berhasil membersihkan **{count}** cache riwayat untuk Instagram `@{target}`! Postingan/Story berikutnya akan dianggap baru.", ephemeral=True)
+        else:
+            await ctx.send(f"🧹 Berhasil membersihkan seluruh cache Instagram (**{count}** konten)! Seluruh akun Instagram akan diperiksa ulang.", ephemeral=True)
 
     @ig_group.command(name="list", description="Daftar akun Instagram yang dipantau")
     @commands.is_owner()
