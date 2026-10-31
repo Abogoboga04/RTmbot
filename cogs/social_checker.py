@@ -142,6 +142,29 @@ async def async_resolve_tiktok_username(raw: str) -> str:
             pass
     return clean
 
+def _get_proxy_for_platform(platform: str) -> Optional[str]:
+    if platform == "instagram":
+        return os.getenv("IG_PROXY") or os.getenv("SOCIAL_PROXY") or os.getenv("HTTPS_PROXY")
+    elif platform == "tiktok":
+        return os.getenv("TT_PROXY") or os.getenv("SOCIAL_PROXY") or os.getenv("HTTPS_PROXY")
+    elif platform == "youtube":
+        return os.getenv("YT_PROXY") or os.getenv("SOCIAL_PROXY") or os.getenv("HTTPS_PROXY")
+    return os.getenv("SOCIAL_PROXY") or os.getenv("HTTPS_PROXY")
+
+
+def _ig_pk_to_shortcode(pk_val) -> str:
+    try:
+        pk = int(str(pk_val).replace("POLARIS_", "").strip())
+        alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+        shortcode = ""
+        while pk > 0:
+            pk, rem = divmod(pk, 64)
+            shortcode = alphabet[rem] + shortcode
+        return shortcode
+    except Exception:
+        return str(pk_val)
+
+
 def normalize_instagram_username(raw: str) -> str:
     if not raw:
         return ""
@@ -2064,6 +2087,9 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         try:
             from curl_cffi import requests as cffi_requests
             s = cffi_requests.Session(impersonate="chrome")
+            proxy = _get_proxy_for_platform("tiktok")
+            if proxy:
+                s.proxies = {"http": proxy, "https": proxy}
             mobile_headers = {
                 "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -2163,6 +2189,9 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
             ydl_opts["impersonate"] = ImpersonateTarget.from_str("chrome")
         except Exception:
             pass
+        proxy = _get_proxy_for_platform("tiktok")
+        if proxy:
+            ydl_opts["proxy"] = proxy
         try:
             import itertools
             from yt_dlp.extractor.tiktok import TikTokUserIE
@@ -2207,6 +2236,9 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         try:
             from curl_cffi import requests as cffi_requests
             s = cffi_requests.Session(impersonate="chrome")
+            proxy = _get_proxy_for_platform("tiktok")
+            if proxy:
+                s.proxies = {"http": proxy, "https": proxy}
             s.headers.update({
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 "Referer": "https://www.tiktok.com/",
@@ -2270,11 +2302,50 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
             ydl_opts["impersonate"] = ImpersonateTarget.from_str("chrome")
         except Exception:
             pass
+        proxy = _get_proxy_for_platform("tiktok")
+        if proxy:
+            ydl_opts["proxy"] = proxy
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 return ydl.extract_info(url, download=False)
         except Exception:
             return None
+
+    def _sync_tiktok_tikwm_feed(self, clean_user: str, display_name: Optional[str] = None):
+        try:
+            from curl_cffi import requests as cffi_requests
+            s = cffi_requests.Session(impersonate="chrome")
+            proxy = _get_proxy_for_platform("tiktok")
+            if proxy:
+                s.proxies = {"http": proxy, "https": proxy}
+            url = f"https://www.tiktok.com/@{clean_user}"
+            mobile_headers = {
+                "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Referer": "https://www.tiktok.com/",
+            }
+            r = s.get(url, headers=mobile_headers, timeout=10)
+            if r.status_code != 200:
+                return []
+            raw_vids = re.findall(r"/video/(\d{19})", r.text) + re.findall(r"(\d{19})", r.text)
+            found_vids = list(dict.fromkeys(raw_vids))
+            results = []
+            creator_name = display_name or clean_user
+            for vid in found_vids[:5]:
+                post_url = f"https://www.tiktok.com/@{clean_user}/video/{vid}"
+                results.append({
+                    "video_id": vid,
+                    "title": f"TikTok Video by @{clean_user}",
+                    "creator": creator_name,
+                    "url": post_url,
+                    "thumbnail": None,
+                    "description": f"TikTok Video by @{clean_user}",
+                    "is_live": False,
+                })
+            return results
+        except Exception:
+            return []
 
     async def _fetch_tiktok_content(self, username: str, sec_uid: Optional[str] = None):
         clean_user = normalize_tiktok_username(username)
@@ -2351,6 +2422,14 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                             "is_live": False,
                             "sec_uid": known_sec_uid,
                         })
+            except Exception:
+                pass
+
+        if not results:
+            try:
+                tt_fallback = await asyncio.to_thread(self._sync_tiktok_tikwm_feed, clean_user, display_name)
+                if tt_fallback:
+                    results.extend(tt_fallback)
             except Exception:
                 pass
 
@@ -2457,6 +2536,12 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         try:
             from curl_cffi import requests as cffi_requests
             s = cffi_requests.Session(impersonate="chrome")
+            proxy = _get_proxy_for_platform("instagram")
+            if proxy:
+                s.proxies = {"http": proxy, "https": proxy}
+            session_id = os.getenv("IG_SESSION_ID") or self.config.get("instagram_session_id")
+            if session_id:
+                s.cookies.set("sessionid", session_id, domain=".instagram.com")
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 "Accept-Language": "en-US,en;q=0.9",
@@ -2593,6 +2678,85 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         except Exception:
             return None, [], None
 
+    def _sync_instagram_mirror_profile(self, username: str):
+        clean_user = normalize_instagram_username(username)
+        if not clean_user:
+            return []
+        url = f"https://www.instagram.com/{clean_user}/"
+        try:
+            from curl_cffi import requests as cffi_requests
+            s = cffi_requests.Session(impersonate="chrome")
+            proxy = _get_proxy_for_platform("instagram")
+            if proxy:
+                s.proxies = {"http": proxy, "https": proxy}
+            session_id = os.getenv("IG_SESSION_ID") or self.config.get("instagram_session_id")
+            if session_id:
+                s.cookies.set("sessionid", session_id, domain=".instagram.com")
+            headers = {
+                "User-Agent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+            }
+            r = s.get(url, headers=headers, timeout=12)
+            if r.status_code != 200:
+                return []
+            matches = re.findall(r'<script type="application/json"[^>]*data-sjs[^>]*>(.*?)</script>', r.text, re.DOTALL)
+            parsed_posts = []
+            display_name = clean_user
+            for m in matches:
+                if "display_uri" in m and ("seo_canonical_url" in m or "pk" in m or "id" in m):
+                    try:
+                        d = json.loads(m)
+                        found_items = []
+                        def _scan_posts(obj):
+                            if isinstance(obj, dict):
+                                if "display_uri" in obj and ("pk" in obj or "id" in obj):
+                                    found_items.append(obj)
+                                for v in obj.values():
+                                    _scan_posts(v)
+                            elif isinstance(obj, list):
+                                for it in obj:
+                                    _scan_posts(it)
+                        _scan_posts(d)
+                        for item in found_items:
+                            pk = str(item.get("pk") or item.get("id") or "").replace("POLARIS_", "")
+                            if not pk or not pk.isdigit():
+                                continue
+                            code = _ig_pk_to_shortcode(pk)
+                            if not code:
+                                continue
+                            prod_type = str(item.get("product_type") or "")
+                            is_reel = (prod_type == "clips" or item.get("media_type") == 2)
+                            caption_obj = item.get("caption") or {}
+                            raw_caption = caption_obj.get("text", "") if isinstance(caption_obj, dict) else str(caption_obj or "")
+                            clean_caption = clean_hyperlink_title(raw_caption) or (f"Instagram Reel by @{clean_user}" if is_reel else f"Instagram Post by @{clean_user}")
+                            thumb = item.get("display_uri")
+                            post_url = f"https://www.instagram.com/reel/{code}/" if is_reel else f"https://www.instagram.com/p/{code}/"
+                            item_id = f"ig_{code}"
+                            if item_id in [p["video_id"] for p in parsed_posts]:
+                                continue
+                            parsed_posts.append({
+                                "video_id": item_id,
+                                "shortcode": code,
+                                "pk": pk,
+                                "title": clean_caption,
+                                "creator": display_name,
+                                "url": post_url,
+                                "thumbnail": thumb,
+                                "description": raw_caption or clean_caption,
+                                "is_live": False,
+                                "is_story": False,
+                                "is_reel": is_reel,
+                                "media_list": [],
+                            })
+                        if parsed_posts:
+                            break
+                    except Exception:
+                        pass
+            return parsed_posts
+        except Exception:
+            return []
+
     async def _fetch_single_instagram_metadata(self, url: str) -> dict:
         canonical_url = url.strip()
         m_code = re.search(r'instagram\.com\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)', canonical_url)
@@ -2671,6 +2835,11 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
         if parsed_posts:
             results.extend(parsed_posts)
+
+        if not results:
+            mirror_posts = await asyncio.to_thread(self._sync_instagram_mirror_profile, clean_user)
+            if mirror_posts:
+                results.extend(mirror_posts)
 
         return results
 
@@ -3039,97 +3208,97 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         await channel.send(content=send_content, files=files, view=fallback_view)
         return True
 
+    async def _process_single_target(self, target: dict):
+        platform = target.get("platform")
+        identifier = target.get("identifier")
+
+        try:
+            if platform == "youtube":
+                items = await self._fetch_youtube_content(identifier)
+                for item in items:
+                    vid = item["video_id"]
+                    if self._is_id_posted(vid):
+                        continue
+
+                    meta = await self._fetch_youtube_metadata(vid, item.get("is_live", False))
+                    if meta.get("channel_id") and meta["channel_id"] != identifier:
+                        continue
+
+                    is_live = meta.get("is_live", False)
+                    is_short = meta.get("is_short", False) or "/shorts/" in meta.get("url", "")
+                    if is_live and not target.get("live_enabled", True):
+                        self._record_posted_id(vid)
+                        continue
+                    if is_short and not target.get("shorts_enabled", True):
+                        self._record_posted_id(vid)
+                        continue
+                    if not is_live and not is_short and not target.get("video_enabled", True):
+                        self._record_posted_id(vid)
+                        continue
+
+                    success = await self._send_content_card(target, meta)
+                    if success:
+                        self._record_posted_id(vid)
+                        await asyncio.sleep(2)
+
+            elif platform == "tiktok":
+                items = await self._fetch_tiktok_content(identifier, target.get("sec_uid"))
+                for item in items:
+                    if item.get("sec_uid") and not target.get("sec_uid"):
+                        target["sec_uid"] = item["sec_uid"]
+                        self._save_config()
+                    vid = item["video_id"]
+                    if self._is_id_posted(vid):
+                        continue
+
+                    is_live = item.get("is_live", False)
+                    if is_live and not target.get("live_enabled", True):
+                        continue
+                    if not is_live and not target.get("video_enabled", True):
+                        self._record_posted_id(vid)
+                        continue
+
+                    success = await self._send_content_card(target, item)
+                    if success:
+                        if not item.get("is_live"):
+                            self._record_posted_id(vid)
+                        await asyncio.sleep(2)
+
+            elif platform == "instagram":
+                items = await self._fetch_instagram_content(identifier)
+                for item in items:
+                    vid = item["video_id"]
+                    if self._is_id_posted(vid):
+                        continue
+
+                    is_story = item.get("is_story", False)
+                    is_reel = item.get("is_reel", False)
+                    if is_story and not target.get("stories_enabled", True):
+                        self._record_posted_id(vid)
+                        continue
+                    if is_reel and not target.get("reels_enabled", True):
+                        self._record_posted_id(vid)
+                        continue
+                    if not is_story and not is_reel and not target.get("feed_enabled", True):
+                        self._record_posted_id(vid)
+                        continue
+
+                    success = await self._send_content_card(target, item)
+                    if success:
+                        self._record_posted_id(vid)
+                        await asyncio.sleep(2)
+
+        except Exception:
+            pass
+
     @tasks.loop(seconds=30)
     async def checker_loop(self):
-        targets = self.config.get("targets", [])
+        targets = [t for t in self.config.get("targets", []) if t.get("enabled", True)]
         if not targets:
             return
 
-        for target in list(targets):
-            if not target.get("enabled", True):
-                continue
-
-            platform = target.get("platform")
-            identifier = target.get("identifier")
-
-            try:
-                if platform == "youtube":
-                    items = await self._fetch_youtube_content(identifier)
-                    for item in items:
-                        vid = item["video_id"]
-                        if self._is_id_posted(vid):
-                            continue
-
-                        meta = await self._fetch_youtube_metadata(vid, item.get("is_live", False))
-                        if meta.get("channel_id") and meta["channel_id"] != identifier:
-                            continue
-
-                        is_live = meta.get("is_live", False)
-                        is_short = meta.get("is_short", False) or "/shorts/" in meta.get("url", "")
-                        if is_live and not target.get("live_enabled", True):
-                            self._record_posted_id(vid)
-                            continue
-                        if is_short and not target.get("shorts_enabled", True):
-                            self._record_posted_id(vid)
-                            continue
-                        if not is_live and not is_short and not target.get("video_enabled", True):
-                            self._record_posted_id(vid)
-                            continue
-
-                        success = await self._send_content_card(target, meta)
-                        if success:
-                            self._record_posted_id(vid)
-                            await asyncio.sleep(2)
-
-                elif platform == "tiktok":
-                    items = await self._fetch_tiktok_content(identifier, target.get("sec_uid"))
-                    for item in items:
-                        if item.get("sec_uid") and not target.get("sec_uid"):
-                            target["sec_uid"] = item["sec_uid"]
-                            self._save_config()
-                        vid = item["video_id"]
-                        if self._is_id_posted(vid):
-                            continue
-
-                        is_live = item.get("is_live", False)
-                        if is_live and not target.get("live_enabled", True):
-                            continue
-                        if not is_live and not target.get("video_enabled", True):
-                            self._record_posted_id(vid)
-                            continue
-
-                        success = await self._send_content_card(target, item)
-                        if success:
-                            if not item.get("is_live"):
-                                self._record_posted_id(vid)
-                            await asyncio.sleep(2)
-
-                elif platform == "instagram":
-                    items = await self._fetch_instagram_content(identifier)
-                    for item in items:
-                        vid = item["video_id"]
-                        if self._is_id_posted(vid):
-                            continue
-
-                        is_story = item.get("is_story", False)
-                        is_reel = item.get("is_reel", False)
-                        if is_story and not target.get("stories_enabled", True):
-                            self._record_posted_id(vid)
-                            continue
-                        if is_reel and not target.get("reels_enabled", True):
-                            self._record_posted_id(vid)
-                            continue
-                        if not is_story and not is_reel and not target.get("feed_enabled", True):
-                            self._record_posted_id(vid)
-                            continue
-
-                        success = await self._send_content_card(target, item)
-                        if success:
-                            self._record_posted_id(vid)
-                            await asyncio.sleep(2)
-
-            except Exception:
-                pass
+        tasks = [asyncio.wait_for(self._process_single_target(t), timeout=10.0) for t in targets]
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     @checker_loop.before_loop
     async def before_checker_loop(self):
