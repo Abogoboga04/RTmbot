@@ -3269,15 +3269,16 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
         if platform == "instagram":
             if is_story:
-                clean_card_title = f"⏳ Story Baru @{creator}"
+                clean_card_title = f"Story Baru @{creator}"
             elif is_reel:
-                clean_card_title = f"🎬 Reels Baru @{creator}"
+                clean_card_title = f"Reels Baru @{creator}"
             else:
-                clean_card_title = f"📸 Postingan Baru @{creator}"
+                clean_card_title = f"Postingan Baru @{creator}"
         elif platform == "tiktok":
-            clean_card_title = f"🔴 Live Streaming @{creator}" if is_live else f"🎵 Video TikTok @{creator}"
+            clean_card_title = f"Live Streaming @{creator}" if is_live else f"Video TikTok @{creator}"
         else:
             clean_card_title = clean_hyperlink_title(title) or f"Video YouTube {creator}"
+        clean_card_title = clean_hyperlink_title(clean_card_title)
 
         preview_img_bytes = None
         target_img_url = thumbnail
@@ -3350,13 +3351,14 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         card_desc_template = target.get("card_desc") or "{deskripsi}"
         use_card = target.get("use_card", True)
 
+        safe_creator = clean_hyperlink_title(creator)
         final_card_title = (
             card_title_template
             .replace("{judul}", clean_card_title)
-            .replace("{creator}", creator)
-            .replace("{username}", creator)
-            .replace("{uploader}", creator)
-            .replace("{channel}", creator)
+            .replace("{creator}", safe_creator)
+            .replace("{username}", safe_creator)
+            .replace("{uploader}", safe_creator)
+            .replace("{channel}", safe_creator)
             .replace("{url}", url)
         )
         final_card_desc = (
