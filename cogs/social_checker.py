@@ -2005,7 +2005,7 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
 
         return removed_count
 
-    async def _generate_ai_hype(self, creator: str, title: str, platform: str, is_live: bool = False, is_story: bool = False, is_reel: bool = False) -> str:
+    async def _generate_ai_hype(self, creator: str, title: str, platform: str, is_live: bool = False, is_story: bool = False, is_reel: bool = False, image_bytes: Optional[bytes] = None, description: Optional[str] = None) -> str:
         if not API_KEYS:
             return self._fallback_hype(creator, platform, is_live, is_story, is_reel)
 
@@ -2020,7 +2020,9 @@ class SocialChecker(commands.Cog, name="Social Media Checker"):
         if creator:
             info_lines.append(f"- Channel/Kreator: {creator}")
         if title:
-            info_lines.append(f"- Judul: {title}")
+            info_lines.append(f"- Judul/Topik: {title}")
+        if description and description != title:
+            info_lines.append(f"- Teks Deskripsi/Caption: {description[:300]}")
 
         context_str = "\n".join(info_lines) if info_lines else "Belum ada detail khusus."
 
@@ -2031,10 +2033,10 @@ Informasi konten:
 {context_str}
 
 Panduan gaya & aturan mutlak:
-1. Hubungkan sapaan kamu secara alami dengan judul atau topik kontennya di atas. Jangan buat pujian kosong yang tidak nyambung dengan isi videonya.
+1. Hubungkan sapaan kamu secara alami dengan isi kontennya di atas. Jika ada foto/meme/teks pada gambar yang dilampirkan, BACA dan cermati teks meme, tweet, suasana, atau objek utama pada gambar tersebut agar sapaan kamu sangat relevan dan nyambung dengan apa yang terlihat di gambar!
 2. Gunakan bahasa obrolan Discord/tongkrongan Indonesia yang asik, santai, dan luwes.
 3. Sesuaikan dengan situasinya:
-   - Kalau video santai/keseharian/vlog/reels, sapa warga server dengan santai dan ajak nonton.
+   - Kalau postingan meme/relate/santai, sapa warga server dengan santai dan ajak bahas isi gambarnya.
    - Kalau story Instagram, ingatkan warga server untuk intip story sebelum hilang dalam 24 jam.
    - Kalau live streaming, ajak warga server langsung merapat ke live chat.
 4. Singkat, padat (cukup 1-2 kalimat). Jangan pakai hashtag dan jangan tulis URL link di dalam teks karena link sudah disediakan di tombol.
@@ -2043,6 +2045,11 @@ Panduan gaya & aturan mutlak:
 
 Tulis LANGSUNG teks pengumumannya sekarang:"""
 
+        contents = []
+        if image_bytes:
+            contents.append({"mime_type": "image/jpeg", "data": image_bytes})
+        contents.append(prompt)
+
         models_to_try = ['gemini-2.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash-lite']
 
         for model_name in models_to_try:
@@ -2050,7 +2057,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
             for _ in range(attempts):
                 try:
                     model = genai.GenerativeModel(model_name)
-                    response = await asyncio.wait_for(model.generate_content_async(prompt), timeout=30.0)
+                    response = await asyncio.wait_for(model.generate_content_async(contents), timeout=30.0)
                     if response and response.text:
                         cleaned = clean_ai_hype_text(response.text)
                         if cleaned:
@@ -2829,6 +2836,13 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                             if u:
                                 carousel_list.append({"url": u, "is_video": is_v})
 
+                post_ts = int(node.get("taken_at_timestamp") or node.get("taken_at") or 0)
+                if not post_ts and pk.isdigit():
+                    try:
+                        post_ts = int(((int(pk) >> 23) + 1314220021721) / 1000)
+                    except Exception:
+                        post_ts = 0
+
                 parsed_posts.append({
                     "video_id": f"ig_{code}",
                     "shortcode": code,
@@ -2842,6 +2856,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                     "is_story": False,
                     "is_reel": is_reel,
                     "media_list": carousel_list,
+                    "timestamp": post_ts,
                 })
 
             story_item = None
@@ -2849,6 +2864,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                 story_item = {
                     "video_id": f"ig_story_{clean_user}_{latest_reel_media}",
                     "latest_reel_media": latest_reel_media,
+                    "timestamp": int(latest_reel_media),
                     "title": f"Story Instagram Baru - @{clean_user}",
                     "creator": display_name,
                     "url": f"https://www.instagram.com/stories/{clean_user}/",
@@ -2920,6 +2936,14 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                             item_id = f"ig_{code}"
                             if item_id in [p["video_id"] for p in parsed_posts]:
                                 continue
+
+                            post_ts = int(item.get("taken_at_timestamp") or item.get("taken_at") or 0)
+                            if not post_ts and pk.isdigit():
+                                try:
+                                    post_ts = int(((int(pk) >> 23) + 1314220021721) / 1000)
+                                except Exception:
+                                    post_ts = 0
+
                             parsed_posts.append({
                                 "video_id": item_id,
                                 "shortcode": code,
@@ -2933,6 +2957,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                                 "is_story": False,
                                 "is_reel": is_reel,
                                 "media_list": [],
+                                "timestamp": post_ts,
                             })
                         if parsed_posts:
                             break
@@ -3239,14 +3264,43 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         desc = content_data.get("description") or title or url
         desc = clean_hyperlink_title(desc) if desc else ""
 
-        clean_card_title = clean_hyperlink_title(title)
-        if not clean_card_title:
-            if platform == "tiktok":
-                clean_card_title = "Video TikTok"
-            elif platform == "instagram":
-                clean_card_title = "Instagram Story" if is_story else ("Instagram Reel" if is_reel else "Postingan Instagram")
+        if platform == "instagram":
+            if is_story:
+                clean_card_title = f"⏳ Story Baru @{creator}"
+            elif is_reel:
+                clean_card_title = f"🎬 Reels Baru @{creator}"
             else:
-                clean_card_title = "Video YouTube"
+                clean_card_title = f"📸 Postingan Baru @{creator}"
+        elif platform == "tiktok":
+            clean_card_title = f"🔴 Live Streaming @{creator}" if is_live else f"🎵 Video TikTok @{creator}"
+        else:
+            clean_card_title = clean_hyperlink_title(title) or f"Video YouTube {creator}"
+
+        preview_img_bytes = None
+        target_img_url = thumbnail
+        if not target_img_url and media_list:
+            first_m = media_list[0]
+            target_img_url = first_m.get("url") if isinstance(first_m, dict) else str(first_m)
+
+        if target_img_url:
+            try:
+                import io
+                dl_headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                }
+                if "tiktok" in str(target_img_url):
+                    dl_headers["Referer"] = "https://www.tiktok.com/"
+                elif "instagram" in str(target_img_url) or "cdninstagram" in str(target_img_url):
+                    dl_headers["Referer"] = "https://www.instagram.com/"
+                timeout = aiohttp.ClientTimeout(total=8)
+                async with aiohttp.ClientSession(timeout=timeout, headers=dl_headers) as session:
+                    async with session.get(target_img_url) as img_resp:
+                        if img_resp.status == 200:
+                            b = await img_resp.read()
+                            if b and len(b) <= 8 * 1024 * 1024:
+                                preview_img_bytes = b
+            except Exception:
+                preview_img_bytes = None
 
         raw_content = target.get("content") or target.get("custom_template")
         if not raw_content:
@@ -3254,15 +3308,28 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
         intro_text = raw_content
         if "{ai_hype}" in intro_text or "{aihype}" in intro_text:
-            ai_text = await self._generate_ai_hype(creator, clean_card_title, platform, is_live, is_story, is_reel)
+            ai_text = await self._generate_ai_hype(
+                creator=creator,
+                title=clean_card_title,
+                platform=platform,
+                is_live=is_live,
+                is_story=is_story,
+                is_reel=is_reel,
+                image_bytes=preview_img_bytes,
+                description=desc
+            )
             intro_text = intro_text.replace("{ai_hype}", ai_text).replace("{aihype}", ai_text)
 
-        intro_text = intro_text.replace("{judul}", clean_card_title)
-        intro_text = intro_text.replace("{creator}", creator)
-        intro_text = intro_text.replace("{uploader}", creator)
-        intro_text = intro_text.replace("{channel}", creator)
-        intro_text = intro_text.replace("{url}", url)
-        intro_text = intro_text.strip()
+        intro_text = (
+            intro_text
+            .replace("{judul}", clean_card_title)
+            .replace("{creator}", creator)
+            .replace("{username}", creator)
+            .replace("{uploader}", creator)
+            .replace("{channel}", creator)
+            .replace("{url}", url)
+            .strip()
+        )
 
         if platform == "tiktok":
             default_btn = "Tonton Live TikTok" if is_live else "Tonton di TikTok"
@@ -3280,8 +3347,26 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         card_desc_template = target.get("card_desc") or "{deskripsi}"
         use_card = target.get("use_card", True)
 
-        final_card_title = card_title_template.replace("{judul}", clean_card_title).replace("{url}", url).replace("{creator}", creator)
-        final_card_desc = card_desc_template.replace("{deskripsi}", desc if desc else url).replace("{judul}", clean_card_title).replace("{url}", url).replace("{creator}", creator).strip()
+        final_card_title = (
+            card_title_template
+            .replace("{judul}", clean_card_title)
+            .replace("{creator}", creator)
+            .replace("{username}", creator)
+            .replace("{uploader}", creator)
+            .replace("{channel}", creator)
+            .replace("{url}", url)
+        )
+        final_card_desc = (
+            card_desc_template
+            .replace("{deskripsi}", desc if desc else url)
+            .replace("{judul}", clean_card_title)
+            .replace("{creator}", creator)
+            .replace("{username}", creator)
+            .replace("{uploader}", creator)
+            .replace("{channel}", creator)
+            .replace("{url}", url)
+            .strip()
+        )
         if not final_card_desc:
             final_card_desc = url
 
@@ -3348,27 +3433,10 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
             except Exception:
                 pass
 
-        if not files and thumbnail:
-            try:
-                import io
-                timeout = aiohttp.ClientTimeout(total=8)
-                dl_headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                }
-                if "tiktok" in str(thumbnail):
-                    dl_headers["Referer"] = "https://www.tiktok.com/"
-                elif "instagram" in str(thumbnail) or "cdninstagram" in str(thumbnail):
-                    dl_headers["Referer"] = "https://www.instagram.com/"
-                async with aiohttp.ClientSession(timeout=timeout, headers=dl_headers) as session:
-                    async with session.get(thumbnail) as img_resp:
-                        if img_resp.status == 200:
-                            img_bytes = await img_resp.read()
-                            if img_bytes:
-                                files = [discord.File(io.BytesIO(img_bytes), filename="thumbnail.jpg")]
-                                attachment_fn = "thumbnail.jpg"
-            except Exception:
-                files = None
-                attachment_fn = None
+        if not files and preview_img_bytes:
+            import io
+            files = [discord.File(io.BytesIO(preview_img_bytes), filename="thumbnail.jpg")]
+            attachment_fn = "thumbnail.jpg"
 
         if use_card:
             card = build_v2_card(
@@ -3401,11 +3469,22 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         try:
             if platform == "youtube":
                 items = await self._fetch_youtube_content(identifier)
-                for item in items:
-                    vid = item["video_id"]
-                    if self._is_id_posted(vid):
-                        continue
+                unposted_items = [it for it in items if not self._is_id_posted(it["video_id"])]
+                if len(unposted_items) > 1:
+                    live_vids = [x for x in unposted_items if x.get("is_live")]
+                    vod_vids = [x for x in unposted_items if not x.get("is_live")]
+                    if vod_vids:
+                        candidate_vod = vod_vids[0]
+                        for older_it in vod_vids[1:]:
+                            self._record_posted_id(older_it["video_id"])
+                        items_to_process = live_vids + [candidate_vod]
+                    else:
+                        items_to_process = live_vids
+                else:
+                    items_to_process = unposted_items
 
+                for item in items_to_process:
+                    vid = item["video_id"]
                     meta = await self._fetch_youtube_metadata(vid, item.get("is_live", False))
                     if meta.get("channel_id") and meta["channel_id"] != identifier:
                         continue
@@ -3434,6 +3513,9 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
             elif platform == "tiktok":
                 items = await self._fetch_tiktok_content(identifier, target.get("sec_uid"))
+                now_ts = datetime.now(timezone.utc).timestamp()
+                max_age_seconds = 48 * 3600
+                unposted_items = []
                 for item in items:
                     if item.get("sec_uid") and not target.get("sec_uid"):
                         target["sec_uid"] = item["sec_uid"]
@@ -3442,6 +3524,37 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                     if self._is_id_posted(vid):
                         continue
 
+                    is_live = item.get("is_live", False)
+                    if not is_live:
+                        ts = item.get("timestamp") or 0
+                        if not ts and vid.isdigit() and len(vid) >= 15:
+                            try:
+                                ts = int(vid) >> 32
+                                item["timestamp"] = ts
+                            except Exception:
+                                pass
+                        if ts and (now_ts - ts) > max_age_seconds:
+                            self._record_posted_id(vid)
+                            continue
+
+                    unposted_items.append(item)
+
+                if len(unposted_items) > 1:
+                    live_items = [x for x in unposted_items if x.get("is_live")]
+                    vod_items = [x for x in unposted_items if not x.get("is_live")]
+                    if vod_items:
+                        vod_items.sort(key=lambda x: x.get("timestamp") or 0, reverse=True)
+                        candidate_vod = vod_items[0]
+                        for older_item in vod_items[1:]:
+                            self._record_posted_id(older_item["video_id"])
+                        items_to_process = live_items + [candidate_vod]
+                    else:
+                        items_to_process = live_items
+                else:
+                    items_to_process = unposted_items
+
+                for item in items_to_process:
+                    vid = item["video_id"]
                     is_live = item.get("is_live", False)
                     if is_live and not target.get("live_enabled", True):
                         continue
@@ -3462,11 +3575,47 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
 
             elif platform == "instagram":
                 items = await self._fetch_instagram_content(identifier)
+                now_ts = datetime.now(timezone.utc).timestamp()
+                max_age_seconds = 48 * 3600
+                unposted_items = []
                 for item in items:
                     vid = item["video_id"]
                     if self._is_id_posted(vid):
                         continue
 
+                    ts = item.get("timestamp") or 0
+                    if not ts and item.get("pk") and str(item["pk"]).isdigit():
+                        try:
+                            pk_int = int(item["pk"])
+                            ts = int(((pk_int >> 23) + 1314220021721) / 1000)
+                            item["timestamp"] = ts
+                        except Exception:
+                            pass
+
+                    if ts and (now_ts - ts) > max_age_seconds:
+                        self._record_posted_id(vid)
+                        continue
+
+                    unposted_items.append(item)
+
+                if len(unposted_items) > 1:
+                    story_items = [x for x in unposted_items if x.get("is_story")]
+                    post_items = [x for x in unposted_items if not x.get("is_story")]
+                    items_to_process = []
+                    if story_items:
+                        items_to_process.append(story_items[0])
+                        for older_story in story_items[1:]:
+                            self._record_posted_id(older_story["video_id"])
+                    if post_items:
+                        post_items.sort(key=lambda x: x.get("timestamp") or 0, reverse=True)
+                        items_to_process.append(post_items[0])
+                        for older_post in post_items[1:]:
+                            self._record_posted_id(older_post["video_id"])
+                else:
+                    items_to_process = unposted_items
+
+                for item in items_to_process:
+                    vid = item["video_id"]
                     is_story = item.get("is_story", False)
                     is_reel = item.get("is_reel", False)
                     if is_story and not target.get("stories_enabled", True):
