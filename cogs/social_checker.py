@@ -3085,9 +3085,12 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
             except Exception:
                 return None
 
-        enriched = await asyncio.to_thread(_fetch_instaloader)
-        if enriched and (enriched.get("video_url") or enriched.get("media_list")):
-            return enriched
+        try:
+            enriched = await asyncio.wait_for(asyncio.to_thread(_fetch_instaloader), timeout=10.0)
+            if enriched and (enriched.get("video_url") or enriched.get("media_list")):
+                return enriched
+        except Exception:
+            pass
 
         def _fetch_curl_cffi():
             try:
@@ -3098,7 +3101,7 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
                     "Accept-Language": "en-US,en;q=0.9",
                 }
                 target_url = f"https://www.instagram.com/p/{sc}/"
-                r = s.get(target_url, headers=headers, timeout=12)
+                r = s.get(target_url, headers=headers, timeout=8)
                 if r.status_code != 200:
                     return None
                 scripts = re.findall(r'<script type="application/json"[^>]*data-sjs[^>]*>(.*?)</script>', r.text, re.DOTALL)
@@ -3647,8 +3650,11 @@ Tulis LANGSUNG teks pengumumannya sekarang:"""
         if not targets:
             return
 
-        tasks = [asyncio.wait_for(self._process_single_target(t), timeout=25.0) for t in targets]
-        await asyncio.gather(*tasks, return_exceptions=True)
+        tasks = [asyncio.wait_for(self._process_single_target(t), timeout=120.0) for t in targets]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for res, t in zip(results, targets):
+            if isinstance(res, Exception):
+                print(f"[SocialChecker] Error processing {t.get('platform')} {t.get('identifier')}: {res}")
 
     @checker_loop.before_loop
     async def before_checker_loop(self):
